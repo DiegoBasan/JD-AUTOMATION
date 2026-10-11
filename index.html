@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador Líneas JD</title>
+<meta name="description" content="Simulación isométrica 3D en tiempo real del flujo de ensamble de cámaras John Deere (Scorpion, Moose, Gecko) sobre el layout real, con Kasalis Pixid 500 y códigos de falla.">
+<style>
+:root{
+  --bg:#eef2f8; --panel:rgba(255,255,255,.92); --ink:#152238; --ink2:#5a6a85; --line:#d8e0ee;
+  --blue:#2f6bff; --blue2:#1f4fd1; --scorpion:#2f6bff; --moose:#0ea5b7; --gecko:#f08c00; --shared:#6b7ea3;
+  --fail:#e5484d; --ok:#22a06b; --shadow:0 8px 30px rgba(20,40,90,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0d1422; --panel:rgba(18,27,45,.94); --ink:#e6ecf7; --ink2:#9aabc8; --line:#2a3956; --shadow:0 8px 30px rgba(0,0,0,.45); }
+}
+:root[data-theme="dark"]{ --bg:#0d1422; --panel:rgba(18,27,45,.94); --ink:#e6ecf7; --ink2:#9aabc8; --line:#2a3956; --shadow:0 8px 30px rgba(0,0,0,.45); }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:13px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block}
+.panel{position:fixed;background:var(--panel);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);z-index:5}
+#left{top:12px;left:12px;width:310px;max-height:calc(100% - 24px);display:flex;flex-direction:column;overflow:hidden}
+#left header{padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+#left h1{font-size:15px;margin:0 0 2px;letter-spacing:.2px}
+#left .sub{color:var(--ink2);font-size:11.5px}
+.sec{padding:10px 14px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:rgba(127,140,170,.12);border-radius:9px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--ink);padding:6px 8px;border-radius:7px;cursor:pointer;font-weight:600;font-size:12px}
+.seg button.on{background:var(--blue);color:#fff}
+.seg button[data-p="moose"].on{background:var(--moose)}
+.seg button[data-p="gecko"].on{background:var(--gecko)}
+select,input[type=search]{width:100%;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit}
+select option{color:#152238}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 10px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.sm{padding:4px 8px;font-size:12px}
+label.chk{display:flex;align-items:center;gap:6px;color:var(--ink2);font-size:12px;cursor:pointer}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink2);margin:0 0 6px;font-weight:700}
+#steps{overflow:auto;flex:1;padding:6px 8px 10px}
+.branch{margin:6px 6px 2px;font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px}
+.step{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:9px;cursor:pointer}
+.step:hover{background:rgba(47,107,255,.08)}
+.step .n{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:11px;background:rgba(127,140,170,.18)}
+.step .t{font-weight:600}
+.step .d{color:var(--ink2);font-size:11.5px}
+.step.active{background:rgba(47,107,255,.12)}
+.step.active .n{background:var(--blue);color:#fff}
+.step.done .n{background:var(--ok);color:#fff}
+.step.failed .n{background:var(--fail);color:#fff}
+#hud{top:12px;left:50%;transform:translateX(-50%);padding:8px 14px;display:flex;gap:16px;align-items:center;white-space:nowrap}
+#hud .k{color:var(--ink2);font-size:11px}
+#hud .v{font-weight:700}
+#hud .now{max-width:420px;overflow:hidden;text-overflow:ellipsis}
+#info{top:12px;right:12px;width:340px;max-height:calc(100% - 24px);overflow:auto;padding:14px;display:none}
+#info.show{display:block}
+#info h2{margin:0 0 4px;font-size:16px}
+#info .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;margin:0 4px 4px 0}
+#info table{width:100%;border-collapse:collapse;margin:6px 0}
+#info td{padding:3px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+#info td:first-child{color:var(--ink2);width:42%}
+#info h3{font-size:12px;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2)}
+#info ul{margin:4px 0;padding-left:18px}
+#info li{margin:2px 0}
+.chip{display:inline-block;margin:2px 3px 2px 0;padding:2px 7px;border-radius:6px;background:rgba(229,72,77,.12);color:var(--fail);font-weight:700;font-size:11.5px;cursor:pointer;border:0}
+.close{float:right;border:0;background:transparent;color:var(--ink2);font-size:18px;cursor:pointer}
+#kas{position:fixed;right:12px;bottom:12px;width:300px;padding:10px 12px;display:none}
+#kas.show{display:block}
+#kas .bar{height:6px;border-radius:4px;background:rgba(127,140,170,.2);overflow:hidden;margin-top:6px}
+#kas .bar i{display:block;height:100%;background:var(--blue);width:0}
+#kas .sub{font-weight:600}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--fail);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);display:none;z-index:9;max-width:90vw}
+#codes{position:fixed;inset:5% 8%;display:none;flex-direction:column;z-index:20}
+#codes.show{display:flex}
+#codes .head{padding:12px 14px;border-bottom:1px solid var(--line)}
+#codes .list{overflow:auto;padding:6px 14px 14px;flex:1}
+.code{display:grid;grid-template-columns:70px 1fr;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
+.code b{font-variant-numeric:tabular-nums}
+.code .g{color:var(--ink2);font-size:11px}
+.code .h{grid-column:2;background:rgba(47,107,255,.08);border-radius:8px;padding:6px 8px;font-size:12px}
+.note{background:rgba(240,140,0,.12);border:1px solid rgba(240,140,0,.35);border-radius:10px;padding:8px 10px;font-size:12px;margin-top:8px}
+#legend{position:fixed;left:334px;bottom:12px;padding:8px 12px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px}
+#legend span{display:flex;align-items:center;gap:5px}
+#legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.label3d{font-size:10.5px;font-weight:700;color:#24324d;background:rgba(255,255,255,.82);padding:1px 6px;border-radius:6px;border:1px solid rgba(40,70,140,.15);white-space:nowrap;pointer-events:none;letter-spacing:.2px}
+.label3d.fail{color:#c22;border-color:rgba(220,40,40,.35)}
+.label3d.approx{border-style:dashed;color:#6b7ea3}
+.badge3d{font-size:10px;font-weight:800;color:#fff;background:var(--blue);padding:1px 6px;border-radius:9px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.hideLabels .label3d{display:none}
+.label3d.dim{opacity:.55;font-size:9px;font-weight:600}
+#mobileToggle{display:none}
+@media (max-width:820px){
+  #left{width:calc(100% - 24px);max-height:46%;top:auto;bottom:12px}
+  #left.collapsed #steps,#left.collapsed .sec.opt{display:none}
+  #mobileToggle{display:inline-block}
+  #hud{top:8px;gap:10px;font-size:11px;max-width:calc(100% - 16px)}
+  #hud .now{max-width:150px}
+  #info{width:calc(100% - 24px);top:56px;max-height:45%}
+  #legend{display:none}
+  #kas{left:12px;right:12px;width:auto;bottom:auto;top:56px}
+  #codes{inset:8px}
+}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="hud" class="panel">
+  <div><div class="k">Producto</div><div class="v" id="hProd">SCORPION</div></div>
+  <div><div class="k">Reloj sim</div><div class="v" id="hClock">0.0 s</div></div>
+  <div><div class="k">OK / Falla</div><div class="v"><span id="hOk" style="color:var(--ok)">0</span> / <span id="hFail" style="color:var(--fail)">0</span></div></div>
+  <div class="now"><div class="k">Paso actual</div><div class="v" id="hNow">—</div></div>
+</div>
+
+<aside id="left" class="panel">
+  <header>
+    <div class="row" style="justify-content:space-between">
+      <h1>Flujo de ensamble · Cámaras JD</h1>
+      <button class="btn sm" id="mobileToggle">▾</button>
+    </div>
+    <div class="sub">Layout real Moose · Scorpion · Gecko — Kasalis = Pixid 500-S</div>
+  </header>
+  <div class="sec">
+    <div class="lbl">Producto</div>
+    <div class="seg" id="prodSeg">
+      <button data-p="scorpion" class="on">Scorpion</button>
+      <button data-p="moose">Moose</button>
+      <button data-p="gecko">Gecko</button>
+    </div>
+    <div style="margin-top:8px" id="variantWrap">
+      <select id="variant"></select>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="row">
+      <button class="btn primary" id="play">▶ Correr</button>
+      <button class="btn" id="reset">⟲ Reset</button>
+      <select id="speed" style="width:auto">
+        <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:8px;gap:12px">
+      <label class="chk"><input type="checkbox" id="continuous"> Flujo continuo (varias piezas)</label>
+      <label class="chk"><input type="checkbox" id="follow"> Seguir pieza</label>
+    </div>
+  </div>
+  <div class="sec opt">
+    <div class="lbl">Simular falla</div>
+    <select id="failSel"></select>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sm" id="viewIso">Vista iso</button>
+      <button class="btn sm" id="viewTop">Planta</button>
+      <button class="btn sm" id="toggleLabels">Etiquetas</button>
+      <button class="btn sm" id="openCodes">Códigos Kasalis</button>
+      <a class="btn sm" href="Tutorial%20Active%20Alignment%20(1).html" target="_blank" style="text-decoration:none">Tutorial AA</a>
+    </div>
+  </div>
+  <div class="lbl" style="padding:8px 14px 0">Ruta de estaciones (clic = ir a estación)</div>
+  <div id="steps"></div>
+</aside>
+
+<div id="legend" class="panel">
+  <span><i style="background:var(--scorpion)"></i>Scorpion</span>
+  <span><i style="background:var(--moose)"></i>Moose</span>
+  <span><i style="background:var(--gecko)"></i>Gecko</span>
+  <span><i style="background:var(--shared)"></i>Compartido / soporte</span>
+  <span><i style="background:var(--fail)"></i>Fallas</span>
+  <span style="color:var(--ink2)">* = ubicación aproximada (no marcada en layout)</span>
+</div>
+
+<div id="info" class="panel"></div>
+<div id="kas" class="panel">
+  <div class="lbl" id="kasTitle">Kasalis Pixid 500-S</div>
+  <div class="sub" id="kasSub">—</div>
+  <div style="color:var(--ink2);font-size:11.5px;margin-top:2px" id="kasDetail"></div>
+  <div class="bar"><i id="kasBar"></i></div>
+</div>
+<div id="toast"></div>
+
+<div id="codes" class="panel">
+  <div class="head">
+    <button class="close" id="closeCodes">✕</button>
+    <div class="lbl" style="margin:0">Códigos de falla Kasalis</div>
+    <div class="row" style="margin-top:8px;flex-wrap:nowrap">
+      <input type="search" id="codeQ" placeholder="Buscar: 161, RETEST, DISP, particle, -350 ...">
+      <select id="codeSrc" style="width:190px">
+        <option value="plc">Pixid PLC (KSmessage)</option>
+        <option value="ksv">KSvision (negativos)</option>
+        <option value="hint">Solo con guía de troubleshooting</option>
+      </select>
+    </div>
+    <div class="note"><b>Ojo con 161 / 155 / 108:</b> en la tabla oficial de Kasalis <b>161 = ALIGN_FT_RETEST_MTF</b> (MTF falla en el RETEST), <b>155 = ALIGN_FT_UNGRIP_MTF</b> (MTF cae al soltar el lente, <i>antes</i> del horno) y <b>108 = ALIGN_SCAN_FAIL</b> (no encontró pico en el barrido). El "no llega a target en BUILD" es <b>131 = FT_PEAK_MTF</b>. Algunas descripciones del documento de flujos no coinciden con la tabla.</div>
+  </div>
+  <div class="list" id="codeList"></div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* =====================================================================
+   DATOS — layout (coordenadas en px del plano "layout moose scorpion gecko.png")
+   ===================================================================== */
+const LINE_COL = {scorpion:0x2f6bff, moose:0x0ea5b7, gecko:0xf08c00, shared:0x6b7ea3, fail:0xe5484d, wip:0xc9d3e6};
+const PX = (x,y)=>[(x-860)/10,(y-560)/10];
+
+// id, etiqueta, línea, rect [x1,y1,x2,y2], altura, tipo, extras
+const STATIONS = [
+  // ---- MOOSE (cian en layout)
+  {id:'m_fallas', name:'Fallas MOOSE', line:'fail', r:[192,317,246,350], h:.7, type:'bin'},
+  {id:'m_cal', name:'CALIBRATION', line:'moose', r:[297,255,368,325], h:1.7, type:'bench'},
+  {id:'m_leak', name:'LEAK TEST (Moose)', line:'moose', r:[405,280,472,350], h:1.9, type:'tester'},
+  {id:'m_final', name:'FINAL ASSY (Moose)', line:'moose', r:[510,255,575,325], h:1.5, type:'bench'},
+  {id:'m_front', name:'FRONT ASSY (Moose)', line:'moose', r:[612,255,678,325], h:1.5, type:'bench'},
+  {id:'m_eol', name:'EOL (Moose) · Nodo 5', line:'moose', r:[228,444,334,600], h:2.3, type:'eol'},
+  {id:'m_brk', name:'BRACKETS', line:'moose', r:[388,470,453,540], h:1.4, type:'bench'},
+  {id:'m_bot', name:'BOT / BACK ASSY (Moose)*', line:'moose', r:[400,378,470,425], h:1.4, type:'bench', approx:true},
+  // ---- Celda AA (nodo 3)
+  {id:'kas', name:'Pixid 500-S KASALIS · Nodo 3', line:'shared', r:[553,470,661,559], h:1.2, type:'kasalis'},
+  {id:'oven3', name:'OVEN (sensor)', line:'shared', r:[661,457,709,509], h:2.2, type:'oven'},
+  {id:'refri', name:'REFRI (DELLO)', line:'shared', r:[661,509,709,559], h:2.0, type:'fridge'},
+  // ---- fila superior (nodo 2)
+  {id:'printer', name:'PRINTER', line:'shared', r:[733,300,750,370], h:1.1, type:'bench'},
+  {id:'s_la', name:'LENS ADAPTER · Nodo 2', line:'scorpion', r:[792,305,850,370], h:1.4, type:'bench'},
+  {id:'g_s1', name:'S1 LENS ADAPTER (Gecko)', line:'gecko', r:[887,297,960,370], h:1.4, type:'bench'},
+  {id:'clean', name:'LIMPIEZA DE SENSOR', line:'shared', r:[960,320,1015,370], h:1.4, type:'bench'},
+  {id:'rep', name:'REPARACIÓN', line:'shared', r:[1115,380,1182,427], h:1.0, type:'desk'},
+  {id:'diag', name:'DIAGNÓSTICO', line:'shared', r:[1188,380,1255,427], h:1.0, type:'desk'},
+  {id:'plasma', name:'PLASMA', line:'shared', r:[1358,365,1422,458], h:2.3, type:'plasma'},
+  // ---- SCORPION (verde en layout) — nodo 1
+  {id:'s_fallas', name:'Fallas SCORPION', line:'fail', r:[776,505,830,535], h:.7, type:'bin'},
+  {id:'s_eol', name:'EOL (Scorpion) · Nodo 1', line:'scorpion', r:[870,503,941,585], h:2.3, type:'eol'},
+  {id:'s_leak', name:'LEAK TEST (Scorpion)', line:'scorpion', r:[962,535,1028,585], h:1.9, type:'tester'},
+  {id:'s_desic', name:'GABINETE DESICCANT', line:'scorpion', r:[1040,535,1098,585], h:2.0, type:'cabinet'},
+  {id:'s_final', name:'FINAL ASSY (Scorpion)', line:'scorpion', r:[1100,535,1167,585], h:1.5, type:'bench'},
+  {id:'s_front', name:'FRONT HOUSING / FRONT ASSY', line:'scorpion', r:[1185,535,1268,585], h:1.5, type:'bench'},
+  {id:'s_back', name:'BACK HOUSING / BACK ASSY', line:'scorpion', r:[1278,535,1355,585], h:1.5, type:'bench'},
+  // ---- GECKO (naranja en layout) — nodo 6
+  {id:'g_fallas', name:'Fallas GECKO', line:'fail', r:[712,640,767,672], h:.7, type:'bin'},
+  {id:'g_out', name:'Salida GECKO', line:'gecko', r:[774,640,828,672], h:.7, type:'bin'},
+  {id:'g_s8', name:'S8 TOP GASKET', line:'gecko', r:[840,600,912,672], h:1.5, type:'bench'},
+  {id:'g_eol', name:'EOL (Gecko) · Nodo 6', line:'gecko', r:[998,600,1066,672], h:2.3, type:'eol'},
+  {id:'g_leak', name:'LEAK TEST (Gecko)', line:'gecko', r:[1068,600,1167,672], h:1.9, type:'tester'},
+  {id:'g_s7', name:'S7 DESICCANT CARTRIDGE', line:'gecko', r:[1215,600,1282,668], h:1.5, type:'bench'},
+  {id:'g_s6', name:'S6 FINAL ASSY (Gecko)', line:'gecko', r:[1323,600,1390,668], h:1.5, type:'bench'},
+  {id:'g_st3', name:'ST03 BOT ASSY', line:'gecko', r:[1050,790,1122,860], h:1.5, type:'bench'},
+  {id:'g_s4', name:'S4 LEDs ASSY', line:'gecko', r:[1168,790,1240,860], h:1.5, type:'bench'},
+  {id:'g_s5', name:'S5 MOISTURE ABSORBER', line:'gecko', r:[1325,790,1390,860], h:1.5, type:'bench'},
+  // ---- Fisnar / Front Window (nodo 4)
+  {id:'kanban', name:'KANBAN FISNAR', line:'shared', r:[655,775,710,808], h:.9, type:'cabinet'},
+  {id:'disp', name:'FISNAR · GECKO DISPENSING · Nodo 4', line:'shared', r:[752,775,836,860], h:1.7, type:'dispenser'},
+  {id:'oven4', name:'OVEN (housing / front window)', line:'shared', r:[878,775,945,825], h:2.2, type:'oven'},
+  // ---- Inspección / salida
+  {id:'fni', name:'FNI (Final Inspection)', line:'shared', r:[455,745,497,820], h:1.3, type:'bench'},
+  {id:'out', name:'PACKOUT / SALIDA (OUT)', line:'shared', r:[455,700,497,740], h:.8, type:'bin'},
+  // ---- Dogbone (no marcado en layout)
+  {id:'dog', name:'DOGBONE ASSY*', line:'scorpion', r:[540,630,605,690], h:1.5, type:'bench', approx:true},
+  {id:'dogoven', name:'HORNO DOGBONE*', line:'scorpion', r:[612,630,660,690], h:2.0, type:'oven', approx:true},
+];
+const WIPS = [[260,300,297,352],[368,300,405,352],[472,300,510,352],[575,300,612,352],[678,300,715,352],
+  [351,444,388,494],[453,444,490,494],[512,444,549,494],[690,440,709,457],
+  [750,320,792,370],[850,320,887,370],[1015,320,1052,370],[1094,405,1115,427],[1255,405,1285,427],[1333,425,1358,458],[1422,425,1447,458],
+  [941,535,960,555],[1167,535,1185,555],[1268,535,1278,555],[1355,535,1372,555],
+  [914,640,950,692],[1175,640,1210,690],[1285,643,1322,693],[1395,643,1432,693],
+  [712,775,750,825],[836,775,873,825],[1010,770,1045,825],[1128,770,1162,825],[1245,770,1280,825],[1287,770,1322,825],[1395,770,1430,825]];
+const ZONES = [
+  {line:'moose', r:[180,245,720,612]},
+  {line:'scorpion', r:[765,495,1405,590]},
+  {line:'gecko', r:[700,592,1440,700]},
+  {line:'gecko', r:[1000,762,1440,868]},
+  {line:'shared', r:[640,765,950,868]},
+  {line:'shared', r:[540,440,712,565]},
+  {line:'shared', r:[725,290,1060,375]},
+];
+// paredes (polilíneas en px)
+const WALLS = [
+  [[120,178],[1578,178],[1578,938],[120,938],[120,178]],
+  [[705,178],[705,265],[1100,265],[1100,355],[1490,355],[1490,178]],
+  [[140,685],[430,685],[430,935]],
+];
+
+/* PCs / software (de "Equipos John Deere.xlsx") */
+const PCS = {
+  s_la:[['SCORPION Lens Adapter','MXCHIM2JDEAS01','ACURA'],['MOOSE Lens Adapter','MXCHIM2JDMO01','ACURA']],
+  kas:[['SCORPION Kasalis','MXCHIM2JDEAA02','KASALIS (Pixid)']],
+  oven3:[['SCORPION Horno/Refri','MXCHIM2JDEAS02','CUSTOM']],
+  refri:[['SCORPION Horno/Refri','MXCHIM2JDEAS02','CUSTOM']],
+  disp:[['SCORPION Fisnar','MXCHIM2PHO042','ARMI'],['SCORPION Front Window','MXCHIM2JDEAS03','ACURA']],
+  s_front:[['SCORPION Front Assy','MXCHIM2JDEAS04','ACURA']],
+  s_back:[['SCORPION Back Assy','MXCHIM2JDEAS05','ACURA']],
+  s_final:[['SCORPION Final Assy','MXCHIM2JDEAS06','ACURA']],
+  dog:[['SCORPION Dogbone','MXCHIM2JDEAS07','ACURA']],
+  dogoven:[['SCORPION Horno Dogbone','MXCHIM2JDE075','CUSTOM']],
+  m_front:[['MOOSE Front Assy','MXCHIM2JDMO02','ACURA']],
+  m_bot:[['MOOSE Bot Assy','MXCHIM2JDMO03','ACURA']],
+  m_final:[['MOOSE Final Assy','MXCHIM2JDMO04','ACURA']],
+  m_brk:[['MOOSE Bracket','MXCHIM2JDMO05','ACURA']],
+  g_s1:[['GECKO Lens Adapter','MXCHIM2JDGK02','ACURA']],
+  g_st3:[['GECKO Bot Assy','MXCHIM2JDGK03','ACURA'],['GECKO Ampseal','MXCHIM2JDGK01','ACURA']],
+  g_s4:[['GECKO LEDs Assy','MXCHIM2JDGK04','ACURA']],
+  g_s5:[['GECKO Moisture Absorber','MXCHIM2JDGK05','ACURA']],
+  g_s6:[['GECKO Final Assy','MXCHIM2JDGK06','ACURA']],
+  g_s7:[['GECKO Cartridge','MXCHIM2JDGK07','ACURA']],
+  g_s8:[['GECKO Top Gasket','MXCHIM2JDGK08','ACURA']],
+  plasma:[['Plasma (etiqueta en layout)','MXCHI2PH023','—']],
+};
+
+/* Qué revisar por estación */
+const CHECKS = {
+  plasma:['Ultrasónico + plasma del lens adapter: sin plasma el DELLO no adhiere (micro-textura).','Tanque Ar/O₂ con presión, tiempo y potencia de plasma según receta.','Piezas tratadas tienen ventana de uso: no dejarlas mucho tiempo en WIP.'],
+  clean:['Limpieza de sensor (COB viene de ISO 5): partículas aquí = falla 242 (PRT) en Kasalis.','Revisar soplado ionizado / hisopos / ESD.'],
+  s_la:['Ensamble sensor + lens adapter (tornillos).','Si el sensor queda mal asentado → fallas de centrado (107/195) o tilt en Kasalis.'],
+  g_s1:['Ensamble sensor + lens adapter Gecko.','Mismo modo de falla que Scorpion: asiento/tilt → 107/195 en Kasalis.'],
+  kas:['BUILD: PRT partículas → DELLO (ARC) → VIS → pick lente → prefocus → scan Z/tilt → centrado → offset Z → UV → ungrip → MTF.','RETEST: re-mide MTF después del horno (161 = RETEST_MTF).','DELLO: pot life 72 h (PotLifeHead1), volumen 18 ml; warning 10 % / error 3 % de volumen, warning 5 % / error 3 % de pot life.','Sacar el DELLO del refri 1.5 h antes; cambio de tubo con aire cerrado.','Limpiar targets/backlight y lente: causa #1 de MTF bajo.'],
+  oven3:['Curado completo del DELLO del sensor/lens adapter (pasivo).','No compartir ciclo con housing (perfiles distintos).','Si el MTF cae entre BUILD y RETEST → revisar perfil de temperatura y manejo de piezas.'],
+  refri:['Almacén de DELLO. 1.5 h a temperatura ambiente antes de usar.','Si se tira/derrama → reinicia las 1.5 h.'],
+  disp:['Front Window: dispensado de DELLO en housing + colocación de vidrio (Fisnar / Gecko dispensing).','Revisar cordón continuo (fugas en Leak Test), presión y aguja.','En el documento de flujos esta función aparece como "ASELEC".'],
+  oven4:['Curado de housing / front window (separado del horno de sensor).'],
+  s_front:['Unión del sensor alineado con el front housing (convergencia).','No tocar ni presionar el lente: puede mover la alineación.'],
+  s_back:['Back housing + PCBA serializer (JOHPBA1081583).','O-ring bien asentado para Leak Test.'],
+  s_final:['Atornillado final — falla endémica: TORNILLOS ELEVADOS.','Revisar torque, velocidad del spindle y presión del cilindro (los 3 juntos).','Tipo/altura de tornillo correcto.'],
+  m_final:['Atornillado final — tornillos elevados: torque / velocidad / presión de cilindro.'],
+  g_s6:['Final Assy Gecko: Top housing link + Back housing link; tornillos, label, O-ring.','Tornillos elevados: torque / velocidad / presión.'],
+  s_leak:['Fuga: O-ring, tornillos elevados, cordón de DELLO del window incompleto.'],
+  m_leak:['Fuga: O-ring, tornillos elevados, cordón de DELLO del window incompleto.'],
+  g_leak:['Fuga: O-ring de cartridge/desiccant, tornillos, window.'],
+  s_eol:['EOL mide (no mueve): MTF/SFR del módulo terminado. Comparar con datos de AA (ver Tutorial AA).','Si EOL falla y Kasalis pasó: revisar targets EOL, distancia, ROIs, enfoque por variante de lente.'],
+  m_eol:['EOL Moose: prueba funcional/óptica final antes de Bracket.'],
+  g_eol:['EOL Gecko: después de Leak test, antes de Top Gasket.'],
+  m_brk:['Bracket 1 y 2 + tornillos + empaque (PFA13297).'],
+  dog:['Dos cámaras a 100/200/300 mm, orientación V/H según SKU.'],
+  m_cal:['En el plano está en la zona Moose; el flujo NPI no la usa para Moose. Se usa aquí como "Robot Calibration" de Dogbone (por confirmar).'],
+  g_st3:['Back assy Gecko: socket Ampseal + O-ring + PCBA serializada.'],
+  g_s4:['LEDs assy.'], g_s5:['Front assy: moisture absorber + etiquetas de color.'],
+  g_s7:['Desiccant cartridge + O-ring.'], g_s8:['Top gasket: foil, top gasket, absorber cover, compliance label.'],
+  fni:['Final inspection / QA (Scorpion 76°: QA INSP).'],
+  s_desic:['Gabinete de desecante (almacenaje) — no es paso de proceso.'],
+};
+
+/* =====================================================================
+   FLUJOS (NPI Product Data + FLUJOS_COMPLETOS_CONTEXTO + layout)
+   ===================================================================== */
+const KBUILD = [
+  ['Load', 0, 'Operador carga sensor + lente en el fixture (finger switch).', .08],
+  ['Dispense · PRT', 1, 'Prueba de partículas en sensor (LP=25 %, PT=1.0, ITC=100). Si falla → no dispensa (242).', .09],
+  ['Dispense · PRE + ARC', 1, 'Pre-inspección de patrón y dispensado DELLO en arco (DR=42 %, SR=50 %, ST=300 ms, VS=20).', .12],
+  ['Dispense · VIS', 1, 'Inspección post-dispense del cordón (ST=50, área 10–25 %). Si falla → 233.', .08],
+  ['Align · pick + prefocus', 2, 'Grippers toman el lente, target sube/baja, prefocus (105).', .1],
+  ['Align · scan Z / tilt / centrado', 2, 'Barrido through-focus, tip/tilt y centrado óptico (108 scan, 107 centro, 131 peak MTF).', .18],
+  ['Align · offset Z + UV cure', 2, 'Sube el lente para compensar contracción y cura UV (Dymax). 130 = medición UV.', .14],
+  ['Align · ungrip + MTF', 2, 'Suelta el lente y re-mide MTF (155 = UNGRIP_MTF).', .09],
+  ['Spare · PRT STN=3', 3, 'Estación spare: prueba de partículas secundaria / UV secundario.', .06],
+  ['Unload', 0, 'Pieza regresa a Load: PASS/FAIL en pantalla.', .06],
+];
+const KRETEST = [
+  ['Load', 0, 'Carga del sensor ya curado en horno.', .2],
+  ['Align · MTF RETEST', 2, 'Engancha eléctricamente y mide MTF on/off-axis contra límites (161 = RETEST_MTF, 175 = RETEST_NOISE).', .6],
+  ['Unload', 0, 'PASS → sigue a Front assy. FAIL → QRQC.', .2],
+];
+
+const S = (st,name,desc,dur,o={})=>({st,name,desc,dur,...o});
+const COMMON_SENSOR = (la)=>[
+  S('plasma','Plasma lens adapter','Ultrasónico + plasma de la cara superior del lens adapter.',3,{add:['adapter']}),
+  S('clean','Limpieza de sensor','Sensor PCBA (COB, viene de ISO 5) se limpia antes de ensamblar.',2.5,{add:['pcb']}),
+  S(la,'Lens Adapter','Sensor + lens adapter (tornillos). Listo para Kasalis.',3,{add:['screws1']}),
+  S('kas','Kasalis · BUILD AA','DELLO → alineación activa (SFR/MTF) → UV cure.',12,{k:'build',add:['glue','lens'],fails:['242','233','108','131','155']}),
+  S('oven3','Horno curado sensor','Curado completo del DELLO (tiempo según spec).',5,{add:['cured']}),
+  S('kas','Kasalis · RETEST AA','Valida MTF después del horno.',5,{k:'retest',fails:['161']}),
+];
+const FLOWS = {
+  scorpion:{
+    name:'SCORPION', fail:'s_fallas',
+    variants:[['mono76','76° Mono (PFA13514) — con QA INSP'],['mono95','95° Mono'],['mono131','131°/135° Mono (PFA13516)'],['mono133','133.4° Mono (PFA13743)'],['dog','Dogbone (100/200/300 mm, V/H)']],
+    build(v){
+      const main=[...COMMON_SENSOR('s_la'),
+        S('s_front','Front Assy','Sensor alineado + front housing con ventana (convergencia).',3,{merge:['housing']}),
+        S('s_back','Back Assy','Back housing + PCBA serializer + O-ring.',3,{add:['serial','back']}),
+        S('s_final','Final Assy','Atornillado final (torque / velocidad / presión).',3,{add:['screws'],fails:['screws']}),
+        S('s_leak','Leak test','Prueba de hermeticidad.',2.5,{fails:['leak']}),
+        S('s_eol','EOL','End of line: prueba óptica/funcional final.',3,{fails:['eol']}),
+      ];
+      if(v==='dog'){
+        main.push(S('dog','Dogbone Assy','2 cámaras montadas a 100/200/300 mm (V/H).',3,{add:['dogbone']}),
+                  S('dogoven','Horno Dogbone','Curado dogbone.',3),
+                  S('m_cal','Robot Calibration','Calibración del dogbone (estación CALIBRATION, por confirmar).',3),
+                  S('fni','Final Inspection','Inspección final.',2),
+                  S('out','Packout','Empaque.',2,{add:['box']}));
+      } else {
+        main.push(S('fni', v==='mono76'?'QA INSP (76°)':'Final Inspection','Inspección final.',2),
+                  S('out','Packout','Empaque / material de embarque (FERT).',2,{add:['box']}));
+      }
+      return {main, housing:[
+        S('disp','Front Window Assy','Fisnar: DELLO en housing + vidrio (ventana).',4,{add:['window']}),
+        S('oven4','Horno housing','Curado del front window.',4),
+      ]};
+    }
+  },
+  moose:{
+    name:'MOOSE', fail:'m_fallas',
+    variants:[['std','HLA PFA13297 (con Bracket)']],
+    build(){
+      return {
+        main:[...COMMON_SENSOR('s_la').map(s=>s.st==='kas'?{...s,desc:s.desc+' (Kasalis Moose; contingencia: Kasalis ELK).'}:s),
+          S('m_front','Front Assy','Lens adapter alineado + front housing con ventana (000000-9522-634).',3,{merge:['housing']}),
+          S('m_final','Final Assy','Front assy + Back assy, tornillos.',3,{merge:['back'],add:['screws'],fails:['screws']}),
+          S('m_leak','Leak test','Prueba de hermeticidad.',2.5,{fails:['leak']}),
+          S('m_eol','EOL','End of line.',3,{fails:['eol']}),
+          S('m_brk','Bracket','Bracket 1 + 2, tornillos (PFA13297).',3,{add:['bracket']}),
+          S('fni','Final Inspection','Inspección final.',2),
+          S('out','Packout','Empaque.',2,{add:['box']}),
+        ],
+        housing:[
+          S('disp','Front Window Assy','Ventana + front housing + foil (000000-9522-983).',4,{add:['window']}),
+          S('oven4','Horno housing','Curado del front window.',4),
+        ],
+        back:[
+          S('m_bot','Back Assy','Back housing + PCBA serializer + O-ring + tornillos (000000-9521-390).',4,{add:['serial']}),
+        ],
+      };
+    }
+  },
+  gecko:{
+    name:'GECKO', fail:'g_fallas',
+    variants:[['std','HLA PFA13568']],
+    build(){
+      return {
+        main:[...COMMON_SENSOR('g_s1').map(s=>s.st==='kas'?{...s,desc:s.desc+' (Kasalis usada por Gecko — confirmar si es la 500-S).'}:s),
+          S('g_st3','ST03 Bot Assy','Back assy: socket Ampseal + O-ring + PCBA serializada.',3,{add:['serial','back','ampseal']}),
+          S('g_s4','S4 LEDs Assy','Ensamble de LEDs.',3,{add:['leds']}),
+          S('g_s6','S6 Final Assy','Top housing link + back housing link, tornillos, label, O-ring.',3,{merge:['housing'],add:['screws'],fails:['screws']}),
+          S('g_s7','S7 Cartridge Assy','Desiccant cartridge + O-ring.',3,{add:['desiccant']}),
+          S('g_leak','Leak test','Prueba de hermeticidad.',2.5,{fails:['leak']}),
+          S('g_eol','EOL','End of line.',3,{fails:['eol']}),
+          S('g_s8','S8 Top Gasket','Foil, top gasket, absorber cover, compliance label.',3,{add:['gasket']}),
+          S('fni','Final Inspection','Inspección final.',2),
+          S('g_out','Packout / Salida GECKO','Empaque.',2,{add:['box']}),
+        ],
+        housing:[
+          S('disp','Front Window Assy','Gecko Dispensing (Fisnar): DELLO + ventana en front/top housing.',4,{add:['window']}),
+          S('oven4','Horno housing','Curado del front window.',4),
+          S('g_s5','S5 Front Assy','Moisture absorber + etiquetas de color.',3,{add:['absorber']}),
+        ],
+      };
+    }
+  },
+};
+const BRANCH_NAMES = {main:'Ruta principal · sensor', housing:'Ruta paralela · housing / ventana', back:'Ruta paralela · back assy'};
+
+/* Fallas simulables */
+const FAILS = [
+  ['', 'Ninguna (todo PASS)'],
+  ['242','242 · Particle test fail (Kasalis Dispense)'],
+  ['233','233 · Post-dispense inspection fail (cordón DELLO)'],
+  ['108','108 · ALIGN_SCAN_FAIL (Build)'],
+  ['131','131 · FT_PEAK_MTF — no llega a target en BUILD'],
+  ['155','155 · FT_UNGRIP_MTF — cae al soltar lente'],
+  ['161','161 · FT_RETEST_MTF — falla en RETEST post-horno'],
+  ['screws','Tornillos elevados (Final Assy)'],
+  ['leak','Leak test FAIL'],
+  ['eol','EOL FAIL'],
+];
+
+/* Guías de troubleshooting (clave = código) */
+const HINTS = {
+  '3':'E-STOP activo: revisar paros de emergencia, puertas/interlocks de enclosure y relevador de seguridad. Reset desde HMI.',
+  '9':'MES: no pudo enviar datos del dispositivo. Revisar red/VLAN, servidor MES, puerto TCP del bridge.',
+  '10':'MES: esperando nuevo dispositivo (serial no validado / ruta MES). Revisar que la pieza tenga el paso previo cerrado.',
+  '12':'Validación de dispositivo falló: serial/receta no corresponde, o el paso anterior en MES no está completo.',
+  '16':'Aire principal bajo: revisar suministro, regulador y manómetro de la máquina (también en cambio de DELLO).',
+  '17':'Proceso abortado por el operador o por otra falla previa: revisar el log (Trace) para la causa raíz.',
+  '101':'Error general de alineación: ver el log para el sub-código KSvision (negativo).',
+  '102':'No abre la cámara del dispositivo: pogo pins / fixture / cable / proxy de cámara. Ver KSvision -1xx (device camera).',
+  '104':'No detecta el lente en el gripper: lente no cargado, gripper sucio/desgastado, posición de pick mal enseñada.',
+  '105':'Prefocus falló: target sucio, exposición, altura de target, lente muy fuera de rango Z.',
+  '107':'Centrado falló: sensor/lens adapter mal asentado, target central sucio o mal configurado (wide vs narrow AoV).',
+  '108':'SCAN_FAIL: el barrido Z/tilt no encontró pico de MTF. Revisar rango de búsqueda Z para la variante de lente (76/95/131/133.4°), targets limpios, iluminación, lente bien tomado. (El doc de flujos lo nombraba "contaminación".)',
+  '111':'Eje Z no se movió: servo/driver, límite, backlash.',
+  '113':'Gripper no cierra: presión de aire, sensor de gripper, mecánica.',
+  '130':'Medición UV falló: lightguide Dymax dañada/sucia, intensidad baja, calibración UV.',
+  '131':'PEAK_MTF: en el pico de alineación el MTF no llega al límite (= "no llega a target SFR" en BUILD). Limpiar lente y targets, checar comunicación de cámara, parámetros MTF por variante de lente.',
+  '143':'MTF falla durante el curado UV: el lente se movió al curar (contracción). Revisar offset Z (UVCure offset) y patrón de DELLO.',
+  '149':'MTF falla post-curado UV (aún en gripper). Igual que 143: contracción / offset.',
+  '155':'UNGRIP_MTF: el MTF cae al ABRIR el gripper (antes del horno). Causas: curado UV insuficiente (intensidad/tiempo), gripper arrastra el lente, poco DELLO / cordón incompleto, offset de contracción. (El doc de flujos lo describía como post-horno.)',
+  '161':'RETEST_MTF: el MTF del RETEST (después de horno) está fuera de límite. Causas: lente/target sucio, DELLO se movió en horno (perfil temp.), golpe/manejo entre horno y retest, límites RETEST en ksprocess, cámara/pogo pins (ver 175 RETEST_NOISE).',
+  '170':'No encontró pico en scan Z: rango Z insuficiente o lente fuera de nominal.',
+  '175':'Ruido en RETEST: conexión de cámara / pogo pins / exposición.',
+  '193':'Saturación en PEAK: exposición/ganancia o backlight demasiado alto.',
+  '195':'Máximo de intentos de centrado: asiento del sensor, tilt del lens adapter.',
+  '199':'Prueba de estabilidad falló: vibración, gripper flojo, temperatura.',
+  '222':'Patrón de visión no encontrado (pre-dispense): pieza mal colocada, iluminación (LD/LL/EXP) o patrón .hdb equivocado para el producto.',
+  '230':'Falla del dispensador: bomba de desplazamiento positivo, cartucho DELLO, cable.',
+  '233':'Inspección post-dispense falló: cordón discontinuo/delgado (DELLO frío, aire, aguja tapada). Purga/prime y revisar DR/VS.',
+  '235':'Nivel de adhesivo bajo (VolumeErrorThreshold=3 %). Cambiar cartucho DELLO (18 ml).',
+  '236':'Pot life de DELLO vencido (PotLifeHead1=72 h, error al 3 %). Reemplazar adhesivo.',
+  '242':'Particle test (PRT) falló: partículas en el sensor. Limpiar sensor, revisar estación de limpieza, guantes/ESD, umbrales ITC/ILS/ITS.',
+  '277':'Presión de dispensado baja: aire / regulador.',
+  '402':'Movimiento de estación arriba con mesa rotatoria: interlock de seguridad.',
+  '403':'Mesa rotatoria no en posición: home offset, sensor de posición, acoplamiento cinemático.',
+  '411':'Timeout de home de la mesa rotatoria.',
+  '418':'Falla en estación de alineación — ver sub-código.',
+  '419':'Falla en estación de dispensado — ver sub-código.',
+  '426':'Vacío no detectado en fixture.',
+  'screws':'Tornillos elevados: revisar torque por tipo de tornillo, velocidad de spindle, presión del cilindro (empuja más allá del límite del material), altura/calibre del tornillo. Parámetros aún TBD por línea.',
+  'leak':'Leak test: O-ring mal asentado o dañado, tornillo elevado, cordón de DELLO de la ventana incompleto (233 en Fisnar), housing con poro.',
+  'eol':'EOL: comparar MTF de EOL vs datos de Kasalis RETEST; targets/ROIs de EOL, distancia de target por variante, conexión/serializer.',
+};
+const STEP_FAIL_LABEL = {screws:'Tornillos elevados', leak:'Leak FAIL', eol:'EOL FAIL'};
+
+const CODES = {"plc":[[1,"AXIS_ERROR","general errors"],[2,"MODULE_ERROR","general errors"],[3,"ESTOP","general errors"],[4,"CALIB_NOT_READY_YET","general errors"],[5,"INCR_WORK_ID","general errors"],[6,"NO_ENABLED_POSITIONS","general errors"],[7,"MP_WRITE","general errors"],[8,"MP_INIT","general errors"],[9,"MES_SEND_DEVICE_DATA","general errors"],[10,"MES_WAIT_FOR_NEW_DEVICE","general errors"],[11,"SEQINIT","general errors"],[12,"DEVICE_VALIDATION","general errors"],[13,"RESTART_DEV_CAM_LIB","general errors"],[14,"EXTLIB_PARTDONE","general errors"],[15,"EXTLIB_INDEXREQUEST","general errors"],[16,"MAIN_AIR","general errors"],[17,"PROCESSING_ABORTED","general errors"],[18,"DUPLEX_CONTROL","general errors"],[19,"DUPLEX_CTRL_PROC_FILE","general errors"],[20,"DEVICE_DATA_CACHE","general errors"],[21,"ALIGN_EXTERNAL","general errors"],[22,"ALIGN_PYTHON_UNKNOWN","general errors"],[31,"CFG_LOAD_CONFIG","configuration errors"],[32,"CFG_EDITOR_SHOW","configuration errors"],[33,"CFG_EDITOR_HIDE","configuration errors"],[34,"CFG_SAVE_CONFIG","configuration errors"],[41,"PAT_EDITOR_SHOW","pattern errors"],[42,"PAT_EDITOR_HIDE","pattern errors"],[44,"PAT_EDIT_MODEL","pattern errors"],[43,"PAT_SELECT","pattern errors"],[45,"PAT_EDIT_SEARCH","pattern errors"],[46,"PAT_LOAD_IMAGE","pattern errors"],[47,"PAT_GRAB_IMAGE","pattern errors"],[48,"PAT_NEW","pattern errors"],[49,"PAT_TRAIN","pattern errors"],[50,"PAT_SEARCH","pattern errors"],[51,"PAT_SAVE","pattern errors"],[52,"PAT_EXPTIME","pattern errors"],[71,"IPC_NOT_CONNECT","communication errors"],[72,"IPC_CONNECT_LOST","communication errors"],[73,"IPC_SEND_ERR","communication errors"],[74,"IPC_RECV_ERR","communication errors"],[75,"IPC_RESP_TIMEOUT","communication errors"],[76,"IPC_INIT_FAIL","communication errors"],[77,"IPC_NO_MSG_SENT","communication errors"],[81,"GAP_LASER_HIGH","gap measurement errors"],[82,"GAP_LASER_LOW","gap measurement errors"],[83,"GAP_LASER_ERROR","gap measurement errors"],[84,"GAP_LASER_SATURATE_HIGH","gap measurement errors"],[85,"GAP_LASER_SATURATE_LOW","gap measurement errors"],[86,"GAP_MEAS_POS_INVALID","gap measurement errors"],[87,"GAP_MEAS_NO_DUT_MEAS","gap measurement errors"],[91,"GUI_CLOSE_VISU","display errors"],[92,"GUI_HIDE_VIEW_PORT","display errors"],[93,"GUI_CHANGE_VIEW_MODE","display errors"],[101,"ALIGN_GENERAL_ERROR","ALIGN MODULE ERRORS (101 - 199)"],[102,"ALIGN_CAM_OPEN","ALIGN MODULE ERRORS (101 - 199)"],[103,"ALIGN_CAM_CLOSE","ALIGN MODULE ERRORS (101 - 199)"],[104,"ALIGN_DETECT_LENS_GRIP","ALIGN MODULE ERRORS (101 - 199)"],[105,"ALIGN_PREFOCUS","ALIGN MODULE ERRORS (101 - 199)"],[106,"ALIGN_REPEAT_TEST_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[107,"ALIGN_CENTER_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[108,"ALIGN_SCAN_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[109,"ALIGN_CLEAR_FRAMES_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[110,"ALIGN_DEL_FRAMES_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[111,"ALIGN_Z_NOT_MOVED","ALIGN MODULE ERRORS (101 - 199)"],[112,"ALIGN_GRIP_OPEN","ALIGN MODULE ERRORS (101 - 199)"],[113,"ALIGN_GRIP_CLOSE","ALIGN MODULE ERRORS (101 - 199)"],[114,"ALIGN_PICKPOS_INVALID","ALIGN MODULE ERRORS (101 - 199)"],[115,"ALIGN_HOME_TIMEOUT_X","ALIGN MODULE ERRORS (101 - 199)"],[116,"ALIGN_HOME_TIMEOUT_Y","ALIGN MODULE ERRORS (101 - 199)"],[117,"ALIGN_HOME_TIMEOUT_Z","ALIGN MODULE ERRORS (101 - 199)"],[118,"ALIGN_HOME_TIMEOUT_TX","ALIGN MODULE ERRORS (101 - 199)"],[119,"ALIGN_HOME_TIMEOUT_TY","ALIGN MODULE ERRORS (101 - 199)"],[120,"ALIGN_HOME_TIMEOUT_TZ","ALIGN MODULE ERRORS (101 - 199)"],[121,"ALIGN_GRAB_VISIMG_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[122,"ALIGN_PAT_LOAD_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[123,"ALIGN_PAT_SEARCH_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[124,"ALIGN_PAT_SAVE_RESULTS","ALIGN MODULE ERRORS (101 - 199)"],[125,"ALIGN_PAT_INSP_MAX_ITER","ALIGN MODULE ERRORS (101 - 199)"],[126,"ALIGN_FOCAL_PLANE_NUM","ALIGN MODULE ERRORS (101 - 199)"],[127,"ALIGN_TEACH_GRIP_CLOSED","ALIGN MODULE ERRORS (101 - 199)"],[128,"ALIGN_SAVE_LENS_POS","ALIGN MODULE ERRORS (101 - 199)"],[129,"ALIGN_STABIL_LOG_EVENT","ALIGN MODULE ERRORS (101 - 199)"],[130,"ALIGN_UVMEASURE_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[131,"ALIGN_FT_PEAK_MTF","ALIGN MODULE ERRORS (101 - 199)"],[132,"ALIGN_FT_PEAK_CTR","ALIGN MODULE ERRORS (101 - 199)"],[133,"ALIGN_FT_PEAK_SYM","ALIGN MODULE ERRORS (101 - 199)"],[134,"ALIGN_FT_PEAK_FC","ALIGN MODULE ERRORS (101 - 199)"],[135,"ALIGN_FT_PEAK_UT","ALIGN MODULE ERRORS (101 - 199)"],[136,"ALIGN_FT_PEAK_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[137,"ALIGN_FT_EXTRA_MTF","ALIGN MODULE ERRORS (101 - 199)"],[138,"ALIGN_FT_EXTRA_CTR","ALIGN MODULE ERRORS (101 - 199)"],[139,"ALIGN_FT_EXTRA_SYM","ALIGN MODULE ERRORS (101 - 199)"],[140,"ALIGN_FT_EXTRA_FC","ALIGN MODULE ERRORS (101 - 199)"],[141,"ALIGN_FT_EXTRA_UT","ALIGN MODULE ERRORS (101 - 199)"],[142,"ALIGN_FT_EXTRA_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[143,"ALIGN_FT_CURE_MTF","ALIGN MODULE ERRORS (101 - 199)"],[144,"ALIGN_FT_CURE_CTR","ALIGN MODULE ERRORS (101 - 199)"],[145,"ALIGN_FT_CURE_SYM","ALIGN MODULE ERRORS (101 - 199)"],[146,"ALIGN_FT_CURE_FC","ALIGN MODULE ERRORS (101 - 199)"],[147,"ALIGN_FT_CURE_UT","ALIGN MODULE ERRORS (101 - 199)"],[148,"ALIGN_FT_CURE_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[149,"ALIGN_FT_POSTCURE_MTF","ALIGN MODULE ERRORS (101 - 199)"],[150,"ALIGN_FT_POSTCURE_CTR","ALIGN MODULE ERRORS (101 - 199)"],[151,"ALIGN_FT_POSTCURE_SYM","ALIGN MODULE ERRORS (101 - 199)"],[152,"ALIGN_FT_POSTCURE_FC","ALIGN MODULE ERRORS (101 - 199)"],[153,"ALIGN_FT_POSTCURE_UT","ALIGN MODULE ERRORS (101 - 199)"],[154,"ALIGN_FT_POSTCURE_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[155,"ALIGN_FT_UNGRIP_MTF","ALIGN MODULE ERRORS (101 - 199)"],[156,"ALIGN_FT_UNGRIP_CTR","ALIGN MODULE ERRORS (101 - 199)"],[157,"ALIGN_FT_UNGRIP_SYM","ALIGN MODULE ERRORS (101 - 199)"],[158,"ALIGN_FT_UNGRIP_UT","ALIGN MODULE ERRORS (101 - 199)"],[159,"ALIGN_FT_UNGRIP_FC","ALIGN MODULE ERRORS (101 - 199)"],[160,"ALIGN_FT_UNGRIP_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[161,"ALIGN_FT_RETEST_MTF","ALIGN MODULE ERRORS (101 - 199)"],[162,"ALIGN_FT_RETEST_CTR","ALIGN MODULE ERRORS (101 - 199)"],[163,"ALIGN_FT_RETEST_SYM","ALIGN MODULE ERRORS (101 - 199)"],[164,"ALIGN_FT_RETEST_UT","ALIGN MODULE ERRORS (101 - 199)"],[165,"ALIGN_FT_RETEST_FC","ALIGN MODULE ERRORS (101 - 199)"],[166,"ALIGN_FT_RETEST_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[167,"ALIGN_UPCAL_INVALID","ALIGN MODULE ERRORS (101 - 199)"],[168,"ALIGN_DOWNCAL_INVALID","ALIGN MODULE ERRORS (101 - 199)"],[169,"ALIGN_ARRAY_PARS_INVAL","ALIGN MODULE ERRORS (101 - 199)"],[170,"ALIGN_PEAK_Z_SCAN","ALIGN MODULE ERRORS (101 - 199)"],[171,"ALIGN_PEAK_TZ_SCAN","ALIGN MODULE ERRORS (101 - 199)"],[172,"ALIGN_MAX_TIME_DISP","ALIGN MODULE ERRORS (101 - 199)"],[173,"ALIGN_FT_PEAK_DZ","ALIGN MODULE ERRORS (101 - 199)"],[174,"ALIGN_FT_PEAK_NOISE","ALIGN MODULE ERRORS (101 - 199)"],[175,"ALIGN_FT_RETEST_NOISE","ALIGN MODULE ERRORS (101 - 199)"],[176,"ALIGN_LENS_HDOWN_OPEN","ALIGN MODULE ERRORS (101 - 199)"],[177,"ALIGN_LENS_HDOWN_CLOSE","ALIGN MODULE ERRORS (101 - 199)"],[178,"ALIGN_FT_EXTRA2_MTF","ALIGN MODULE ERRORS (101 - 199)"],[179,"ALIGN_FT_EXTRA2_CTR","ALIGN MODULE ERRORS (101 - 199)"],[180,"ALIGN_FT_EXTRA2_SYM","ALIGN MODULE ERRORS (101 - 199)"],[181,"ALIGN_FT_EXTRA2_FC","ALIGN MODULE ERRORS (101 - 199)"],[182,"ALIGN_FT_EXTRA2_UT","ALIGN MODULE ERRORS (101 - 199)"],[183,"ALIGN_FT_EXTRA2_OTHER","ALIGN MODULE ERRORS (101 - 199)"],[184,"ALIGN_LENS_CLAMP_OPEN","ALIGN MODULE ERRORS (101 - 199)"],[185,"ALIGN_LENS_CLAMP_CLOSE","ALIGN MODULE ERRORS (101 - 199)"],[186,"ALIGN_NO_UV_CURE_STEPS","ALIGN MODULE ERRORS (101 - 199)"],[187,"ALIGN_SAFETY_TGTZ","ALIGN MODULE ERRORS (101 - 199)"],[188,"ALIGN_FORCE_NOT_REACH","ALIGN MODULE ERRORS (101 - 199)"],[189,"ALIGN_GAP_CAL_FAILED","ALIGN MODULE ERRORS (101 - 199)"],[190,"ALIGN_UVCURE_OFFSET","ALIGN MODULE ERRORS (101 - 199)"],[191,"ALIGN_FINAL_SCAN_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[192,"ALIGN_FINAL_SCAN_OFFSET","ALIGN MODULE ERRORS (101 - 199)"],[193,"ALIGN_FT_PEAK_SAT","ALIGN MODULE ERRORS (101 - 199)"],[194,"ALIGN_FT_RETEST_SAT","ALIGN MODULE ERRORS (101 - 199)"],[195,"ALIGN_CENTER_MAX_TRYS","ALIGN MODULE ERRORS (101 - 199)"],[196,"ALIGN_GET_LENS_PICK_POS","ALIGN MODULE ERRORS (101 - 199)"],[197,"ALIGN_VACUUM_ON","ALIGN MODULE ERRORS (101 - 199)"],[198,"ALIGN_VACUUM_OFF","ALIGN MODULE ERRORS (101 - 199)"],[199,"ALIGN_STAB_TEST_FAIL","ALIGN MODULE ERRORS (101 - 199)"],[201,"DISP_GENERAL_ERROR","DISPENSE MODULE ERRORS (201 - 299)"],[202,"DISP_TF_X_ACTIVE","DISPENSE MODULE ERRORS (201 - 299)"],[203,"DISP_TF_Y_ACTIVE","DISPENSE MODULE ERRORS (201 - 299)"],[204,"DISP_TF_Z_ACTIVE","DISPENSE MODULE ERRORS (201 - 299)"],[205,"DISP_TF_X_CLEAR","DISPENSE MODULE ERRORS (201 - 299)"],[206,"DISP_TF_Y_CLEAR","DISPENSE MODULE ERRORS (201 - 299)"],[207,"DISP_TF_X_BROKEN","DISPENSE MODULE ERRORS (201 - 299)"],[208,"DISP_TF_Y_BROKEN","DISPENSE MODULE ERRORS (201 - 299)"],[209,"DISP_TF_Z_BROKEN","DISPENSE MODULE ERRORS (201 - 299)"],[210,"DISP_TF_SAVE_RESULTS","DISPENSE MODULE ERRORS (201 - 299)"],[211,"DISP_CAL_SAVE_RESULTS","DISPENSE MODULE ERRORS (201 - 299)"],[212,"DISP_CAL_FIND_LEFT_FID","DISPENSE MODULE ERRORS (201 - 299)"],[213,"DISP_CAL_FIND_RIGHT_FID","DISPENSE MODULE ERRORS (201 - 299)"],[214,"DISP_CAL_MAX_ITER","DISPENSE MODULE ERRORS (201 - 299)"],[215,"DISP_SEQ_GET_STEPS","DISPENSE MODULE ERRORS (201 - 299)"],[216,"DISP_SEQ_UNK_STEP","DISPENSE MODULE ERRORS (201 - 299)"],[217,"DISP_CYCLIC_MOVE","DISPENSE MODULE ERRORS (201 - 299)"],[218,"DISP_TIPFIND_EXTEND","DISPENSE MODULE ERRORS (201 - 299)"],[219,"DISP_TIPFIND_RETRACT","DISPENSE MODULE ERRORS (201 - 299)"],[220,"DISP_GRAB_IMAGE_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[221,"DISP_PAT_LOAD_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[222,"DISP_PAT_SEARCH_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[223,"DISP_PAT_SAVE_RESULTS","DISPENSE MODULE ERRORS (201 - 299)"],[224,"DISP_PAT_INSP_MAX_ITER","DISPENSE MODULE ERRORS (201 - 299)"],[225,"DISP_HOME_TIMEOUT_X","DISPENSE MODULE ERRORS (201 - 299)"],[226,"DISP_HOME_TIMEOUT_Y","DISPENSE MODULE ERRORS (201 - 299)"],[227,"DISP_HOME_TIMEOUT_Z","DISPENSE MODULE ERRORS (201 - 299)"],[228,"DISP_HEAD2_EXTEND","DISPENSE MODULE ERRORS (201 - 299)"],[229,"DISP_HEAD2_RETRACT","DISPENSE MODULE ERRORS (201 - 299)"],[230,"DISP_DISPENSER_FAULT","DISPENSE MODULE ERRORS (201 - 299)"],[231,"DISP_CAM_OPEN","DISPENSE MODULE ERRORS (201 - 299)"],[232,"DISP_CAM_CLOSE","DISPENSE MODULE ERRORS (201 - 299)"],[233,"DISP_POST_INSP_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[234,"DISP_FOCUS","DISPENSE MODULE ERRORS (201 - 299)"],[235,"DISP_HEAD1_LEVEL","DISPENSE MODULE ERRORS (201 - 299)"],[236,"DISP_HEAD1_POTLIFE","DISPENSE MODULE ERRORS (201 - 299)"],[237,"DISP_HEAD2_LEVEL","DISPENSE MODULE ERRORS (201 - 299)"],[238,"DISP_HEAD2_POTLIFE","DISPENSE MODULE ERRORS (201 - 299)"],[239,"DISP_ST_PART_REG","DISPENSE MODULE ERRORS (201 - 299)"],[240,"DISP_ST_PIXEL_REG","DISPENSE MODULE ERRORS (201 - 299)"],[241,"DISP_ST_DSTN_REG","DISPENSE MODULE ERRORS (201 - 299)"],[242,"DISP_ST_PART_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[243,"DISP_ST_PART_OTHER","DISPENSE MODULE ERRORS (201 - 299)"],[244,"DISP_ST_PIXEL_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[245,"DISP_ST_PIXEL_OTHER","DISPENSE MODULE ERRORS (201 - 299)"],[246,"DISP_ST_DARK_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[247,"DISP_ST_NOISE_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[248,"DISP_ST_DSTN_OTHER","DISPENSE MODULE ERRORS (201 - 299)"],[249,"DISP_TIP_POS_INVALID","DISPENSE MODULE ERRORS (201 - 299)"],[250,"DISP_VIS_SENS_POS_BAD","DISPENSE MODULE ERRORS (201 - 299)"],[251,"DISP_VIS_LENS_POS_BAD","DISPENSE MODULE ERRORS (201 - 299)"],[252,"DISP_VIS_TGT_POS_BAD","DISPENSE MODULE ERRORS (201 - 299)"],[253,"DISP_CUP_VOL_EXCEEDED","DISPENSE MODULE ERRORS (201 - 299)"],[254,"DISP_CYCLIC_BADPARAMS","DISPENSE MODULE ERRORS (201 - 299)"],[255,"DISP_ST_USERTEST_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[256,"DISP_ST_USERTEST_OTHER","DISPENSE MODULE ERRORS (201 - 299)"],[257,"DISP_SEQ_EXTLIB_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[258,"DISP_LASER_X_CAL","DISPENSE MODULE ERRORS (201 - 299)"],[259,"DISP_LASER_Y_CAL","DISPENSE MODULE ERRORS (201 - 299)"],[260,"DISP_LASER_Z_CAL","DISPENSE MODULE ERRORS (201 - 299)"],[261,"DISP_LASER_SAVE_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[262,"DISP_LASER_AUTO_TEACH","DISPENSE MODULE ERRORS (201 - 299)"],[263,"DISP_NO_PREINSPECT_OPS","DISPENSE MODULE ERRORS (201 - 299)"],[264,"DISP_WEIGH_HEAD1_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[265,"DISP_WEIGH_NO_STEP","DISPENSE MODULE ERRORS (201 - 299)"],[266,"DISP_GAP_CAL_SAVE","DISPENSE MODULE ERRORS (201 - 299)"],[267,"DISP_DOME_LOWER","DISPENSE MODULE ERRORS (201 - 299)"],[268,"DISP_DOME_RAISE","DISPENSE MODULE ERRORS (201 - 299)"],[269,"DISP_SEQ_NO_PRT_OP","DISPENSE MODULE ERRORS (201 - 299)"],[270,"DISP_SEQ_NO_POST_OP","DISPENSE MODULE ERRORS (201 - 299)"],[271,"DISP_TF_X_TOLERANCE","DISPENSE MODULE ERRORS (201 - 299)"],[272,"DISP_TF_Y_TOLERANCE","DISPENSE MODULE ERRORS (201 - 299)"],[273,"DISP_TF_Z_TOLERANCE","DISPENSE MODULE ERRORS (201 - 299)"],[274,"DISP_DOT_PARAMS","DISPENSE MODULE ERRORS (201 - 299)"],[275,"DISP_WEIGH_HEAD2_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[276,"DISP_CAL_FIND_BOTH_FID","DISPENSE MODULE ERRORS (201 - 299)"],[277,"DISP_PRESSURE_LOW","DISPENSE MODULE ERRORS (201 - 299)"],[278,"DISP_HEAD1_EXTEND","DISPENSE MODULE ERRORS (201 - 299)"],[279,"DISP_HEAD1_RETRACT","DISPENSE MODULE ERRORS (201 - 299)"],[280,"DISP_VIS_PLACE_POS_BAD","DISPENSE MODULE ERRORS (201 - 299)"],[281,"DISP_LIN_ZERO_MOVE","DISPENSE MODULE ERRORS (201 - 299)"],[282,"DISP_ST_DLI_REG","DISPENSE MODULE ERRORS (201 - 299)"],[283,"DISP_ST_DLI_FAIL","DISPENSE MODULE ERRORS (201 - 299)"],[284,"DISP_ST_DLI_OTHER","DISPENSE MODULE ERRORS (201 - 299)"],[301,"ENCLO_GENERAL_ERROR","ENCLOSURE MODULE ERRORS (301 - 399)"],[302,"ENCLO_LOCK_ACCESS_DOOR","ENCLOSURE MODULE ERRORS (301 - 399)"],[303,"ENCLO_LOCK_LOAD_DOOR","ENCLOSURE MODULE ERRORS (301 - 399)"],[401,"ROTARY_GENERAL_ERROR","ROTARY MODULE ERRORS (401 - 499)"],[402,"ROTARY_STN_UP_MOTION","ROTARY MODULE ERRORS (401 - 499)"],[403,"ROTARY_NOT_IN_POS","ROTARY MODULE ERRORS (401 - 499)"],[404,"ROTARY_ALIGN_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[405,"ROTARY_ALIGN_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[406,"ROTARY_DISPENSE_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[407,"ROTARY_DISPENSE_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[408,"ROTARY_LOAD_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[409,"ROTARY_LOAD_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[410,"ROTARY_UNUSED","ROTARY MODULE ERRORS (401 - 499)"],[411,"ROTARY_HOME_TIMEOUT_IDX","ROTARY MODULE ERRORS (401 - 499)"],[412,"ROTARY_ZRETRACT_ALIGN","ROTARY MODULE ERRORS (401 - 499)"],[413,"ROTARY_ZRETRACT_DISP","ROTARY MODULE ERRORS (401 - 499)"],[414,"ROTARY_STN_DISABLED_ALN","ROTARY MODULE ERRORS (401 - 499)"],[415,"ROTARY_STN_DISABLED_DSP","ROTARY MODULE ERRORS (401 - 499)"],[416,"ROTARY_STN_NODEVICE_ALN","ROTARY MODULE ERRORS (401 - 499)"],[417,"ROTARY_STN_NODEVICE_DSP","ROTARY MODULE ERRORS (401 - 499)"],[418,"ROTARY_STN_FAIL_ALN","ROTARY MODULE ERRORS (401 - 499)"],[419,"ROTARY_STN_FAIL_DSP","ROTARY MODULE ERRORS (401 - 499)"],[420,"ROTARY_PUSHER_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[421,"ROTARY_PUSHER_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[422,"ROTARY_HOME_TIMEOUT_UV","ROTARY MODULE ERRORS (401 - 499)"],[423,"ROTARY_UV_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[424,"ROTARY_UV_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[425,"ROTARY_UV_LOG_RESULTS","ROTARY MODULE ERRORS (401 - 499)"],[426,"ROTARY_VAC_NOT_DETECTED","ROTARY MODULE ERRORS (401 - 499)"],[427,"ROTARY_PREPICK_GRIP","ROTARY MODULE ERRORS (401 - 499)"],[428,"ROTARY_PREPICK_NA","ROTARY MODULE ERRORS (401 - 499)"],[429,"ROTARY_LENS_CLAMP_OPEN","ROTARY MODULE ERRORS (401 - 499)"],[430,"ROTARY_STN_DISABLED_SPR","ROTARY MODULE ERRORS (401 - 499)"],[431,"ROTARY_WEIGH_RAISE","ROTARY MODULE ERRORS (401 - 499)"],[432,"ROTARY_WEIGH_LOWER","ROTARY MODULE ERRORS (401 - 499)"],[433,"ROTARY_DISP_WEIGH_FAIL","ROTARY MODULE ERRORS (401 - 499)"],[434,"ROTARY_WEIGH_RTN_ERR","ROTARY MODULE ERRORS (401 - 499)"],[435,"ROTARY_SAFE_ALIGN_POGOS","ROTARY MODULE ERRORS (401 - 499)"],[436,"ROTARY_SAFE_DISP_POGOS","ROTARY MODULE ERRORS (401 - 499)"],[437,"ROTARY_SAFE_LOAD_LIFT","ROTARY MODULE ERRORS (401 - 499)"],[438,"ROTARY_SAFE_UV_AXIS","ROTARY MODULE ERRORS (401 - 499)"],[439,"ROTARY_SAFE_TIP_FIND","ROTARY MODULE ERRORS (401 - 499)"],[440,"ROTARY_SAFE_FXT_CLAMP","ROTARY MODULE ERRORS (401 - 499)"],[441,"ROTARY_SAFE_TBL_LOCK","ROTARY MODULE ERRORS (401 - 499)"],[442,"ROTARY_SAFE_ALIGN_Z","ROTARY MODULE ERRORS (401 - 499)"],[443,"ROTARY_SAFE_DISP_Z","ROTARY MODULE ERRORS (401 - 499)"],[444,"ROTARY_SAFE_ALIGN_VC","ROTARY MODULE ERRORS (401 - 499)"],[445,"ROTARY_SAFE_DISP_WEIGH","ROTARY MODULE ERRORS (401 - 499)"],[446,"ROTARY_GAP_CALIB_ERROR","ROTARY MODULE ERRORS (401 - 499)"],[447,"ROTARY_SAFE_DISP_DOME","ROTARY MODULE ERRORS (401 - 499)"],[448,"ROTARY_LOCK_PIN_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[449,"ROTARY_LOCK_PIN_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[450,"ROTARY_SAFE_COUNTR_LOCK","ROTARY MODULE ERRORS (401 - 499)"],[451,"ROTARY_COUNTER_CYL_EXT","ROTARY MODULE ERRORS (401 - 499)"],[452,"ROTARY_COUNTER_CYL_RETR","ROTARY MODULE ERRORS (401 - 499)"],[453,"ROTARY_SAFE_SPARE_POGO","ROTARY MODULE ERRORS (401 - 499)"],[454,"ROTARY_SPARE_EXTEND","ROTARY MODULE ERRORS (401 - 499)"],[455,"ROTARY_SPARE_RETRACT","ROTARY MODULE ERRORS (401 - 499)"],[456,"ROTARY_SAFE_CAMERA_RET","ROTARY MODULE ERRORS (401 - 499)"],[457,"ROTARY_SAFE_PROBE_RET","ROTARY MODULE ERRORS (401 - 499)"],[458,"ROTARY_STN_DISABLED_GS","ROTARY MODULE ERRORS (401 - 499)"],[459,"ROTARY_STN_DISAB_LCOS","ROTARY MODULE ERRORS (401 - 499)"],[460,"ROTARY_STN_NODEVICE_TS1","ROTARY MODULE ERRORS (401 - 499)"],[461,"ROTARY_STN_NODEVICE_TS2","ROTARY MODULE ERRORS (401 - 499)"],[462,"ROTARY_STN_FAIL_TEST1","ROTARY MODULE ERRORS (401 - 499)"],[463,"ROTARY_STN_FAIL_TEST2","ROTARY MODULE ERRORS (401 - 499)"],[464,"ROTARY_SAFE_DOMELIGHT","ROTARY MODULE ERRORS (401 - 499)"],[465,"ALIGN_SAFE_DOMELIGHT","ROTARY MODULE ERRORS (401 - 499)"],[466,"TARGET_SAFE_DOMELIGHT","ROTARY MODULE ERRORS (401 - 499)"],[467,"ROTARY_NO_ENABLED_STN","ROTARY MODULE ERRORS (401 - 499)"],[468,"ROTARY_LC_DURING_HOME","ROTARY MODULE ERRORS (401 - 499)"],[469,"ROTARY_STN_ENABLED_ALN","ROTARY MODULE ERRORS (401 - 499)"],[470,"ROTARY_RETRACT_EXTERNAL","ROTARY MODULE ERRORS (401 - 499)"],[501,"TARGET_GENERAL_ERROR","TARGET MODULE ERRORS (501 - 599)"],[502,"TARGET_INVALID_POSITION","TARGET MODULE ERRORS (501 - 599)"],[503,"TARGET_HOME_TIMEOUT_Z","TARGET MODULE ERRORS (501 - 599)"],[504,"TARGET_SAFETY","TARGET MODULE ERRORS (501 - 599)"],[505,"TARGET_DOME_EXTEND","TARGET MODULE ERRORS (501 - 599)"],[506,"TARGET_DOME_RETRACT","TARGET MODULE ERRORS (501 - 599)"],[601,"SPARE_GENERAL_ERROR","SPARE MODULE ERRORS (601 - 699)"],[602,"SPARE_SCAN_FIXTURE","SPARE MODULE ERRORS (601 - 699)"],[603,"SPARE_NO_UV_CURE_STEPS","SPARE MODULE ERRORS (601 - 699)"],[604,"SPARE_CAM_OPEN","SPARE MODULE ERRORS (601 - 699)"],[605,"SPARE_CAM_CLOSE","SPARE MODULE ERRORS (601 - 699)"],[606,"SPARE_ST_PART_FAIL","SPARE MODULE ERRORS (601 - 699)"],[701,"ALIGN2_GENERAL_ERROR","ALIGN2 MODULE ERRORS (701 - 799)"],[801,"ROBOT_GENERAL_ERROR","ROBOT MODULE ERRORS (801 - 899)"],[802,"ROBOT_UNLOAD_START_FAIL","ROBOT MODULE ERRORS (801 - 899)"],[803,"ROBOT_UNLOAD_CLAMP_FAIL","ROBOT MODULE ERRORS (801 - 899)"],[804,"ROBOT_HANDSK_ERR","ROBOT MODULE ERRORS (801 - 899)"],[805,"ROBOT_UNLOAD_ERR","ROBOT MODULE ERRORS (801 - 899)"],[806,"ROBOT_LOAD_START_ERR","ROBOT MODULE ERRORS (801 - 899)"],[807,"ROBOT_INIT_FAIL","ROBOT MODULE ERRORS (801 - 899)"],[808,"ROBOT_COMMAND_ERR","ROBOT MODULE ERRORS (801 - 899)"],[809,"ROBOT_LOAD_CLAMP_ERR","ROBOT MODULE ERRORS (801 - 899)"],[810,"ROBOT_LOAD_ERR","ROBOT MODULE ERRORS (801 - 899)"],[811,"ROBOT_ESTOP_ACTIVE","ROBOT MODULE ERRORS (801 - 899)"],[901,"TEST1_GENERAL_ERROR","TEST1 MODULE ERRORS (901 - 999)"],[902,"TEST1_CAMERA_UP","TEST1 MODULE ERRORS (901 - 999)"],[903,"TEST1_CAMERA_DOWN","TEST1 MODULE ERRORS (901 - 999)"],[904,"TEST1_PROBE_EXTEND","TEST1 MODULE ERRORS (901 - 999)"],[905,"TEST1_PROBE_RETRACT","TEST1 MODULE ERRORS (901 - 999)"],[906,"TEST1_CAM_LEFT","TEST1 MODULE ERRORS (901 - 999)"],[907,"TEST1_CAM_RIGHT","TEST1 MODULE ERRORS (901 - 999)"],[908,"TEST1_TEST","TEST1 MODULE ERRORS (901 - 999)"],[909,"TEST1_REPEAT_TEST_FAIL","TEST1 MODULE ERRORS (901 - 999)"],[910,"TEST1_DEL_FRAMES_FAIL","TEST1 MODULE ERRORS (901 - 999)"],[1001,"TEST2_GENERAL_ERROR","TEST2 MODULE ERRORS (1001 - 1099)"],[1002,"TEST2_NO_FIXTURE","TEST2 MODULE ERRORS (1001 - 1099)"],[1003,"TEST2_TEST","TEST2 MODULE ERRORS (1001 - 1099)"],[1004,"TEST2_REPEAT_TEST_FAIL","TEST2 MODULE ERRORS (1001 - 1099)"],[1005,"TEST2_DEL_FRAMES_FAIL","TEST2 MODULE ERRORS (1001 - 1099)"],[1101,"LASER_LD_ENABLE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1102,"LASER_LD_DISABLE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1103,"LASER_MAX_ADJUST","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1104,"ALIGN_VAC_CYLINDER_UP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1105,"ALIGN_VAC_CYLINDER_DN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1106,"ALIGN_LIFT_LOWER_UP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1107,"ALIGN_LIFT_LOWER_DN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1108,"ALIGN_LIFT_UPPER_UP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1109,"ALIGN_LIFT_UPPER_DN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1110,"ALIGN_TONGUE_UP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1111,"ALIGN_TONGUE_DOWN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1112,"ALIGN_TONGUE_EXTEND","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1113,"ALIGN_TONGUE_RETRACT","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1114,"ALIGN_SAFE_TONGUE_EXT","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1115,"ALIGN_SAFE_TONGUE_RET","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1116,"ALIGN_GS_SET_EXPOSURE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1117,"ALIGN_GS_TAB_PREALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1118,"ALIGN_GS_TAB_ALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1119,"ALIGN_GS_TAB_PEAK","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1120,"ALIGN_GS_TAB_POSTCURE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1121,"ALIGN_GS_TAB_UNGRIP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1122,"ALIGN_GS_TAB_RETEST","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1123,"ALIGN_GS_APTR_PREALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1124,"ALIGN_GS_APTR_ALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1125,"ALIGN_GS_APTR_PEAK","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1126,"ALIGN_GS_APTR_POSTCURE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1127,"ALIGN_GS_APTR_UNGRIP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1128,"ALIGN_GS_APTR_RETEST","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1129,"ALIGN_GS_LEDS_PREALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1130,"ALIGN_GS_LEDS_ALIGN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1131,"ALIGN_GS_LEDS_PEAK","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1132,"ALIGN_GS_LEDS_POSTCURE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1133,"ALIGN_GS_LEDS_UNGRIP","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1134,"ALIGN_GS_LEDS_RETEST","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1135,"ALIGN_XY_MOTION_LIMIT","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1136,"ALIGN_DOWN_CAM_EXTEND","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1137,"ALIGN_DOWN_CAM_RETRACT","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1138,"ALIGN_BACKLASH_FAIL","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1139,"ALIGN_VPP_FAIL","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1142,"ALIGN_GRDCTR_FAIL","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1143,"ALIGN_GRDCTR_MAX_TRYS","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1144,"ALIGN_TIMEOUT_DOME_EXTN","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1145,"ALIGN_TIMEOUT_DOME_RETR","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1146,"ALIGN_LIVE_VIEW_ENABLE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1147,"ALIGN_LIVE_VIEW_DISABLE","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1148,"ALIGN_SDCAL_INVALID","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1149,"ALIGN_NO_LEASR","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1150,"ALIGN_VPP_EXCEED_EOT_X","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1151,"ALIGN_VPP_EXCEED_EOT_Y","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"],[1152,"ALIGN_VPP_EXCEED_EOT_Z","ALIGN MODULE ERRORS GROUP 2 (1101 - 1199)"]],"ksv":[[1,"WAITING","","KSVision returns this error to"],[0,"NONE","",""],[-1,"CONFIG_NOT_LOADED","configuration errors",""],[-2,"CONFIG_EXISTS_KSINI","configuration errors",""],[-3,"CONFIG_EXISTS_KSGLOBAL","configuration errors",""],[-4,"CONFIG_EXISTS_KSFIXTURE","configuration errors",""],[-5,"CONFIG_EXISTS_KSPROCESS","configuration errors",""],[-6,"CONFIG_EXISTS_KSDISPENSE","configuration errors",""],[-7,"CONFIG_LOAD_EDIT_FILE","configuration errors",""],[-8,"CONFIG_SAVE_EDIT_FILE","configuration errors",""],[-9,"CONFIG_LOAD_EDIT_TEXT","configuration errors",""],[-10,"CONFIG_SAVE_EDIT_TEXT","configuration errors",""],[-11,"CONFIG_LOAD_TEXT_TOO_LARGE","configuration errors",""],[-12,"CONFIG_SAVE_TEXT_TOO_LARGE","configuration errors",""],[-13,"CONFIG_MEM_ALLOC","configuration errors",""],[-14,"CONFIG_PARAM_NOT_FOUND","configuration errors",""],[-15,"CONFIG_EXISTS_CONFIG_FOLDER","configuration errors",""],[-16,"CONFIG_EXISTS_DATA_FOLDER","configuration errors",""],[-17,"CONFIG_EXISTS_IMAGE_FOLDER","configuration errors",""],[-18,"CONFIG_EXISTS_BRVCLOADER","configuration errors",""],[-19,"CONFIG_KSDISPENSE_OPEN","configuration errors",""],[-20,"CONFIG_KSDISPENSE_GET_SIZE","configuration errors",""],[-21,"CONFIG_KSDISPENSE_PARSE","configuration errors",""],[-22,"CONFIG_KSFIXTURE_OPEN","configuration errors",""],[-23,"CONFIG_KSFIXTURE_GET_SIZE","configuration errors",""],[-24,"CONFIG_KSFIXTURE_PARSE","configuration errors",""],[-25,"CONFIG_KSFIXTURE_DUP_ENTRIES","configuration errors",""],[-26,"CONFIG_MACH_BAD_MODEL_TYPE","configuration errors",""],[-27,"CONFIG_PARAM_NOT_VALID","configuration errors",""],[-28,"CONFIG_EXISTS_CTR_INI","configuration errors",""],[-29,"CONFIG_EXISTS_CTR_CAM_FILE_PARAM","configuration errors",""],[-30,"CONFIG_DUAL_HEAD_DUAL_FIXTURE","configuration errors",""],[-31,"CONFIG_EXT_LIB_DUAL_FIXTURE","configuration errors",""],[-32,"CONFIG_INTERNAL_ROBOT_MES_ROBOT","configuration errors",""],[-33,"CONFIG_DOUBLET_ALIGN_ARRAY_GRIP","configuration errors",""],[-34,"CONFIG_KSDISPENSE_PAT_UNDEFINED","configuration errors",""],[-35,"CONFIG_KSDISPENSE_PRE_UNDEFINED","configuration errors",""],[-36,"CONFIG_KSDISPENSE_PAT_DUPLICATE","configuration errors",""],[-37,"CONFIG_KSDISPENSE_PRE_DUPLICATE","configuration errors",""],[-38,"CONFIG_KSDISPENSE_PAT_OUTRANGE","configuration errors",""],[-39,"CONFIG_KSDISPENSE_PRE_OUTRANGE","configuration errors",""],[-40,"CONFIG_INVALID_SCANNER_CONFIG","configuration errors",""],[-41,"CONFIG_UNDEFINED_DATAREC_TYPE","configuration errors",""],[-42,"CONFIG_INVALID_GREYSCALE_FACTORS","configuration errors",""],[-43,"CONFIG_PARAM_MISSING_VALUES","configuration errors",""],[-44,"CONFIG_PROC_TRACK_NOT_SUPPORTED","configuration errors",""],[-45,"CONFIG_KSDISPENSE_FX_OUTRANGE","configuration errors",""],[-46,"CONFIG_2ND_DISPLAY_LAUNCH_ERROR","configuration errors",""],[-47,"CONFIG_2ND_DISPLAY_IMG_SIZE_ERR","configuration errors",""],[-48,"CONFIG_EXISTS_UPLOAD_FOLDER","configuration errors",""],[-49,"CONFIG_PARAM_TOO_MANY_VALUES","configuration errors",""],[-50,"USER_TABLE_EXISTS","user table errors",""],[-51,"USER_TABLE_OPEN","user table errors",""],[-52,"USER_TABLE_GET_SIZE","user table errors",""],[-53,"USER_TABLE_MEM_ALLOC","user table errors",""],[-54,"USER_WRONG_NAME_LENGTH","user table errors",""],[-55,"USER_WRONG_PWD_LENGTH","user table errors",""],[-56,"USER_WRONG_ACCESS_LEVEL","user table errors",""],[-57,"USER_ENGINEER_NOT_FOUND","user table errors",""],[-58,"USER_TECHNICIAN_NOT_FOUND","user table errors",""],[-101,"CAM_DUT_INIT_EXISTS_XSDAT","device camera errors",""],[-102,"CAM_DUT_INIT_EXISTS_INI","device camera errors",""],[-103,"CAM_DUT_INIT_OPEN_INI","device camera errors",""],[-104,"CAM_DUT_INIT_GET_BUFFER_SIZE","device camera errors",""],[-105,"CAM_DUT_INIT_MEM_ALLOC","device camera errors",""],[-106,"CAM_DUT_INIT_BAD_CAM_TYPE","device camera errors",""],[-107,"CAM_DUT_INIT_BAD_IMG_FMT","device camera errors",""],[-108,"CAM_DUT_INIT_WRONG_IMG_FMT","device camera errors",""],[-109,"CAM_DUT_INIT_WRONG_PIX_BITS","device camera errors",""],[-110,"CAM_DUT_INIT_BAD_FRAME_SIZE","device camera errors",""],[-111,"CAM_DUT_INIT_NOT_OPEN","device camera errors",""],[-112,"CAM_DUT_INIT_EXCEPTION","device camera errors",""],[-113,"CAM_DUT_INIT_NO_CAMS_FOUND","device camera errors",""],[-114,"CAM_DUT_INIT_NO_VIDEO_SIGNAL","device camera errors",""],[-115,"CAM_DUT_INIT_BAD_HDW_ID","device camera errors",""],[-116,"CAM_DUT_INIT_BAD_INI_IMG_FMT","device camera errors",""],[-117,"CAM_DUT_INIT_LOAD_REGS","device camera errors",""],[-118,"CAM_DUT_INIT_DEVICE_FUNCTION","device camera errors",""],[-119,"CAM_DUT_INIT_INI_IMG_FMT_NA","device camera errors",""],[-120,"CAM_DUT_INIT_BAD_INI_RCC_FMT","device camera errors",""],[-121,"CAM_DUT_INIT_NO_MIU_FOUND","device camera errors",""],[-122,"CAM_DUT_INIT_DUPL_MIU_FOUND","device camera errors",""],[-123,"CAM_DUT_INIT_FIND_MIUS","device camera errors",""],[-124,"CAM_DUT_INIT_MIU_OPEN_ALIGN","device camera errors",""],[-125,"CAM_DUT_INIT_MIU_OPEN_DISP","device camera errors",""],[-126,"CAM_DUT_INIT_MIU_ALIGN_NF","device camera errors",""],[-127,"CAM_DUT_INIT_MIU_DISP_NF","device camera errors",""],[-128,"CAM_DUT_INIT_RAW_BUF_EMPTY","device camera errors",""],[-129,"CAM_DUT_INIT_RAW_BAD_PARAMS","device camera errors",""],[-130,"CAM_DUT_INIT_RAW_BAD_IMG_TYPE","device camera errors",""],[-131,"CAM_DUT_INIT_RAW_BAD_CAM_TYPE","device camera errors",""],[-132,"CAM_DUT_INIT_WRONG_IMG_SIZE","device camera errors",""],[-133,"CAM_DUT_INIT_AARDVARK_NA","device camera errors",""],[-134,"CAM_DUT_INIT_INI_IICFPID_NA","device camera errors",""],[-135,"CAM_DUT_INIT_INI_MIPIFPVAL_NA","device camera errors",""],[-136,"CAM_DUT_INIT_LOAD_3RD_PARTY_LIB","device camera errors",""],[-137,"CAM_DUT_INIT_GET_3RD_PARTY_FNC","device camera errors",""],[-138,"CAM_DUT_INIT_READ_HDW_ID","device camera errors",""],[-139,"CAM_DUT_INIT_DEVICE_TEMPERATURE","device camera errors",""],[-140,"CAM_DUT_INIT_MIU_SPARE_NF","device camera errors",""],[-141,"CAM_DUT_INIT_MIU_OPEN_SPARE","device camera errors",""],[-142,"CAM_DUT_INIT_MIU_OPEN","device camera errors",""],[-143,"CAM_DUT_INIT_CROP_DATA_OUTOF_RANGE","device camera errors",""],[-144,"CAM_DUT_INIT_INVALID_CROP_SIZE_10BIT","device camera errors",""],[-145,"CAM_DUT_INIT_INVALID_CROP_SIZE_12BIT","device camera errors",""],[-146,"CAM_DUT_INIT_IMG_PROCESS","device camera errors",""],[-201,"CAM_VIS_INIT_CREATE_CONTEXT","machine vision camera errors",""],[-202,"CAM_VIS_INIT_NUM_CAMS_GET","machine vision camera errors",""],[-203,"CAM_VIS_INIT_NUM_CAMS_ZERO","machine vision camera errors",""],[-204,"CAM_VIS_INIT_SERNUM_NF","machine vision camera errors",""],[-205,"CAM_VIS_INIT_CONNECT","machine vision camera errors",""],[-206,"CAM_VIS_INIT_CAM_INFO","machine vision camera errors",""],[-207,"CAM_VIS_INIT_CREATE_IMG_BUF","machine vision camera errors",""],[-208,"CAM_VIS_INIT_START_CAPTURE","machine vision camera errors",""],[-209,"CAM_VIS_INIT_GET_FRAME","machine vision camera errors",""],[-210,"CAM_VIS_INIT_SIZE_INVALID","machine vision camera errors",""],[-211,"CAM_VIS_INIT_FORMAT_INVALID","machine vision camera errors",""],[-212,"CAM_VIS_INIT_NOT_OPEN","machine vision camera errors",""],[-213,"CAM_VIS_INIT_DUPLICATE_SN","machine vision camera errors",""],[-214,"CAM_VIS_INIT_GET_PROP_INFO","machine vision camera errors",""],[-215,"CAM_VIS_INIT_SET_PROP","machine vision camera errors",""],[-216,"CAM_VIS_INIT_PROP_NOT_PRESENT","machine vision camera errors",""],[-217,"CAM_VIS_SET_EXPOSURE","machine vision camera errors",""],[-218,"CAM_VIS_INIT_EMBEDDED_INFO","machine vision camera errors",""],[-219,"CAM_VIS_INIT_MEM_ALLOC","machine vision camera errors",""],[-220,"CAM_VIS_INIT_COMPOSITE_CAM_SN_FORMAT","machine vision camera errors",""],[-221,"CAM_VIS_INIT_COMPOSITE_CAM_NOT_OPEN","machine vision camera errors",""],[-222,"CAM_VIS_INIT_SET_GRAB_TIMEOUT","machine vision camera errors",""],[-223,"CAM_VIS_INIT_GET_EXPOSURE","machine vision camera errors",""],[-224,"CAM_VIS_INVALID_CAM_TYPE","machine vision camera errors",""],[-225,"CAM_VIS_SET_GAIN","machine vision camera errors",""],[-226,"CAM_VIS_GET_GAIN","machine vision camera errors",""],[-227,"CAM_VIS_SET_OFFSET","machine vision camera errors",""],[-228,"CAM_VIS_GET_AUTOINFO","machine vision camera errors",""],[-229,"CAM_VIS_PIXEL_CLOCK","machine vision camera errors",""],[-230,"CAM_VIS_INIT_COLOR_MODE","machine vision camera errors",""],[-231,"CAM_VIS_INIT_ACTIVE_MEM","machine vision camera errors",""],[-232,"CAM_VIS_INIT_SOFTTRIG","machine vision camera errors",""],[-233,"CAM_VIS_INIT_IDS_SERNUM_NF","machine vision camera errors",""],[-234,"CAM_VIS_SET_TIMEOUT","machine vision camera errors",""],[-235,"CAM_VIS_SET_TRIGGER_DELAY","machine vision camera errors",""],[-236,"CAM_VIS_SET_EXTERNAL_TRIGGER","machine vision camera errors",""],[-237,"CAM_VIS_INIT_EVENT","machine vision camera errors",""],[-238,"CAM_VIS_ENABLE_EVENT","machine vision camera errors",""],[-239,"CAM_VIS_UNSUPPORTED_COLOR_MODE","machine vision camera errors",""],[-301,"IMAGE_LOAD_FAIL","image processing errors",""],[-302,"IMAGE_SAVE_FAIL","image processing errors",""],[-303,"IMAGE_LOAD_INVALID_FILE_NAME","image processing errors",""],[-304,"IMAGE_SAVE_INVALID_FILE_NAME","image processing errors",""],[-305,"IMAGE_GRAB_FAILED_DUT","image processing errors",""],[-306,"IMAGE_GRAB_FAILED_VIS","image processing errors",""],[-307,"IMAGE_GRAB_BAD_ARRAY_SIZE","image processing errors",""],[-308,"IMAGE_FRAME_NUM_INVALID","image processing errors",""],[-309,"IMAGE_FRAME_NO_EMPTY_FRAMES","image processing errors",""],[-310,"IMAGE_FRAME_BUFFER_EMPTY","image processing errors",""],[-311,"IMAGE_BAD_VIS_CAM_NUM","image processing errors",""],[-312,"IMAGE_BAD_DUT_CAM_NUM","image processing errors",""],[-313,"IMAGE_MULT_DUT_CAMS_NA","image processing errors",""],[-314,"IMAGE_INVALID_BIT_DEPTH","image processing errors",""],[-315,"IMAGE_UNSUPPORTED_COLOR_MODE","image processing errors",""],[-316,"IMAGE_NO_IMAGE_DATA","image processing errors",""],[-401,"CREATE_CLIENT_WINDOW","general errors",""],[-402,"LOAD_KS_CAM_LIBRARY","general errors",""],[-403,"GET_KS_CAM_LIB_FNC_PTR","general errors",""],[-404,"INVALID_TOOL_INDEX","general errors",""],[-405,"FOCUS_NO_FRAMES_TO_ANALYZE","general errors",""],[-406,"LOAD_KS_MACHVIS_LIBRARY","general errors",""],[-407,"GET_KS_MACHVIS_LIB_FNC_PTR","general errors",""],[-408,"LOAD_KS_HEXSIGHT_LIBRARY","general errors",""],[-409,"GET_KS_HEXSIGHT_LIB_FNC_PTR","general errors",""],[-410,"INVALID_ALIGN_MODE","general errors",""],[-411,"INVALID_CALIB_MODE","general errors",""],[-412,"INVALID_DISP_CAL_STEP_NUM","general errors",""],[-413,"KS_HEXISGHT_LIB_NOT_INIT","general errors",""],[-414,"NA_64BIT","general errors",""],[-415,"INALID_IMAGE_ARRAY_PARAMS","general errors",""],[-416,"PATTERN_NO_MATCHES","general errors",""],[-417,"FUNCTION_NOT_SUPPORTED","general errors",""],[-418,"CAM_DUT_SET_REG_EXISTS_INI","general errors",""],[-419,"CAM_DUT_SET_REG_OPEN_INI","general errors",""],[-420,"CAM_DUT_SET_REG_ARG_INVALID","general errors",""],[-421,"CAM_DUT_SET_REG_ERROR","general errors",""],[-422,"CAM_DUT_SET_REG_MALLOC","general errors",""],[-423,"MAX_WORK_ID","general errors",""],[-424,"INVALID_ROTARY_TABLE_POS","general errors",""],[-425,"INVALID_FIXTURE_TYPE","general errors",""],[-426,"TEST_NOT_ENABLED","general errors",""],[-427,"IMAGE_FRAMES_NOT_SAME_SIZE","general errors",""],[-428,"CROP_BORDER_TOO_LARGE","general errors",""],[-429,"GET_KS_I2C_LIB_FNC_PTR","general errors",""],[-430,"INVALID_FOCAL_PLANE","general errors",""],[-431,"CREATE_IMAGE_PROCESS_THREAD","general errors",""],[-432,"UVMEASURE_CREATE_CSV_FILE","general errors",""],[-433,"DATAREC_INVALID_STATION_NO","general errors",""],[-434,"DATAREC_CREATE_CSV_FILE","general errors",""],[-435,"DISPINSPECT_CREATE_IMAGE_FILE","general errors",""],[-436,"ALIGN_FAIL_CALC_ONAXIS_PEAK","general errors",""],[-437,"ALIGN_FAIL_MAX_SCANS_REACHED","general errors",""],[-438,"ALIGN_PEAK_TZ_SCAN_MAX_STEPS","general errors",""],[-439,"EXTLIB_LOAD","general errors",""],[-440,"EXTLIB_GET_FUNC_PTR","general errors",""],[-441,"EXTLIB_CREATE_IMAGE_FILE","general errors",""],[-442,"EXTLIB_FUNC_DISPENSEON","general errors",""],[-443,"EXTLIB_FUNC_DISPENSEOFF","general errors",""],[-444,"EXTLIB_FUNC_ALIGNMENTON","general errors",""],[-445,"EXTLIB_FUNC_ALIGNMENTOFF","general errors",""],[-446,"EXTLIB_FUNC_INSPECT","general errors",""],[-447,"EXTLIB_FUNC_PARTDONE","general errors",""],[-448,"EXTLIB_FUNC_INDEXREQUEST","general errors",""],[-449,"SCANNERLIB_LOAD","general errors",""],[-450,"SCANNERLIB_GET_FUNC_PTR","general errors",""],[-451,"SCANNERLIB_WRONG_FIXTURE_POS1","general errors",""],[-452,"SCANNERLIB_WRONG_FIXTURE_POS2","general errors",""],[-453,"SCANNERLIB_WRONG_FIXTURE_POS3","general errors",""],[-454,"SCANNERLIB_WRONG_FIXTURE_POS4","general errors",""],[-455,"LASERREADER_LIB_LOAD","general errors",""],[-456,"LASERREADER_GET_FUNC_PTR","general errors",""],[-457,"LIGHTWAVE_LIB_LOAD","general errors",""],[-458,"LIGHTWAVE_GET_FUNC_PTR","general errors",""],[-459,"LASERSCAN_INVALID_COMMAND","general errors",""],[-460,"LASERSCAN_CREATE_IMAGE_FILE","general errors",""],[-461,"LOAD_SIMULATION_IMAGE","general errors",""],[-462,"DISPENSEWEIGH_LOAD","general errors",""],[-463,"DISPENSEWEIGH_GET_FUNC_PTR","general errors",""],[-464,"DISPENSEWEIGH_UNEXPECTED_RESP","general errors",""],[-465,"DISPENSEWEIGH_WRONG_UNIT","general errors",""],[-466,"DISPENSEWEIGH_STABLE_WGT_TIMEOUT","general errors",""],[-467,"DISPENSEWEIGH_CREATE_CSV_FILE","general errors",""],[-468,"KS_HEXISGHT_FILE_NOT_FOUND","general errors",""],[-469,"DOUBLET_FINAL_SCAN_THRESH","general errors",""],[-470,"CAM_DUT_GET_REG_ARG_INVALID","general errors",""],[-471,"CAM_DUT_GET_REG_ERROR","general errors",""],[-472,"MACHINE_LOG_FILE_OPEN","general errors",""],[-473,"DEBUG_LOG_FILE_OPEN","general errors",""],[-474,"MACHINE_LOG_FILE_WRITE","general errors",""],[-475,"DEBUG_LOG_FILE_WRITE","general errors",""],[-476,"KSDATARAY_LIB_LOAD","general errors",""],[-477,"KSDATARAY_GET_FUNC_PTR","general errors",""],[-478,"GET_MACHINE_HDW_ID","general errors",""],[-479,"CREATE_PIXID_SYSTEM_FOLDER","general errors",""],[-480,"ROBOT_LOG_FILE_OPEN","general errors",""],[-481,"ROBOT_LOG_FILE_WRITE","general errors",""],[-482,"INVALID_FIXTURE_NUMBER","general errors",""],[-483,"DUT_SER_NUM_LOG_FILE_OPEN","general errors",""],[-484,"BNC_LIB_LOAD","general errors",""],[-485,"BNC_LIB_FNC_PTR","general errors",""],[-486,"TEMPLATE_MATCH_LOAD_IMAGE","general errors",""],[-487,"CREATE_IMAGE_ARCHIVE","general errors",""],[-488,"CREATE_PIXID_UPLOAD_FOLDER","general errors",""],[-489,"ALIGN_SCAN_LOG_FILE_WRITE","general errors",""],[-490,"INVALID_ASSEMBLY_NUMBER","general errors",""],[-491,"ALIGN_OFF_AXIS_WEIGHT_POLYORDER","general errors",""],[-492,"ALIGN_OFF_AXIS_WEIGHT_MODE2_MTF_HI","general errors",""],[-493,"ALIGN_OFF_AXIS_WEIGHT_MODE2_MTF_LO","general errors",""],[-494,"CONFIGBACKUP_CREATE_ZIP_FOLDER","general errors",""],[-495,"CONFIGBACKUP_CREATE_PIXID_LOG_FOLDER","general errors",""],[-496,"CONFIGBACKUP_CREATE_OPEN_FILE_RECORD","general errors",""],[-497,"CONFIGBACKUP_CREATE_OPEN_FILELIST","general errors",""],[-498,"CREATE_PIXIDSYS_FILE","general errors",""],[-499,"INCR_WORK_ID","general errors",""],[-500,"INVALID_CALIB_MEM_ALLOC","general errors",""],[-501,"VISU_INVALID_TCP_COMMAND","visualization errors",""],[-502,"VISU_GET_WINDOW_HANDLE","visualization errors",""],[-503,"VISU_GET_PROCESS_ID","visualization errors",""],[-504,"VISU_GET_PROCESS_ACCESS","visualization errors",""],[-505,"VISU_CLOSE_PROCESS","visualization errors",""],[-506,"VISU_INVALID_VIEW_MODE","visualization errors",""],[-507,"VISU_DATA_SIZE_MISMATCH","visualization errors",""],[-510,"MES_CREATE_PROCESS","visualization errors",""],[-511,"MES_CONNECT_TO_KSMESCOMM","visualization errors",""],[-512,"MES_SEND_BUF_TOO_SMALL","visualization errors",""],[-513,"MES_SEND_FAILED","visualization errors",""],[-514,"MES_SEND_RESPONSE_FAILED","visualization errors",""],[-516,"MES_NOT_CONNECTED","visualization errors",""],[-517,"MES_CONNECT_AS_HOST","visualization errors",""],[-518,"MES_WRONG_VERSION","visualization errors",""],[-519,"MES_DUPLEX_REQUEST_ACK_FAILED","visualization errors",""],[-520,"MES_DUPLEX_REQUEST_RESP_FAILED","visualization errors",""],[-521,"MES_DUPLEX_MES_MODE","visualization errors",""],[-522,"MES_DUPLEX_EXISTS_KSGOLDSAMPLE","visualization errors",""],[-523,"MES_DUPLEX_DEVICESTATE_FAIL","visualization errors",""],[-550,"ALIGN_PYTHON_FILE_NOT_FOUND","visualization errors",""],[-551,"ALIGN_PYTHON_EXCEPTION","visualization errors",""],[-552,"ALIGN_PYTHON_ERROR_CODE","visualization errors",""],[-553,"ALIGN_PYTHON_FIXTURE_OFFSET_BUF","visualization errors",""],[-601,"BLOB_MEM_ALLOC","blob errors",""],[-602,"BLOB_INVALID_LABEL_NUM","blob errors",""],[-603,"BLOB_CALIBTOOL_NO_BLOBS","blob errors",""],[-604,"BLOB_HOT_SPOT_NOT_FOUND","blob errors",""],[-605,"BLOB_HOT_SPOT_TOO_BRIGHT","blob errors",""],[-607,"ALIGN_FAIL_MOTION_LIMIT","passive/active align errors",""],[-608,"ALIGN_FAIL_LASER_DIODE_OFF","passive/active align errors",""],[-610,"CENTRATION_FAIL_FIND_FEATURE","centration errors - object location based",""],[-611,"CENTRATION_FAIL_LINE_FIT","centration errors - object location based",""],[-612,"CENTRATION_FAIL_ANGLE_FEATURES","centration errors - object location based",""],[-613,"CENTRATION_FAIL_MOTION_LIMIT","centration errors - object location based",""],[-614,"CENTRATION_FAIL_TOUCHING_BORDER","centration errors - object location based",""],[-615,"CENTRATION_FAIL_FIND_CENTER","centration errors - gradient location based",""],[-616,"CENTRATION_FAIL_TOO_BRIGHT","centration errors - gradient location based",""],[-617,"CENTRATION_FAIL_TOO_DARK","centration errors - gradient location based",""],[-618,"CENTRATION_SATURATED","centration errors - gradient location based",""],[-620,"MTF_FEATURE_NOT_FOUND","centration errors - gradient location based",""],[-621,"MTF_FEATURE_NOT_VALID","centration errors - gradient location based",""],[-622,"MTF_MEM_ALLOC","centration errors - gradient location based",""],[-623,"MTF_BAD_GRADIENT","centration errors - gradient location based",""],[-624,"MTF_EDGE_TOO_CLOSE","centration errors - gradient location based",""],[-625,"MTF_FEATURE_TOO_SMALL","centration errors - gradient location based",""],[-626,"MTF_REGION_OUTSIDE_FRAME","centration errors - gradient location based",""],[-627,"MTF_ANGLE_TOO_SMALL","centration errors - gradient location based",""],[-628,"MTF_ANGLE_TOO_LARGE","centration errors - gradient location based",""],[-629,"MTF_CANT_INTERPOLATE","centration errors - gradient location based",""],[-630,"MTF_REGION_OUTSIDE_ROI","centration errors - gradient location based",""],[-631,"MTF_FEATURE_BLOB_NOT_FOUND","centration errors - gradient location based",""],[-632,"MTF_FEATURE_CHARACTERISTICS","centration errors - gradient location based",""],[-633,"MTF_FEATURE_ANGLE_THRESH","centration errors - gradient location based",""],[-634,"MTF_FEATURE_GRADIENT_THRESH","centration errors - gradient location based",""],[-635,"MTF_FEATURE_ROTATION","centration errors - gradient location based",""],[-636,"MTF_ROI_NOT_DEFINED","centration errors - gradient location based",""],[-637,"MTF_FEATURE_EDGE_LENGTH","centration errors - gradient location based",""],[-641,"SENSORTEST_INVALID_MODE","sensor test general errors",""],[-645,"USERTEST_CREATE_CSV_FILE","user test errors",""],[-646,"USERTEST_FAILED","user test errors",""],[-649,"STABILITY_TEST_CREATE_CSV","repeatability and stability test errors",""],[-650,"REPEATABILITY_TEST_CREATE_CSV","repeatability and stability test errors",""],[-651,"PARTICLETEST_CREATE_CSV_FILE","particle test errors",""],[-652,"PARTICLETEST_CREATE_IMAGE_FILE","particle test errors",""],[-653,"PARTICLETEST_TEST_FAILED","particle test errors",""],[-654,"PARTICLETEST_BAD_STEP_NUM","particle test errors",""],[-655,"PARTICLETEST_BAD_LUMINANCE_RANGE","particle test errors",""],[-661,"PIXELTEST_CREATE_CSV_FILE","defective pixel test errors",""],[-662,"PIXELTEST_CREATE_IMAGE_FILE","defective pixel test errors",""],[-663,"PIXELTEST_BAD_CLUSTER_PARAM","defective pixel test errors",""],[-664,"PIXELTEST_TEST_FAILED","defective pixel test errors",""],[-671,"DARKTEST_CREATE_CSV_FILE","dark signal test errors",""],[-672,"DARKTEST_CREATE_IMAGE_FILE","dark signal test errors",""],[-673,"DARKTEST_TEST_FAILED","dark signal test errors",""],[-681,"NOISETEST_CREATE_CSV_FILE","temporal noise test error",""],[-682,"NOISETEST_CREATE_IMAGE_FILE","temporal noise test error",""],[-683,"NOISETEST_TEST_FAILED","temporal noise test error",""],[-691,"DISPENSETEST_CREATE_CSV_FILE","post dispense inspect errors",""],[-692,"DISPENSETEST_CREATE_IMAGE_FILE","post dispense inspect errors",""],[-693,"DISPENSETEST_TEST_FAILED_BLOB","post dispense inspect errors",""],[-694,"DISPENSETEST_BAD_STEP_NUM","post dispense inspect errors",""],[-695,"DISPENSETEST_TEST_FAILED_CS","post dispense inspect errors",""],[-696,"DISPENSETEST_REMOTE_BAD_DISP","post dispense inspect errors",""],[-697,"DISPENSETEST_REMOTE_FAILED_IMAGE","post dispense inspect errors",""],[-698,"DISPENSETEST_REMOTE_FAILED_CONN","post dispense inspect errors",""],[-699,"DISPENSETEST_REMOTE_SERVER_SHUT","post dispense inspect errors",""],[-700,"DISPENSETEST_REMOTE_ZMQ_MISSING","post dispense inspect errors",""],[-701,"FINALTEST_GENERAL_ERROR","final test errors",""],[-702,"FINALTEST_INVALID_MODE","final test errors",""],[-703,"FINALTEST_CREATE_CSV_FILE","final test errors",""],[-704,"FINALTEST_CREATE_IMAGE_FILE","final test errors",""],[-705,"FINALTEST_TESTS_FAILED","final test errors",""],[-711,"PREFOCUS_CREATE_IMAGE_FILE","prefocus errors",""],[-712,"PREFOCUS_NOISE_TEST","prefocus errors",""],[-713,"PREFOCUS_ADJ_LIMIT","prefocus errors",""],[-721,"LASERLINE_MEM_ALLOC","laser line analysis errors",""],[-722,"LASERLINE_NOT_LOCATED","laser line analysis errors",""],[-725,"GAP_MEASURE_LUT_EXISTS","gap/uv offset look up table errors",""],[-726,"GAP_MEASURE_LUT_DATA_FORMAT","gap/uv offset look up table errors",""],[-727,"GAP_MEASURE_LUT_OUT_OF_RANGE","gap/uv offset look up table errors",""],[-728,"GAP_MEASURE_CREATE_CSV_FILE","gap/uv offset look up table errors",""],[-730,"LASER_SPOT_NODATA_ACQUIRED","laser spot analysis errors",""],[-731,"LASER_SPOT_DATA_NOT_VALID","laser spot analysis errors",""],[-732,"LASER_SPOT_MEM_ALLOC","laser spot analysis errors",""],[-733,"LASER_SPOT_TIMEOUT","laser spot analysis errors",""],[-734,"LASER_SPOT_MISSING_CURFRAME","laser spot analysis errors",""],[-735,"LASER_SPOT_Z_OUT_RANGE","laser spot analysis errors",""],[-736,"LASER_SPOT_FWHM_FAILED","laser spot analysis errors",""],[-738,"EDGE_CANNOT_RESOLVE_HOUGHLINES","edge detection error",""],[-739,"EDGE_ANGLE_OUTOF_TOLERANCE","edge detection error",""],[-740,"EDGE_NOT_ENOUGH_EDGEDATA","edge detection error",""],[-741,"LASER_BAR_NO_PHASE_DATA_FOUND","laser bars analysis errors",""],[-742,"LASER_BAR_NO_PROFILE_IMAGE","laser bars analysis errors",""],[-743,"LASER_BAR_PROFILE_DATA_NOMEMORY","laser bars analysis errors",""],[-744,"LASER_BAR_CANNOT_LOG_DATA","laser bars analysis errors",""],[-745,"LASER_BAR_CANNOT_FOUND_LPM_AREA","laser bars analysis errors",""],[-746,"LASER_BAR_NO_DATA","laser bars analysis errors",""],[-747,"LASER_BAR_NO_ROI_FOUND","laser bars analysis errors",""],[-748,"LASER_BAR_NO_FEATURE_FOUND","laser bars analysis errors",""],[-749,"LASER_BAR_UNABLE_TO_LOCATE_LD","laser bars analysis errors",""],[-751,"DATALINETEST_CREATE_CSV_FILE","data line integrity test errors",""],[-752,"DATALINETEST_CREATE_IMAGE_FILE","data line integrity test errors",""],[-753,"DATALINETEST_LOAD_GOLDEN_FILE","data line integrity test errors",""],[-754,"DATALINETEST_INCONSISTENT_IMAGE_FORMAT","data line integrity test errors",""],[-755,"DATALINETEST_TEST_FAILED","data line integrity test errors",""],[-801,"VALID_FIXTURE_AT_TABLE_POS_DUP","fixture calibration file errors",""],[-802,"VALID_FIXTURE_NOT_FOUND_POS1","fixture calibration file errors",""],[-803,"VALID_FIXTURE_NOT_FOUND_POS2","fixture calibration file errors",""],[-804,"VALID_FIXTURE_NOT_FOUND_POS3","fixture calibration file errors",""],[-805,"VALID_FIXTURE_NOT_FOUND_POS4","fixture calibration file errors",""],[-811,"VISCAL_IMAGE_IS_INVALID","calibration and correction for vignetting and distortion",""],[-812,"VISCAL_NO_CALIBRATION_PATTERN_DEFINED","calibration and correction for vignetting and distortion",""],[-813,"VISCAL_NO_CALIBRATION_PATTERN_FOUND","calibration and correction for vignetting and distortion",""],[-814,"VISCAL_FAILED_DO_DISTORTION_CALIBRATION","calibration and correction for vignetting and distortion",""],[-815,"VISCAL_NON_DISTORTION_CALIBRATION_DATA","calibration and correction for vignetting and distortion",""],[-816,"VISCAL_IMAGE_SIZE_DIFFERENT_THAN_CALIBRATION","calibration and correction for vignetting and distortion",""],[-817,"VISCAL_CAMERA_TRANSFORM_IS_DIFFERENT","calibration and correction for vignetting and distortion",""],[-818,"VISCAL_NOT_VALID_CAMERA_NUMBER","calibration and correction for vignetting and distortion",""],[-819,"VISCAL_VIGNETTING_MEM_ALLOC","calibration and correction for vignetting and distortion",""],[-820,"VISCAL_CANNOT_SAVE_CALIBRATION_DATA","calibration and correction for vignetting and distortion",""],[-821,"VISCAL_IMAGE_TOO_BRIGHT","calibration and correction for vignetting and distortion",""],[-822,"VISCAL_IMAGE_TOO_DARK","calibration and correction for vignetting and distortion",""],[-823,"VISCAL_NON_VIGNETTE_CALIBRATION_DATA","calibration and correction for vignetting and distortion",""],[-831,"DATA_CACHE_FILE_OPEN","device data cache errors",""],[-832,"DATA_CACHE_FILE_READ","device data cache errors",""],[-833,"DATA_CACHE_FILE_WRITE","device data cache errors",""],[-834,"DATA_CACHE_TYPE","device data cache errors",""],[-835,"DATA_CACHE_VERSION","device data cache errors",""],[-836,"DATA_CACHE_MAC_ADDRESS","device data cache errors",""],[-837,"DATA_CACHE_SIZE","device data cache errors",""],[-838,"DATA_CACHE_WORK_ID_MISMATCH","device data cache errors",""],[-839,"DATA_CACHE_NOT_FOUND","device data cache errors",""],[-840,"DATA_CACHE_NOT_CREATED","device data cache errors",""],[-850,"CONFIG_EXISTS_PIXIDSYS","configuration error second group",""],[-851,"CONFIG_PARAM_TOO_MANY_CHARS","configuration error second group",""],[-852,"CONFIG_PYTHON_NOT_SUPPORTED","configuration error second group",""],[-853,"CONFIG_PYTHON_DUAL_FIXTURE","configuration error second group",""],[-860,"LED_INVALID_NOMINAL_POSDATA","led alignment errors",""],[-861,"LED_CANNOT_OPEN_FILE","led alignment errors",""],[-862,"LED_FOUND_LESS_BLOBS","led alignment errors",""],[-863,"LED_FILE_PATH_NULL","led alignment errors",""],[-864,"LED_MISSING_APERTURE_SEARCH_DATA","led alignment errors",""],[-865,"LED_MISIING_TAB_SEARCH_DATA","led alignment errors",""],[-866,"LED_RADIAL_ERROR","led alignment errors",""],[-880,"BEAM_PROFILER_IMAGE_FORMAT","led alignment errors",""],[-881,"BEAM_PROFILER_NUM_SPOT","led alignment errors",""],[-882,"BEAM_PROFILER_INVALID_PARAM","led alignment errors",""],[-883,"BEAM_PROFILER_NUM_PIXELS","led alignment errors",""],[-890,"OPTIMIZE_INVALID_HANDLE","led alignment errors",""],[-891,"OPTIMIZE_INVALID_ACTION","led alignment errors",""],[-892,"OPTIMIZE_INVALID_FEATURE","led alignment errors",""],[-893,"OPTIMIZE_INVALID_METHOD","led alignment errors",""],[-901,"PROC_TRACK_FILE_OPEN","process tracking (adaptive intelligence) errors",""],[-902,"PROC_TRACK_FILE_READ","process tracking (adaptive intelligence) errors",""],[-903,"PROC_TRACK_FILE_WRITE","process tracking (adaptive intelligence) errors",""],[-904,"PROC_TRACK_TYPE","process tracking (adaptive intelligence) errors",""],[-905,"PROC_TRACK_VERSION","process tracking (adaptive intelligence) errors",""],[-906,"PROC_TRACK_MAC_ADDRESS","process tracking (adaptive intelligence) errors",""],[-907,"PROC_TRACK_SIZE","process tracking (adaptive intelligence) errors",""],[-908,"PROC_TRACK_PLACE_X_ADJ_LIMIT","process tracking (adaptive intelligence) errors",""],[-909,"PROC_TRACK_PLACE_Y_ADJ_LIMIT","process tracking (adaptive intelligence) errors",""],[-910,"PROC_TRACK_PLACE_Z_ADJ_LIMIT","process tracking (adaptive intelligence) errors",""],[-911,"PROC_TRACK_PLACE_TX_ADJ_LIMIT","process tracking (adaptive intelligence) errors",""],[-912,"PROC_TRACK_PLACE_TY_ADJ_LIMIT","process tracking (adaptive intelligence) errors",""],[-951,"KSWSC_EXE_NOT_FOUND","from KSwsc.exe",""],[-952,"KSWSC_CREATE_PROCESS","from KSwsc.exe",""],[-953,"KSWSC_GET_EXIT_CODE","from KSwsc.exe",""],[-954,"KSWSC_WEB_SERVICE_TIMEOUT","from KSwsc.exe",""],[-955,"KSWSC_INVALID_ARG","from KSwsc.exe",""],[-956,"KSWSC_GETSN_WEB_SERVICE_EXCEPTION","from KSwsc.exe",""],[-957,"KSWSC_GETSN_WEB_SERVICE_PARSE","from KSwsc.exe",""],[-958,"KSWSC_GETSN_WEB_SERVICE_FAILURE","from KSwsc.exe",""],[-959,"KSWSC_GETMODEL_WEB_SERVICE_EXCEPTION","from KSwsc.exe",""],[-960,"KSWSC_GETMODEL_WEB_SERVICE_PARSE","from KSwsc.exe",""],[-961,"KSWSC_GETMODEL_WEB_SERVICE_FAILURE","from KSwsc.exe",""],[-962,"KSWSC_WRITE_RESULT_FILE","from KSwsc.exe",""],[-963,"KSWSC_READ_RESULT_FILE","from KSwsc.exe",""],[-964,"KSWSC_PARSE_RESULT_FILE","from KSwsc.exe",""],[-1001,"BITMAP_BAD_FILE_SPEC","from KSbitmap.h which is part of KShexsight library",""],[-1002,"BITMAP_OPEN_FILE_FAILED","from KSbitmap.h which is part of KShexsight library",""],[-1003,"BITAMP_LOAD_BAD_BPP","from KSbitmap.h which is part of KShexsight library",""],[-1004,"BITMAP_MEM_ALLOC","from KSbitmap.h which is part of KShexsight library",""],[-1005,"BITMAP_NO_IMAGE","from KSbitmap.h which is part of KShexsight library",""],[-1006,"BITMAP_NEW_BAD_IMAGE_PARAMS","from KSbitmap.h which is part of KShexsight library",""],[-1101,"HS_MFC_INIT_FAIL","from KShexsight.h which is part of KShexsight library",""],[-1102,"HS_NOT_INIT","from KShexsight.h which is part of KShexsight library",""],[-1103,"HS_CREATE_ACTIVEX_FAIL","from KShexsight.h which is part of KShexsight library",""],[-1104,"HS_CONFIG_NOT_LOADED","from KShexsight.h which is part of KShexsight library",""],[-1105,"HS_INVALID_MATCH_INDEX","from KShexsight.h which is part of KShexsight library",""],[-1106,"HS_LOAD_CONFIG","from KShexsight.h which is part of KShexsight library",""],[-1107,"HS_LOAD_MODEL_DATABASE","from KShexsight.h which is part of KShexsight library",""],[-1108,"HS_ADD_MODEL","from KShexsight.h which is part of KShexsight library",""],[-1109,"HS_SAVE_CONFIG","from KShexsight.h which is part of KShexsight library",""],[-1110,"HS_SAVE_MODEL_DATABASE","from KShexsight.h which is part of KShexsight library",""],[-1201,"IPC_NOT_INIT","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1202,"IPC_CANT_LOCK","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1203,"IPC_CREATE_PROCESS","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1204,"IPC_CANT_CREATE_MUTEX","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1205,"IPC_CANT_CREATE_FILE_MAP","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1206,"IPC_CANT_MAP_VIEW_OF_FILE","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1207,"IPC_NOT_ALLOWED_THIS_OWNER","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1208,"IPC_TIMEOUT","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1209,"IPC_CRITICAL_ERROR","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1210,"IPC_ABORTED_FROM_TIMEOUT","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1211,"IPC_ABORTED_FROM_CRITICAL_ERROR","from CIpc class which is defined in KSipc.h and used by both the KSvision",""],[-1301,"SC_COINITIALIZE","from KSscanner.h which is part of the KSscanner library",""],[-1302,"SC_CREATE_OBJECT","from KSscanner.h which is part of the KSscanner library",""],[-1303,"SC_CREATE_EVENT_SINK","from KSscanner.h which is part of the KSscanner library",""],[-1304,"SC_METHOD_OPEN","from KSscanner.h which is part of the KSscanner library",""],[-1305,"SC_METHOD_CLOSE","from KSscanner.h which is part of the KSscanner library",""],[-1306,"SC_METHOD_GETSCANNERS","from KSscanner.h which is part of the KSscanner library",""],[-1307,"SC_SNAPI_NO_SCANNERS_FOUND","from KSscanner.h which is part of the KSscanner library",""],[-1308,"SC_SNAPI_MULT_SCANNERS_FOUND","from KSscanner.h which is part of the KSscanner library",""],[-1309,"SC_METHOD_REGISTER_EVENTS","from KSscanner.h which is part of the KSscanner library",""],[-1310,"SC_METHOD_PULL_TRIGGER","from KSscanner.h which is part of the KSscanner library",""],[-1311,"SC_METHOD_RELEASE_TRIGGER","from KSscanner.h which is part of the KSscanner library",""],[-1312,"SC_SCAN_NO_LABEL_DETECTED","from KSscanner.h which is part of the KSscanner library",""],[-1313,"SC_PARSE_SCANNER_ID_ERROR","from KSscanner.h which is part of the KSscanner library",""],[-1314,"SC_PARSE_LABEL_ERROR","from KSscanner.h which is part of the KSscanner library",""],[-1315,"SC_COM_ERROR","from KSscanner.h which is part of the KSscanner library",""],[-1401,"TY_SUBI_FIND","from KSscanner.h which is part of the KSscanner library",""],[-1402,"TY_SUBI_READCHIPID","from KSscanner.h which is part of the KSscanner library",""],[-1403,"TY_SUBI_PERFORDDEVICECLOSESEQ","from KSscanner.h which is part of the KSscanner library",""],[-1404,"TY_SUBI_PERFORDDEVICEOPENSEQ","from KSscanner.h which is part of the KSscanner library",""],[-1405,"TY_SUBI_GETDEVICELOCATION","from KSscanner.h which is part of the KSscanner library",""],[-1406,"TY_SUBI_IMAGEDATA","from KSscanner.h which is part of the KSscanner library",""],[-1407,"TY_SUBI_SET_OPMODE_SLEEP","from KSscanner.h which is part of the KSscanner library",""],[-1408,"TY_SUBI_SET_IPMODE_RAW","from KSscanner.h which is part of the KSscanner library",""],[-1419,"TY_SUBI_SET_OPMODE_RUN","from KSscanner.h which is part of the KSscanner library",""],[-1410,"TY_OPOG_CALDATAWRITE","from KSscanner.h which is part of the KSscanner library",""],[-1411,"TY_OPOG_INITIALIZATION","from KSscanner.h which is part of the KSscanner library",""],[-1412,"TY_OPOG_DEINITIALIZATION","from KSscanner.h which is part of the KSscanner library",""],[-1413,"TY_OPOG_PERFORMONEPOINTOFFSET","from KSscanner.h which is part of the KSscanner library",""],[-1414,"TY_OPOG_APPLYONEPOINTOFFSETANDGAIN","from KSscanner.h which is part of the KSscanner library",""],[-1415,"TY_OPOG_SHUTTERPOLARITYCHECK","from KSscanner.h which is part of the KSscanner library",""],[-1416,"TY_OPOG_OPENSHUTTER","from KSscanner.h which is part of the KSscanner library",""],[-1417,"TY_OPOG_SHUTTERLEAKAGECHECK","from KSscanner.h which is part of the KSscanner library",""],[-1418,"TY_OPOG_THETAZASWEEP","from KSscanner.h which is part of the KSscanner library",""],[-1501,"KL_FUNC_NAK_COMMAND","from KSkeyence.h which is part of the KSkeyence library",""],[-1502,"KL_FUNC_NAK_COMMAND_LENGTH","from KSkeyence.h which is part of the KSkeyence library",""],[-1503,"KL_FUNC_NAK_TIMEOUT","from KSkeyence.h which is part of the KSkeyence library",""],[-1504,"KL_FUNC_NAK_CHECKSUM","from KSkeyence.h which is part of the KSkeyence library",""],[-1505,"KL_FUNC_NAK_INVALID_STATE","from KSkeyence.h which is part of the KSkeyence library",""],[-1506,"KL_FUNC_NAK_OTHER","from KSkeyence.h which is part of the KSkeyence library",""],[-1507,"KL_FUNC_NAK_PARAMETER","from KSkeyence.h which is part of the KSkeyence library",""],[-1508,"KL_FUNC_NAK_OUT_STAGE","from KSkeyence.h which is part of the KSkeyence library",""],[-1509,"KL_FUNC_NAK_OUT_HEAD_NUM","from KSkeyence.h which is part of the KSkeyence library",""],[-1510,"KL_FUNC_NAK_OUT_INVALID_CALC","from KSkeyence.h which is part of the KSkeyence library",""],[-1511,"KL_FUNC_NAK_OUT_VOID","from KSkeyence.h which is part of the KSkeyence library",""],[-1512,"KL_FUNC_NAK_INVALID_CYCLE","from KSkeyence.h which is part of the KSkeyence library",""],[-1513,"KL_FUNC_NAK_CTRL_ERROR","from KSkeyence.h which is part of the KSkeyence library",""],[-1514,"KL_FUNC_NAK_SRAM_ERROR","from KSkeyence.h which is part of the KSkeyence library",""],[-1515,"KL_FUNC_ERR_OPEN_DEVICE","from KSkeyence.h which is part of the KSkeyence library",""],[-1516,"KL_FUNC_ERR_NO_DEVICE","from KSkeyence.h which is part of the KSkeyence library",""],[-1517,"KL_FUNC_ERR_SEND","from KSkeyence.h which is part of the KSkeyence library",""],[-1518,"KL_FUNC_ERR_RECEIVE","from KSkeyence.h which is part of the KSkeyence library",""],[-1519,"KL_FUNC_ERR_TIMEOUT","from KSkeyence.h which is part of the KSkeyence library",""],[-1520,"KL_FUNC_ERR_NODATA","from KSkeyence.h which is part of the KSkeyence library",""],[-1521,"KL_FUNC_ERR_NOMEMORY","from KSkeyence.h which is part of the KSkeyence library",""],[-1522,"KL_FUNC_ERR_DISCONNECT","from KSkeyence.h which is part of the KSkeyence library",""],[-1523,"KL_FUNC_ERR_UNKNOWN","from KSkeyence.h which is part of the KSkeyence library",""],[-1524,"KL_FLOATRESULT_RANGEOVER_P","from KSkeyence.h which is part of the KSkeyence library",""],[-1525,"KL_FLOATRESULT_RANGEOVER_N","from KSkeyence.h which is part of the KSkeyence library",""],[-1526,"KL_FLOATRESULT_WAITING","from KSkeyence.h which is part of the KSkeyence library",""],[-1527,"KL_FLOATRESULT_ALARM","from KSkeyence.h which is part of the KSkeyence library",""],[-1528,"KL_FLOATRESULT_INVALID","from KSkeyence.h which is part of the KSkeyence library",""],[-1529,"KL_FLOATRESULT_UNKNOWN","from KSkeyence.h which is part of the KSkeyence library",""],[-1530,"KL_DLL_KEYENCE_NOT_FOUND","from KSkeyence.h which is part of the KSkeyence library",""],[-1531,"KL_DLL_KEYENCE_CANNOT_LOAD","from KSkeyence.h which is part of the KSkeyence library",""],[-1532,"KL_DLL_KEYENCE_GET_FUNC_ADDR","from KSkeyence.h which is part of the KSkeyence library",""],[-1601,"LW_OPEN_PORT","from KSlightwave.h which is part of the KSlightwave library",""],[-1602,"LW_SET_PORT_BUF_SIZE","from KSlightwave.h which is part of the KSlightwave library",""],[-1603,"LW_GET_COMM_DEFAULT_CONFIG","from KSlightwave.h which is part of the KSlightwave library",""],[-1604,"LW_SET_COMM_CONFIG","from KSlightwave.h which is part of the KSlightwave library",""],[-1605,"LW_GET_COMM_STATE","from KSlightwave.h which is part of the KSlightwave library",""],[-1606,"LW_SET_COMM_STATE","from KSlightwave.h which is part of the KSlightwave library",""],[-1607,"LW_GET_COMM_TIMEOUTS","from KSlightwave.h which is part of the KSlightwave library",""],[-1608,"LW_SET_COMM_TIMEOUTS","from KSlightwave.h which is part of the KSlightwave library",""],[-1609,"LW_PURGE_COMM_BUFFERS","from KSlightwave.h which is part of the KSlightwave library",""],[-1610,"LW_READ","from KSlightwave.h which is part of the KSlightwave library",""],[-1611,"LW_WRITE","from KSlightwave.h which is part of the KSlightwave library",""],[-1612,"LW_RESPONSE_TOO_LARGE","from KSlightwave.h which is part of the KSlightwave library",""],[-1613,"LW_RESPONSE_TIMEOUT","from KSlightwave.h which is part of the KSlightwave library",""],[-1614,"LW_INVALID_COMPORT_NUM","from KSlightwave.h which is part of the KSlightwave library",""],[-1700,"DB_DBMS_BACKEND_CANNOT_BE_LOADED","from KSdatabase.h which is part of the KSdatabase library",""],[-1701,"DB_CANNOT_CONNECT_TO_DATABASE","from KSdatabase.h which is part of the KSdatabase library",""],[-1702,"DB_SQL_COMMAND_FAILED","from KSdatabase.h which is part of the KSdatabase library",""],[-1703,"DB_NO_COLUMNS_IN_TABLE","from KSdatabase.h which is part of the KSdatabase library",""],[-1704,"DB_TABLE_NOT_DEFINED","from KSdatabase.h which is part of the KSdatabase library",""],[-1705,"DB_COLUMN_DEFINITION_INCOMPLETE","from KSdatabase.h which is part of the KSdatabase library",""],[-1706,"DB_COLUMN_NOT_DEFINED","from KSdatabase.h which is part of the KSdatabase library",""],[-1707,"DB_EMPTY_SELECT_OR_FROM_LIST","from KSdatabase.h which is part of the KSdatabase library",""],[-1708,"DB_CSV_INDEX_OUT_OF_RANGE","from KSdatabase.h which is part of the KSdatabase library",""],[-1709,"DB_COLUMN_INDEX_OUT_OF_RANGE","from KSdatabase.h which is part of the KSdatabase library",""],[-1710,"DB_QUERY_RESULT_COLUMN_COUNT","from KSdatabase.h which is part of the KSdatabase library",""],[-1711,"DB_UNHANDLED_EXCEPTION","from KSdatabase.h which is part of the KSdatabase library",""],[-1712,"DB_NO_TABLE_DEFINITIONS_IN_MAP","from KSdatabase.h which is part of the KSdatabase library",""],[-1801,"MT_OPEN_PORT","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1802,"MT_SET_PORT_BUF_SIZE","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1803,"MT_GET_COMM_DEFAULT_CONFIG","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1804,"MT_SET_COMM_CONFIG","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1805,"MT_GET_COMM_STATE","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1806,"MT_SET_COMM_STATE","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1807,"MT_GET_COMM_TIMEOUTS","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1808,"MT_SET_COMM_TIMEOUTS","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1809,"MT_PURGE_COMM_BUFFERS","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1810,"MT_READ","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1811,"MT_WRITE","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1812,"MT_RESPONSE_TOO_LARGE","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1813,"MT_RESPONSE_TIMEOUT","from KSmettlertoledo.h which is part of the KSmettlertoledo library",""],[-1901,"CX_OPEN_PORT","from KSscannercx.h which is part of the KSscannercx library",""],[-1902,"CX_SET_PORT_BUF_SIZE","from KSscannercx.h which is part of the KSscannercx library",""],[-1903,"CX_GET_COMM_DEFAULT_CONFIG","from KSscannercx.h which is part of the KSscannercx library",""],[-1904,"CX_SET_COMM_CONFIG","from KSscannercx.h which is part of the KSscannercx library",""],[-1905,"CX_GET_COMM_STATE","from KSscannercx.h which is part of the KSscannercx library",""],[-1906,"CX_SET_COMM_STATE","from KSscannercx.h which is part of the KSscannercx library",""],[-1907,"CX_GET_COMM_TIMEOUTS","from KSscannercx.h which is part of the KSscannercx library",""],[-1908,"CX_SET_COMM_TIMEOUTS","from KSscannercx.h which is part of the KSscannercx library",""],[-1909,"CX_PURGE_COMM_BUFFERS","from KSscannercx.h which is part of the KSscannercx library",""],[-1910,"CX_READ","from KSscannercx.h which is part of the KSscannercx library",""],[-1911,"CX_WRITE","from KSscannercx.h which is part of the KSscannercx library",""],[-1912,"CX_RESPONSE_TOO_LARGE","from KSscannercx.h which is part of the KSscannercx library",""],[-1913,"CX_RESPONSE_TIMEOUT","from KSscannercx.h which is part of the KSscannercx library",""],[-1914,"CX_INVALID_COMMPORT_NUM","from KSscannercx.h which is part of the KSscannercx library",""],[-1915,"CX_INVALID_FORMAT","from KSscannercx.h which is part of the KSscannercx library",""],[-1920,"CX_MISSING_LOCATION1","from KSscannercx.h which is part of the KSscannercx library",""],[-1921,"CX_MISSING_LOCATION2","from KSscannercx.h which is part of the KSscannercx library",""],[-1922,"CX_MISSING_LOCATION3","from KSscannercx.h which is part of the KSscannercx library",""],[-1923,"CX_MISSING_LOCATION4","from KSscannercx.h which is part of the KSscannercx library",""],[-1924,"CX_MISSING_LOCATION5","from KSscannercx.h which is part of the KSscannercx library",""],[-1925,"CX_MISSING_LOCATION6","from KSscannercx.h which is part of the KSscannercx library",""],[-1930,"CX_MISSING_MULTI_LOCATION","from KSscannercx.h which is part of the KSscannercx library",""],[-1931,"CX_MISSING_ONE_LOCATION","from KSscannercx.h which is part of the KSscannercx library",""],[-1932,"CX_MISSING_TWO_LOCATION","from KSscannercx.h which is part of the KSscannercx library",""],[-1933,"CX_MISSING_THREE_LOCATION","from KSscannercx.h which is part of the KSscannercx library",""],[-1934,"CX_MISSING_FOUR_LOCATION","from KSscannercx.h which is part of the KSscannercx library",""],[-1940,"CX_SORT_ERROR","from KSscannercx.h which is part of the KSscannercx library",""],[-1941,"CX_MAX_COMMPORT_REACHED","from KSscannercx.h which is part of the KSscannercx library",""],[-2001,"DT_NOT_INITIALIZED","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2002,"DT_DRIVER_START_FAILED","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2003,"DT_DEVICE_START_FAILED","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2004,"DT_DEVICE_STOP_FAILED","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2005,"DT_DATA_NOT_READY","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2006,"DT_DEVICE_NOT_PRESENT","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2007,"DT_GRAB_TIMEOUT","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2008,"DT_NO_MEMORY","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2009,"DT_MODE_UNSUPPORT","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2010,"DT_BAD_CAM_NUM","from KSdataray.h which is part of the KSdataray laser profiler library",""],[-2101,"AA_OPEN_PORT","from KSaardvark.h which is part of the KSaardvark library",""],[-2102,"AA_CLOSE_PORT","from KSaardvark.h which is part of the KSaardvark library",""],[-2103,"AA_CONFIG","from KSaardvark.h which is part of the KSaardvark library",""],[-2104,"AA_INCOMPATIBLE_DEVICE","from KSaardvark.h which is part of the KSaardvark library",""],[-2105,"AA_REG_GET_WRITE_ADR","from KSaardvark.h which is part of the KSaardvark library",""],[-2106,"AA_REG_GET_READ_VAL","from KSaardvark.h which is part of the KSaardvark library",""],[-2107,"AA_REG_SET","from KSaardvark.h which is part of the KSaardvark library",""],[-2108,"AA_REG_SET_ARG_INVALID","from KSaardvark.h which is part of the KSaardvark library",""],[-2109,"AA_REG_SET_NOT_INITIALIZED","from KSaardvark.h which is part of the KSaardvark library",""],[-2110,"AA_REG_GET_ARG_INVALID","from KSaardvark.h which is part of the KSaardvark library",""],[-2111,"AA_REG_GET_NOT_INITIALIZED","from KSaardvark.h which is part of the KSaardvark library",""],[-2112,"AA_REG_VERIFY","from KSaardvark.h which is part of the KSaardvark library",""],[-2113,"AA_NOT_ALL_DEVICES_FOUND","from KSaardvark.h which is part of the KSaardvark library",""],[-2114,"AA_INIT_LOAD_LIB","from KSaardvark.h which is part of the KSaardvark library",""],[-2130,"KSVAA_UNABLE_TO_LOAD_LIBRARY","errors for KSvisionaa",""],[-2131,"KSVAA_UNABLE_TO_LOAD_DRIVER","errors for KSvisionaa",""],[-2132,"KSVAA_NO_DEVICES","errors for KSvisionaa",""],[-2133,"KSVAA_TOO_MANY_DEVICES","errors for KSvisionaa",""],[-2134,"KSVAA_PORT_IN_USE","errors for KSvisionaa",""],[-2135,"KSVAA_DEVICE_SERIAL_NUM_NF","errors for KSvisionaa",""],[-2136,"KSVAA_UNABLE_TO_OPEN_DEVICE","errors for KSvisionaa",""],[-2137,"KSVAA_INCOMPATIBLE_DEVICE","errors for KSvisionaa",""],[-2138,"KSVAA_DEVICE_NOT_OPEN","errors for KSvisionaa",""],[-2139,"KSVAA_DEVICE_NOT_INITIALIZED","errors for KSvisionaa",""],[-2140,"KSVAA_WRITE_REGISTER_FAILED","errors for KSvisionaa",""],[-2141,"KSVAA_BAD_DEVICE_NUM","errors for KSvisionaa",""],[-2142,"KSVAA_SET_REG_ARG_INVALID","errors for KSvisionaa",""],[-2143,"KSVAA_SET_REG_ADDR_INVALID","errors for KSvisionaa",""],[-2144,"KSVAA_SET_REG_DATA_INVALID","errors for KSvisionaa",""],[-2145,"KSVAA_READ_REGISTER_FAILED","errors for KSvisionaa",""],[-2201,"GS_OPEN_PORT","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2202,"GS_SET_PORT_BUF_SIZE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2203,"GS_GET_COMM_DEFAULT_CONFIG","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2204,"GS_SET_COMM_CONFIG","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2205,"GS_GET_COMM_STATE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2206,"GS_SET_COMM_STATE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2207,"GS_GET_COMM_TIMEOUTS","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2208,"GS_SET_COMM_TIMEOUTS","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2209,"GS_PURGE_COMM_BUFFERS","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2210,"GS_READ","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2211,"GS_WRITE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2212,"GS_RESPONSE_TOO_LARGE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2213,"GS_RESPONSE_TIMEOUT","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2214,"GS_INVALID_CMD","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2215,"GS_INVALID_VALUE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2216,"GS_UNEXPECTED_RESPONSE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2217,"GS_RESET_NOT_DETECTED","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2218,"GS_I2C_FAILURE","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2219,"GS_I2C_WRITE_REGISTER","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2220,"GS_I2C_VERIFY","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2221,"GS_USER_INPUT_ERROR","from KSgscontrol.h which is part of the KSgscontrol library - not required in",""],[-2301,"BNC_OPEN_PORT","from KSbnc.h which is part of the KSbnc library",""],[-2302,"BNC_SET_PORT_BUF_SIZE","from KSbnc.h which is part of the KSbnc library",""],[-2303,"BNC_GET_COMM_DEFAULT_CONFIG","from KSbnc.h which is part of the KSbnc library",""],[-2304,"BNC_SET_COMM_CONFIG","from KSbnc.h which is part of the KSbnc library",""],[-2305,"BNC_GET_COMM_STATE","from KSbnc.h which is part of the KSbnc library",""],[-2306,"BNC_SET_COMM_STATE","from KSbnc.h which is part of the KSbnc library",""],[-2307,"BNC_GET_COMM_TIMEOUTS","from KSbnc.h which is part of the KSbnc library",""],[-2308,"BNC_SET_COMM_TIMEOUTS","from KSbnc.h which is part of the KSbnc library",""],[-2309,"BNC_PURGE_COMM_BUFFERS","from KSbnc.h which is part of the KSbnc library",""],[-2310,"BNC_READ","from KSbnc.h which is part of the KSbnc library",""],[-2311,"BNC_WRITE","from KSbnc.h which is part of the KSbnc library",""],[-2312,"BNC_RESPONSE_TOO_LARGE","from KSbnc.h which is part of the KSbnc library",""],[-2313,"BNC_RESPONSE_TIMEOUT","from KSbnc.h which is part of the KSbnc library",""],[-2314,"BNC_COMMAND_UNKNOWN_ERROR","from KSbnc.h which is part of the KSbnc library",""],[-2315,"BNC_COMMAND_PREFIX_ERROR","from KSbnc.h which is part of the KSbnc library",""],[-2316,"BNC_COMMAND_MISSING_KEYWORD","from KSbnc.h which is part of the KSbnc library",""],[-2317,"BNC_COMMAND_INVALID_KEYWORD","from KSbnc.h which is part of the KSbnc library",""],[-2318,"BNC_COMMAND_MISSING_PARAM","from KSbnc.h which is part of the KSbnc library",""],[-2319,"BNC_COMMAND_INVALID_PARAM","from KSbnc.h which is part of the KSbnc library",""],[-2320,"BNC_COMMAND_QUERY_FORMAT_ERROR","from KSbnc.h which is part of the KSbnc library",""],[-2321,"BNC_COMMAND_INVALID_QUERY","from KSbnc.h which is part of the KSbnc library",""],[-2322,"BNC_COMMAND_INVALID","from KSbnc.h which is part of the KSbnc library",""],[-2323,"BNC_COMMAND_PARAM_OUT_OF_BOUND","from KSbnc.h which is part of the KSbnc library",""],[-2401,"LCOS_AARDVARK_LIB_LOAD","for KSlcosGE",""],[-2402,"LCOS_AARDVARK_LIB_FNC_PTR","for KSlcosGE",""],[-2403,"LCOS_AARDVARK_NOT_INIT","for KSlcosGE",""],[-2404,"LCOS_TEMP_READING_FAIL","for KSlcosGE",""],[-2405,"LCOS_OVERTEMP","for KSlcosGE",""],[-2501,"TARS_INI_FILE_NF","for TARS MES data file generation",""],[-2502,"TARS_FILE_PATH_PARAM_NF","for TARS MES data file generation",""],[-2503,"TARS_MACHINE_ID_PARAM_NF","for TARS MES data file generation",""],[-2504,"TARS_PROCESS_NAME_PARAM_NF","for TARS MES data file generation",""],[-2505,"TARS_PROJECTION_SECT_PARAM_NF","for TARS MES data file generation",""],[-2506,"TARS_SPECTRE_SECTION_PARAM_NF","for TARS MES data file generation",""],[-2507,"TARS_LCOS_SECTION_PARAM_NF","for TARS MES data file generation",""],[-2508,"TARS_GS_SECTION_PARAM_NF","for TARS MES data file generation",""],[-2509,"TARS_ADHESIVE_SECT_PARAM_NF","for TARS MES data file generation",""],[-2510,"TARS_PROJECTOR_MASK_PARAM_NF","for TARS MES data file generation",""],[-2511,"TARS_SPECTRE_MASK_PARAM_NF","for TARS MES data file generation",""],[-2512,"TARS_LCOS_MASK_PARAM_NF","for TARS MES data file generation",""],[-2513,"TARS_GS_MASK_PARAM_NF","for TARS MES data file generation",""],[-2514,"TARS_UNKNOWN_DATA_TAG_PARAM_NF","for TARS MES data file generation",""],[-2515,"TARS_FAILED_TO_OPEN_DATA_FILE","for TARS MES data file generation",""],[-2516,"TARS_INVALID_SERIAL_NUMBER","for TARS MES data file generation",""],[-2517,"TARS_PARAM_LABEL_MAX_LENGTH","for TARS MES data file generation",""],[-2518,"TARS_FILE_BACKUP_PATH_PARAM_NF","for TARS MES data file generation",""],[-2519,"TARS_RETEST_FILE_PATH_PARAM_NF","for TARS MES data file generation",""],[-2520,"TARS_RUN_TIS_PARAM_NF","for TARS MES data file generation",""],[-2521,"TARS_TIS_SERIAL_NUM_NF","for TARS MES data file generation",""],[-2522,"TARS_TIS_NETWORK_FAILURE","for TARS MES data file generation",""],[-2523,"TARS_TIS_EXECUTE_FAILED","for TARS MES data file generation",""],[-2524,"TARS_TIS_FAILED_TO_GET_EXIT_CODE","for TARS MES data file generation",""],[-2525,"TARS_TIS_UNKNOWN","for TARS MES data file generation",""],[-2526,"TARS_TIS_TISEXE_NF","for TARS MES data file generation",""],[-2527,"TARS_TIS_TIMELIMIT_PARAM_NF","for TARS MES data file generation",""],[-2528,"TARS_TIS_TIMED_OUT","for TARS MES data file generation",""],[-2529,"TARS_TIS_CUSTOMER_NF","for TARS MES data file generation",""],[-2530,"TARS_TIS_DIVISION_NF","for TARS MES data file generation",""],[-2531,"TARS_PARAM_NF","for TARS MES data file generation",""],[-2540,"TRS_LOG_FILE_OPEN","for TRS MES data file generation",""],[-2541,"TRS_LOG_DIR_EXISTS","for TRS MES data file generation",""],[-2542,"TRS_INVALID_RECORD_DATA","for TRS MES data file generation",""],[-2543,"TRS_FILE_PATH_PARAM_NF","for TRS MES data file generation",""],[-2545,"TAC_ASIC_RTN_NAK","for Tacoma ASIC I2C communications",""],[-2546,"TAC_ASIC_RTN_CHECKSUM_ERR","for Tacoma ASIC I2C communications",""],[-2547,"TAC_BLEMISH_DATA_VALIDATION","for Tacoma ASIC I2C communications",""],[-2550,"ALIGN_EXTERNAL_FAILED_CONNECT","for external alignment errors",""],[-2551,"ALIGN_EXTERNAL_DISCONNECT","for external alignment errors",""],[-2552,"ALIGN_EXTERNAL_FAILED","for external alignment errors",""],[-2553,"ALIGN_EXTERNAL_MANUAL_DISCONNECT","for external alignment errors",""],[-2554,"ALIGN_EXTERNAL_UNSAFE_INDEX","for external alignment errors",""],[-2555,"ALIGN_EXTERNAL_ZMQ_MISSING","for external alignment errors",""],[-5000,"EOL_LCOS_CORNERS_NOT_FOUND","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5001,"EOL_LCOS_CORNERS_OUT_OF_RANGE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5002,"EOL_UNIFORMITY_MEM_ALLOC","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5003,"EOL_ANSI_MEM_ALLOC","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5004,"EOL_LCOS_IMAGE_FILE_NOT_DEFINED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5005,"EOL_IMAGE_SIZE_ERROR","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5011,"EOL_ONE_OR_MORE_TESTS_FAILED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5020,"EOL_ROI_DATA_NOT_INITIALIZED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5021,"EOL_GS_CONTROL_LIB_LOAD","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5022,"EOL_GS_CONTROL_LIB_FNC_PTR","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5023,"EOL_GS_CONTROL_NOT_INIT","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5024,"EOL_LED_THERMISTOR_FAIL","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5025,"EOL_LED_THERMISTOR_READING_HIGH","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5026,"EOL_INADEQUATE_BIN_LEVEL","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5027,"EOL_NOT_ALL_TESTS_COMPLETED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5028,"EOL_IMAGE_GREYSCALE_TOO_HIGH","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5029,"EOL_INVALID_MTF_EXCEPTION_VALUE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5031,"EOL_IMAGE_GREYSCALE_TOO_LOW","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5032,"EOL_GREYSCALE_CHECK_ANSI","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5033,"EOL_GREYSCALE_CHECK_ANSI_HDR","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5034,"EOL_GREYSCALE_CHECK_ANSI_UNIFORMITY","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5035,"EOL_GREYSCALE_CHECK_MTF_HORZ_VERT","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5036,"EOL_ASPECT_RATIO","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5062,"EOL_MTF_SATURATED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5063,"EOL_MTF_CLIPPED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5064,"EOL_UNIFORMITY_SATURATED","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5065,"EOL_MTF_ROI_OUTSIDE_FOV","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5070,"EOL_VIGNETTING_EXIST","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5071,"EOL_VIGNETTING_IMAGE_FORMAT","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5072,"EOL_VIGNETTING_IMAGE_VALUE_ZERO","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5073,"EOL_VIGNETTING_IMAGE_SIZE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5074,"EOL_VIGNETTING_DATA_SIZE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5075,"EOL_BLEMISH_CONV_EXCEPTION","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5081,"EOL_INVALID_TEST_TYPE_VALUE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5082,"EOL_INVALID_TEST_STATE_VALUE","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5083,"EOL_UNABLE_TO_WARMUP","for GEEOLTest - gaps are to allow the error codes to align with",""],[-5084,"EOL_UNABLE_TO_READ_CURRENT","for GEEOLTest - gaps are to allow the error codes to align with",""]]};
+
+/* =====================================================================
+   ESCENA
+   ===================================================================== */
+const stageEl = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stageEl.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+Object.assign(labelRenderer.domElement.style,{position:'absolute',top:'0',left:'0',pointerEvents:'none'});
+stageEl.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+const FR = 62;
+let aspect = innerWidth/innerHeight;
+const camera = new THREE.OrthographicCamera(-FR*aspect/2, FR*aspect/2, FR/2, -FR/2, -500, 1000);
+const ISO = new THREE.Vector3(62, 78, 92);
+camera.position.copy(ISO);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI/2.15;
+controls.minZoom = .5; controls.maxZoom = 8;
+controls.target.set(0,0,0);
+const Z0 = ()=> innerWidth < 820 ? .2 : .62;
+camera.zoom = Z0();
+function viewOffset(){ if(innerWidth>=820) camera.setViewOffset(innerWidth,innerHeight,-165,-10,innerWidth,innerHeight); else camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*.2,innerWidth,innerHeight); camera.updateProjectionMatrix(); }
+viewOffset();
+camera.updateProjectionMatrix();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d6f0, 1.15));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(-40, 90, 50);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096,4096);
+Object.assign(sun.shadow.camera,{left:-90,right:90,top:60,bottom:-60,near:1,far:300});
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+const M = (c,o={})=>new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:.05, ...o});
+const WHITE = M(0xffffff), WHITE2 = M(0xf3f6fb), GLASS = M(0x9cc3ff,{transparent:true,opacity:.22,roughness:.1});
+const DARK = M(0x1d2b45,{roughness:.4});
+
+// base / piso tipo diorama
+{
+  const [x1,z1]=PX(120,178), [x2,z2]=PX(1578,938);
+  const w=x2-x1, d=z2-z1;
+  const slab = new THREE.Mesh(new RoundedBoxGeometry(w+4,2,d+4,3,.6), M(0xffffff));
+  slab.position.set((x1+x2)/2,-1.02,(z1+z2)/2); slab.receiveShadow=true; scene.add(slab);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(w+4.2,.25,d+4.2), M(0x2f6bff,{roughness:.4}));
+  edge.position.set((x1+x2)/2,-1.9,(z1+z2)/2); scene.add(edge);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w,d), M(0xf6f8fc,{roughness:.9}));
+  floor.rotation.x=-Math.PI/2; floor.position.set((x1+x2)/2,0.005,(z1+z2)/2); floor.receiveShadow=true; scene.add(floor);
+  const grid = new THREE.GridHelper(Math.max(w,d), Math.round(Math.max(w,d)/2), 0xdde5f2, 0xe9eef7);
+  grid.position.set((x1+x2)/2,0.012,(z1+z2)/2); grid.material.transparent=true; grid.material.opacity=.6; scene.add(grid);
+}
+// zonas por línea
+for(const z of ZONES){
+  const [x1,z1]=PX(z.r[0],z.r[1]), [x2,z2]=PX(z.r[2],z.r[3]);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(x2-x1,z2-z1), new THREE.MeshBasicMaterial({color:LINE_COL[z.line],transparent:true,opacity:.07}));
+  m.rotation.x=-Math.PI/2; m.position.set((x1+x2)/2,.02,(z1+z2)/2); scene.add(m);
+}
+// paredes
+for(const poly of WALLS){
+  for(let i=0;i<poly.length-1;i++){
+    const [ax,az]=PX(...poly[i]), [bx,bz]=PX(...poly[i+1]);
+    const len=Math.hypot(bx-ax,bz-az); if(len<.01) continue;
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(len+.4,1.1,.4), WHITE2);
+    wall.position.set((ax+bx)/2,.55,(az+bz)/2); wall.rotation.y=-Math.atan2(bz-az,bx-ax);
+    wall.castShadow=true; wall.receiveShadow=true; scene.add(wall);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(len+.4,.08,.42), M(0x2f6bff));
+    cap.position.set(wall.position.x,1.12,wall.position.z); cap.rotation.y=wall.rotation.y; scene.add(cap);
+  }
+}
+
+function label(text, cls='label3d'){
+  const d=document.createElement('div'); d.className=cls; d.textContent=text;
+  return new CSS2DObject(d);
+}
+
+const ST = {};          // id -> station runtime
+const pickables = [];
+function rectInfo(r){ const [x1,z1]=PX(r[0],r[1]), [x2,z2]=PX(r[2],r[3]); return {cx:(x1+x2)/2, cz:(z1+z2)/2, w:Math.abs(x2-x1), d:Math.abs(z2-z1)}; }
+
+function buildStation(s){
+  const {cx,cz,w,d}=rectInfo(s.r);
+  const g=new THREE.Group(); g.position.set(cx,0,cz);
+  const col=LINE_COL[s.line]; const accentMat=M(col,{emissive:col,emissiveIntensity:0});
+  const W=Math.max(w-.5,1), D=Math.max(d-.5,1);
+  let top=s.h;
+  const body=(h,mat=WHITE,ww=W,dd=D,y=0)=>{ const b=new THREE.Mesh(new RoundedBoxGeometry(ww,h,dd,2,Math.min(.25,h/3)),mat); b.position.y=y+h/2; b.castShadow=b.receiveShadow=true; g.add(b); return b; };
+  const stripe=(y,ww=W,dd=D)=>{ const a=new THREE.Mesh(new THREE.BoxGeometry(ww+.06,.2,dd+.06),accentMat); a.position.y=y-.32; g.add(a); return a; };
+  let extra={};
+  if(s.approx){ accentMat.transparent=true; accentMat.opacity=.55; }
+  switch(s.type){
+    case 'kasalis':{
+      body(1.2); stripe(1.25);
+      const enc=new THREE.Mesh(new THREE.BoxGeometry(W,2.6,D),GLASS); enc.position.y=1.2+1.3; g.add(enc);
+      const frame=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,2.6,D)),new THREE.LineBasicMaterial({color:0x2f6bff}));
+      frame.position.y=2.5; g.add(frame);
+      const table=new THREE.Group(); table.position.y=1.42; g.add(table);
+      const R=Math.min(W,D)*.32;
+      const arm1=new THREE.Mesh(new THREE.BoxGeometry(R*2.2,.16,.7),M(0xdfe6f3)); const arm2=arm1.clone(); arm2.rotation.y=Math.PI/2;
+      table.add(arm1,arm2);
+      const hub=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,.3,24),M(0x2f6bff)); table.add(hub);
+      const fixtures=[];
+      for(let i=0;i<4;i++){ const f=new THREE.Mesh(new THREE.BoxGeometry(.9,.25,.9),M(i===0?0x2f6bff:0x8fa3c7)); const a=-i*Math.PI/2; f.position.set(Math.cos(a)*R,.15,Math.sin(a)*R); table.add(f); fixtures.push(f); }
+      // módulos fijos: 0 Load (frente +z), 1 Dispense, 2 Align, 3 Spare
+      const modPos=i=>{ const a=i*Math.PI/2; return new THREE.Vector3(Math.cos(a)*R,0,-Math.sin(a)*R); };
+      const disp=new THREE.Mesh(new THREE.CylinderGeometry(.18,.05,1.1,12),M(0x4f7cff)); disp.position.copy(modPos(1)).setY(2.6); g.add(disp);
+      const tgt=new THREE.Mesh(new THREE.BoxGeometry(1.3,.25,1.3),M(0x24324d)); tgt.position.copy(modPos(2)).setY(3.2); g.add(tgt);
+      const tower=new THREE.Mesh(new THREE.BoxGeometry(.3,2.4,.3),M(0x9fb0cf)); tower.position.copy(modPos(2)).add(new THREE.Vector3(0,2.4,0)); tower.position.x+=.9; g.add(tower);
+      const uv=new THREE.Mesh(new THREE.ConeGeometry(.55,1.5,20,1,true),new THREE.MeshBasicMaterial({color:0x8b5cf6,transparent:true,opacity:0,side:THREE.DoubleSide}));
+      uv.position.copy(modPos(2)).setY(2.3); g.add(uv);
+      const uvLight=new THREE.PointLight(0x8b5cf6,0,8); uvLight.position.copy(modPos(2)).setY(2.6); g.add(uvLight);
+      const scr=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.1,.1),DARK); scr.position.set(W/2-1,2.0,D/2+.2); g.add(scr);
+      top=1.6; extra={table,fixtures,R,uv,uvLight,tgt,modPos};
+      break;}
+    case 'oven':{
+      body(s.h); stripe(s.h+.02);
+      const door=new THREE.Mesh(new THREE.BoxGeometry(W*.7,s.h*.6,.08),M(0x2a3550,{emissive:0xff7a1a,emissiveIntensity:0}));
+      door.position.set(0,s.h*.5,D/2+.02); g.add(door);
+      const ch=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,1.2,14),WHITE2); ch.position.set(W/4,s.h+.6,-D/4); ch.castShadow=true; g.add(ch);
+      extra={door}; break;}
+    case 'fridge':{
+      body(s.h); stripe(s.h+.02);
+      const hd=new THREE.Mesh(new THREE.BoxGeometry(.12,s.h*.5,.12),M(0x9fb0cf)); hd.position.set(W/2-.5,s.h*.55,D/2+.08); g.add(hd);
+      break;}
+    case 'plasma':{
+      body(s.h); stripe(s.h+.02);
+      for(const dx of [-1,1]){ const t=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,2.6,20),M(0xe6ecf7)); t.position.set(W/2+.6, 1.3, dx*1.3); t.castShadow=true; g.add(t);
+        const cap=new THREE.Mesh(new THREE.SphereGeometry(.55,20,10,0,Math.PI*2,0,Math.PI/2),M(0x2f6bff)); cap.position.set(t.position.x,2.6,t.position.z); g.add(cap); }
+      const win=new THREE.Mesh(new THREE.BoxGeometry(W*.6,.9,.08),M(0x2a3550,{emissive:0xa855f7,emissiveIntensity:0})); win.position.set(0,s.h*.55,D/2+.02); g.add(win);
+      extra={door:win}; break;}
+    case 'eol':{
+      body(s.h); stripe(s.h+.02);
+      const dome=new THREE.Mesh(new THREE.SphereGeometry(Math.min(W,D)*.22,24,12,0,Math.PI*2,0,Math.PI/2),M(0xdfe7f7)); dome.position.y=s.h; dome.castShadow=true; g.add(dome);
+      const scr=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.2,.1),DARK); scr.position.set(0,s.h+.9,-D/2+.3); g.add(scr);
+      break;}
+    case 'tester':{
+      body(1.1); stripe(1.15);
+      const box=new THREE.Mesh(new RoundedBoxGeometry(W*.5,s.h-1.1,D*.55,2,.15),WHITE2); box.position.set(-W*.15,1.1+(s.h-1.1)/2,-D*.1); box.castShadow=true; g.add(box);
+      const scr=new THREE.Mesh(new THREE.BoxGeometry(1.4,1,.1),DARK); scr.position.set(W*.25,1.8,-D/2+.4); g.add(scr);
+      top=1.15; break;}
+    case 'dispenser':{
+      body(1.1); stripe(1.15);
+      const gantry=new THREE.Mesh(new THREE.BoxGeometry(W*.9,.3,.4),M(0x9fb0cf)); gantry.position.set(0,2.6,0); g.add(gantry);
+      for(const dx of [-1,1]){ const p=new THREE.Mesh(new THREE.BoxGeometry(.3,1.5,.3),M(0x9fb0cf)); p.position.set(dx*W*.43,1.85,0); g.add(p); }
+      const needle=new THREE.Mesh(new THREE.CylinderGeometry(.22,.05,.9,12),M(0x4f7cff)); needle.position.set(0,2.05,0); g.add(needle);
+      top=1.15; extra={needle}; break;}
+    case 'cabinet':{ body(s.h,WHITE2); stripe(s.h+.02); break;}
+    case 'bin':{ const b=body(s.h, M(s.line==='fail'?0xfff1f1:0xf5f8ff)); stripe(s.h+.02); break;}
+    case 'desk':{
+      body(s.h); stripe(s.h+.02);
+      const scr=new THREE.Mesh(new THREE.BoxGeometry(1.4,1,.08),DARK); scr.position.set(0,s.h+.55,-D/2+.4); g.add(scr);
+      break;}
+    default:{ // banco de trabajo
+      body(s.h); stripe(s.h+.02);
+      const scr=new THREE.Mesh(new THREE.BoxGeometry(Math.min(1.6,W*.4),1,.08),DARK); scr.position.set(W*.25,s.h+.6,-D/2+.35); scr.castShadow=true; g.add(scr);
+      const fix=new THREE.Mesh(new THREE.BoxGeometry(Math.min(1.6,W*.35),.35,Math.min(1.6,D*.35)),M(0xdfe6f3)); fix.position.set(-W*.15,s.h+.17,.1); fix.castShadow=true; g.add(fix);
+    }
+  }
+  // anillo de actividad
+  const ring=new THREE.Mesh(new THREE.RingGeometry(Math.max(W,D)*.55,Math.max(W,D)*.62,48),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.03; g.add(ring);
+  // etiqueta
+  const lb=label(s.name,'label3d'+(s.line==='fail'?' fail':'')+(s.approx?' approx':''));
+  lb.position.set(0,(s.type==='kasalis'?4.2:s.h+(s.type==='eol'?2:1.6)),0); g.add(lb); s._lb=lb;
+  g.traverse(o=>{ if(o.isMesh){ o.userData.station=s.id; pickables.push(o); }});
+  scene.add(g);
+  ST[s.id]={...s, group:g, accentMat, ring, top, extra, cx, cz, W, D, active:0, badge:null};
+}
+STATIONS.forEach(buildStation);
+// racks WIP
+const wipMat=M(0xe3e9f4);
+for(const r of WIPS){
+  const {cx,cz,w,d}=rectInfo(r);
+  const b=new THREE.Mesh(new RoundedBoxGeometry(Math.max(w-.4,.6),.6,Math.max(d-.4,.6),2,.12),wipMat);
+  b.position.set(cx,.3,cz); b.castShadow=b.receiveShadow=true; scene.add(b);
+  for(let i=0;i<2;i++){ const t=new THREE.Mesh(new THREE.BoxGeometry(.6,.25,.6),M(0xc5d3ee)); t.position.set(cx+(i?.5:-.5)*Math.min(1,w/3),.72,cz); scene.add(t); }
+}
+// tanque Ar/O2, conveyor, puertas IN/OUT
+{
+  const [tx,tz]=PX(1445,382); const tank=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,3,24),M(0xf2f5fb)); tank.position.set(tx,1.5,tz); tank.castShadow=true; scene.add(tank);
+  const tl=label('Tanque Ar & O₂'); tl.position.set(tx,3.8,tz); scene.add(tl);
+  const {cx,cz,w}=rectInfo([815,588,1400,594]); const conv=new THREE.Mesh(new THREE.BoxGeometry(w,.25,.5),M(0xb9c6df)); conv.position.set(cx,1.2,cz); conv.castShadow=true; scene.add(conv);
+  for(const [txt,x,y] of [['IN',437,845],['OUT',437,720],['FNI room / acceso',300,810]]){ const [lx,lz]=PX(x,y); const l=label(txt); l.position.set(lx,1.2,lz); scene.add(l); }
+}
+// gente (operadores)
+const people=[];
+function person(x,y,c=0x2f6bff){
+  const [px,pz]=PX(x,y); const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.9,4,10),M(c)); body.position.y=.95; body.castShadow=true;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),M(0xf2d7c2)); head.position.y=1.85; head.castShadow=true;
+  g.add(body,head); g.position.set(px,0,pz); scene.add(g); people.push({g,ph:Math.random()*6});
+}
+[[600,452],[820,385],[930,385],[985,385],[1150,445],[1220,445],[1390,480],[1130,520],[1220,520],[1000,520],[905,615],[1250,700],[1350,700],[1090,780],[1200,780],[1360,775],[795,880],[540,345],[640,345],[440,365],[420,565],[300,620],[480,770]].forEach(([x,y],i)=>person(x,y,i%3?0x2f6bff:0x1f4fd1));
+/* =====================================================================
+   PIEZA (ensamble que va creciendo)
+   ===================================================================== */
+function makeUnit(kind){
+  const g=new THREE.Group(); const parts={};
+  const add=(k,mesh,vis=false)=>{ mesh.castShadow=true; mesh.visible=vis; g.add(mesh); (parts[k]=parts[k]||[]).push(mesh); return mesh; };
+  const tray=new THREE.Mesh(new RoundedBoxGeometry(1.6,.14,1.6,2,.05),M(kind==='main'?0x2f6bff:(kind==='housing'?0x7aa2ff:0x5ec3d0)));
+  tray.position.y=.07; tray.castShadow=true; g.add(tray); parts.tray=[tray];
+  add('pcb', new THREE.Mesh(new THREE.BoxGeometry(1.05,.08,1.05),M(0x2e9e5b))).position.y=.18;
+  add('adapter', new THREE.Mesh(new THREE.CylinderGeometry(.4,.44,.36,24),M(0xcfd6e0,{metalness:.3}))).position.y=.4;
+  for(const [dx,dz] of [[-.4,-.4],[.4,.4]]) add('screws1', new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.12,8),M(0x8a96a8,{metalness:.6}))).position.set(dx,.28,dz);
+  add('glue', new THREE.Mesh(new THREE.TorusGeometry(.33,.06,8,28),M(0x4f7cff,{emissive:0x2f6bff,emissiveIntensity:.4}))).rotation.x=Math.PI/2;
+  parts.glue[0].position.y=.6;
+  const lens=add('lens', new THREE.Mesh(new THREE.CylinderGeometry(.27,.3,.5,24),M(0x22324a,{roughness:.3}))); lens.position.y=.85;
+  add('lens', new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.03,24),M(0x9cc3ff,{roughness:.05,metalness:.4}))).position.y=1.11;
+  const front=add('front', new THREE.Mesh(new RoundedBoxGeometry(1.35,.75,1.35,2,.12),M(0xe8eefc,{transparent:true,opacity:.6}))); front.position.y=.75;
+  add('window', new THREE.Mesh(new THREE.BoxGeometry(.9,.05,.9),M(0x9cc3ff,{transparent:true,opacity:.75,roughness:.05}))).position.y=1.15;
+  add('back', new THREE.Mesh(new RoundedBoxGeometry(1.4,.22,1.4,2,.06),M(0xb8c7e6))).position.y=.25;
+  add('serial', new THREE.Mesh(new THREE.BoxGeometry(.6,.06,.45),M(0x2e9e5b))).position.set(.35,.33,-.4);
+  for(const [dx,dz] of [[-.55,-.55],[.55,-.55],[-.55,.55],[.55,.55]]) add('screws', new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.1,8),M(0x6b778a,{metalness:.7}))).position.set(dx,1.16,dz);
+  const b1=add('bracket', new THREE.Mesh(new THREE.BoxGeometry(.12,1.1,1.3),M(0x8a96a8,{metalness:.5}))); b1.position.set(-.82,.6,0);
+  add('bracket', new THREE.Mesh(new THREE.BoxGeometry(.6,.12,1.3),M(0x8a96a8,{metalness:.5}))).position.set(-1.1,.08,0);
+  for(const [dx,dz] of [[-.45,-.45],[.45,-.45],[-.45,.45],[.45,.45]]) add('leds', new THREE.Mesh(new THREE.SphereGeometry(.08,10,8),M(0xfff4b0,{emissive:0xffd84d,emissiveIntensity:1}))).position.set(dx,1.18,dz);
+  add('ampseal', new THREE.Mesh(new THREE.BoxGeometry(.35,.3,.5),M(0x222831))).position.set(.85,.35,.2);
+  add('absorber', new THREE.Mesh(new THREE.BoxGeometry(.3,.25,.3),M(0xffffff))).position.set(-.4,1.25,.35);
+  add('desiccant', new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.6,16),M(0xe9e2c7))).position.set(.85,.5,-.35);
+  parts.desiccant[0].rotation.z=Math.PI/2;
+  add('gasket', new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),M(0x1d2433))).rotation.x=Math.PI/2; parts.gasket[0].position.y=1.18;
+  const dg=new THREE.Group(); const bar=new THREE.Mesh(new THREE.BoxGeometry(3.3,.15,.4),M(0x8a96a8,{metalness:.5})); bar.position.set(.9,1.3,0);
+  const cam2=new THREE.Mesh(new RoundedBoxGeometry(1.35,1,1.35,2,.12),M(0xe8eefc)); cam2.position.set(1.9,.6,0); dg.add(bar,cam2); dg.traverse(o=>o.castShadow=true);
+  add('dogbone', dg);
+  add('box', new THREE.Mesh(new RoundedBoxGeometry(1.9,1.5,1.9,2,.05),M(0xc8a46a,{roughness:.9}))).position.y=.85;
+  g.userData.parts=parts;
+  return g;
+}
+function showParts(unit, keys){ const p=unit.userData.parts; for(const k of keys||[]) if(p[k]) p[k].forEach(m=>m.visible=true);
+  if(keys&&keys.includes('cured') && p.glue) p.glue.forEach(m=>{m.material=m.material.clone(); m.material.color.set(0x1e3a8a); m.material.emissiveIntensity=0;});
+  if(keys&&keys.includes('box')) Object.keys(p).forEach(k=>{ if(k!=='box'&&k!=='tray') p[k].forEach(m=>m.visible=false); });
+}
+function visibleParts(unit){ const p=unit.userData.parts; return Object.keys(p).filter(k=>k!=='tray'&&p[k][0].visible); }
+function tintTray(unit,c){ const t=unit.userData.parts.tray[0]; t.material=t.material.clone(); t.material.color.set(c); t.material.emissive=new THREE.Color(c); t.material.emissiveIntensity=.4; }
+
+/* =====================================================================
+   RUTA VISUAL (arcos + partículas + números de paso)
+   ===================================================================== */
+const routeGroup=new THREE.Group(); scene.add(routeGroup);
+let flowDots=[];
+function stationTop(id){ const s=ST[id]; return new THREE.Vector3(s.cx, s.top+.05, s.cz); }
+function arcCurve(a,b){
+  const d=a.distanceTo(b); const mid=a.clone().add(b).multiplyScalar(.5);
+  mid.y=Math.max(a.y,b.y)+2.5+d*.12;
+  return new THREE.QuadraticBezierCurve3(a.clone(),mid,b.clone());
+}
+function clearBadges(){ for(const id in ST){ if(ST[id].badge){ ST[id].group.remove(ST[id].badge); ST[id].badge.element.remove(); ST[id].badge=null; } } }
+function drawRoute(flow, prodKey){
+  routeGroup.clear(); flowDots=[]; clearBadges();
+  const col=LINE_COL[prodKey];
+  const nums={};
+  let n=0;
+  const seq=(branch, list, endAt)=>{
+    const ids=list.map(s=>s.st);
+    if(endAt) ids.push(endAt);
+    for(let i=0;i<ids.length-1;i++){
+      if(ids[i]===ids[i+1]) continue;
+      const c=arcCurve(stationTop(ids[i]),stationTop(ids[i+1]));
+      const tube=new THREE.Mesh(new THREE.TubeGeometry(c,40,.09,6,false),new THREE.MeshBasicMaterial({color:branch==='main'?col:0x7aa2ff,transparent:true,opacity:.5}));
+      routeGroup.add(tube);
+      for(let k=0;k<3;k++){ const dot=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),new THREE.MeshBasicMaterial({color:branch==='main'?col:0x7aa2ff})); routeGroup.add(dot); flowDots.push({dot,c,off:k/3}); }
+      // flecha al final
+      const cone=new THREE.Mesh(new THREE.ConeGeometry(.3,.7,12),new THREE.MeshBasicMaterial({color:branch==='main'?col:0x7aa2ff}));
+      const p=c.getPoint(.93), t=c.getTangent(.93); cone.position.copy(p); cone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),t.normalize()); routeGroup.add(cone);
+    }
+  };
+  const order=[];
+  flow.main.forEach(s=>order.push(['main',s]));
+  for(const b of Object.keys(flow)) if(b!=='main') flow[b].forEach(s=>order.push([b,s]));
+  for(const [b,s] of order){ n++; s._n=n; (nums[s.st]=nums[s.st]||[]).push(n); }
+  seq('main',flow.main);
+  for(const b of Object.keys(flow)) if(b!=='main'){
+    const mergeStep=flow.main.find(s=>s.merge&&s.merge.includes(b));
+    seq(b,flow[b],mergeStep&&mergeStep.st);
+  }
+  for(const id in ST){ const el=ST[id]._lb.element; el.classList.toggle('dim', !nums[id] && id!==FLOWS[prodKey].fail); }
+  for(const id in nums){
+    const s=ST[id]; const el=document.createElement('div'); el.className='badge3d'; el.textContent=nums[id].join(' · ');
+    el.style.background=getComputedStyle(document.documentElement).getPropertyValue('--'+prodKey);
+    const o=new CSS2DObject(el); o.position.set(0,(s.type==='kasalis'?5.2:s.h+(s.type==='eol'?3:2.6)),0); s.group.add(o); s.badge=o;
+  }
+}
+
+/* =====================================================================
+   SIMULACIÓN
+   ===================================================================== */
+const sim={prod:'scorpion', variant:null, flow:null, playing:false, speed:1, t:0, jobs:[], nextSpawn:0, ok:0, failed:0, fail:'', jobSeq:0, focusJob:null};
+const TRAVEL_SPEED=14;
+
+class Token{
+  constructor(job, branch, steps){
+    this.job=job; this.branch=branch; this.steps=steps; this.idx=-1;
+    this.unit=makeUnit(branch); scene.add(this.unit);
+    this.phase='idle'; this.t=0; this.dur=0; this.curve=null; this.at=null; this.slot=0;
+    this.done=false; this.parked=false;
+  }
+  pos(){ return this.unit.position; }
+  place(id){ const p=stationTop(id); const s=ST[id];
+    const off=(this.branch==='main'?0:(this.branch==='housing'?1:-1))*Math.min(1.2,s.W*.2);
+    this.unit.position.set(p.x+off,p.y,p.z+ (this.slot%3-1)*.0); this.at=id; }
+  begin(){ this.idx=0; const s=this.steps[0]; this.place(s.st); this.startProcess(); }
+  target(){ return this.idx<this.steps.length ? this.steps[this.idx].st : this.endAt; }
+  travelTo(id){
+    this.dest=id;
+    if(this.at===id){ this.arrive(); return; }
+    const a=this.unit.position.clone(); const b=stationTop(id);
+    this.curve=arcCurve(a,b); this.phase='travel'; this.t=0; this.dur=Math.max(.9,a.distanceTo(b)/TRAVEL_SPEED); this.dest=id;
+  }
+  arrive(){
+    this.place(this.dest||this.at);
+    if(this.idx>=this.steps.length){ // rama terminada: estacionada en estación de convergencia
+      this.phase='parked'; this.parked=true; return; }
+    const s=this.steps[this.idx];
+    if(s.merge){ this.phase='wait'; return; }
+    this.startProcess();
+  }
+  startProcess(){ const s=this.steps[this.idx]; this.phase='process'; this.t=0; this.dur=s.dur; ST[s.st].active++; }
+  finishProcess(){
+    const s=this.steps[this.idx]; ST[s.st].active--; this.unit.scale.setScalar(1);
+    showParts(this.unit, s.add);
+    if(sim.fail && s.fails && s.fails.includes(sim.fail) && this.branch==='main'){ this.job.failAt(this,s); return; }
+    this.idx++;
+    if(this.idx>=this.steps.length){
+      if(this.branch==='main'){ this.job.complete(); return; }
+      this.travelTo(this.endAt); return;
+    }
+    this.travelTo(this.steps[this.idx].st);
+  }
+  update(dt){
+    if(this.phase==='travel'){
+      this.t+=dt; const k=Math.min(1,this.t/this.dur); const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      this.unit.position.copy(this.curve.getPoint(e)); this.unit.rotation.y=e*Math.PI*.5;
+      if(k>=1){ this.unit.rotation.y=0; this.arrive(); }
+    } else if(this.phase==='process'){
+      this.t+=dt; const s=this.steps[this.idx];
+      if(s.k){ kasalisAnim(this, s); }
+      if(this.t>=this.dur) this.finishProcess();
+    } else if(this.phase==='wait'){
+      const s=this.steps[this.idx];
+      const ready=s.merge.every(b=>this.job.tokens[b] && this.job.tokens[b].parked);
+      if(ready){
+        for(const b of s.merge){ const tk=this.job.tokens[b]; showParts(this.unit, visibleParts(tk.unit)); tk.dispose(); delete this.job.tokens[b]; }
+        this.startProcess();
+      }
+    } else if(this.phase==='failmove'){
+      this.t+=dt; const k=Math.min(1,this.t/this.dur);
+      this.unit.position.copy(this.curve.getPoint(k));
+      if(k>=1){ this.phase='dead'; this.t=0; }
+    } else if(this.phase==='dead' || this.phase==='finished'){
+      this.t+=dt; if(this.t>(this.phase==='dead'?5:2.5)){ this.unit.scale.multiplyScalar(.9); if(this.unit.scale.x<.05) this.job.remove(); }
+    }
+  }
+  dispose(){ scene.remove(this.unit); this.unit.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+}
+class Job{
+  constructor(flow){
+    this.id=++sim.jobSeq; this.flow=flow; this.tokens={}; this.state='run'; this.log=[];
+    for(const b of Object.keys(flow)){
+      const tk=new Token(this,b,flow[b]);
+      if(b==='housing') showParts(tk.unit,['front']);
+      if(b==='back') showParts(tk.unit,['back']);
+      if(b!=='main'){ const ms=flow.main.find(s=>s.merge&&s.merge.includes(b)); tk.endAt=ms.st; }
+      this.tokens[b]=tk;
+    }
+    Object.values(this.tokens).forEach(t=>t.begin());
+  }
+  update(dt){ Object.values(this.tokens).forEach(t=>t.update(dt)); }
+  failAt(tk,s){
+    this.state='failed'; sim.failed++;
+    tintTray(tk.unit,0xe5484d);
+    const binId=FLOWS[sim.prod].fail;
+    const a=tk.unit.position.clone(); const b=stationTop(binId);
+    tk.curve=arcCurve(a,b); tk.phase='failmove'; tk.t=0; tk.dur=Math.max(1,a.distanceTo(b)/TRAVEL_SPEED);
+    for(const k of Object.keys(this.tokens)) if(k!=='main'){ const o=this.tokens[k]; if(o.phase==='process') ST[o.steps[o.idx].st].active--; o.phase='dead'; o.t=3; }
+    const code=sim.fail;
+    toast(`✖ Pieza #${this.id} FALLA en ${s.name} — ${STEP_FAIL_LABEL[code]||('Código Kasalis '+code)} → ${ST[binId].name}`);
+    if(this===sim.focusJob) markStep(s,'failed');
+    if(!sim.continuous || this===sim.focusJob) showStationInfo(s.st, code);
+  }
+  complete(){ this.state='done'; sim.ok++; const tk=this.tokens.main; tintTray(tk.unit,0x22a06b); tk.phase='finished'; tk.t=0; }
+  remove(){ Object.values(this.tokens).forEach(t=>t.dispose()); this.tokens={}; this.state='gone'; }
+}
+
+/* animación interna de Kasalis */
+const kasPanel=document.getElementById('kas');
+function kasalisAnim(tk, s){
+  const K=ST.kas.extra; const seq=s.k==='build'?KBUILD:KRETEST;
+  const prog=tk.t/tk.dur; let acc=0, i=0;
+  for(;i<seq.length;i++){ acc+=seq[i][3]; if(prog<=acc) break; }
+  i=Math.min(i,seq.length-1);
+  const [name,mod,detail]=seq[i];
+  // gira la mesa: el fixture 0 va al módulo indicado
+  const targetAng=mod*Math.PI/2;
+  K.table.rotation.y += (targetAng - K.table.rotation.y)*Math.min(1,.12*sim.speed);
+  // pieza sobre el fixture 0
+  const f=K.fixtures[0]; const wp=new THREE.Vector3(); f.getWorldPosition(wp);
+  const off=(tk.branch==='main'?0:0);
+  tk.unit.position.set(wp.x, wp.y+.15, wp.z+off); tk.unit.scale.setScalar(.75);
+  const uvOn = name.includes('UV');
+  K.uv.material.opacity = uvOn ? .35+.15*Math.sin(performance.now()/90) : 0;
+  K.uvLight.intensity = uvOn ? 30 : 0;
+  K.tgt.position.y = 3.2 + (mod===2 && !uvOn ? Math.sin(performance.now()/400)*.25 : .4);
+  if(tk.job===sim.focusJob){
+    kasPanel.classList.add('show');
+    document.getElementById('kasTitle').textContent=`Kasalis Pixid 500-S · ${s.k==='build'?'BUILD':'RETEST'} · pieza #${tk.job.id}`;
+    document.getElementById('kasSub').textContent=`${i+1}/${seq.length} · ${name}`;
+    document.getElementById('kasDetail').textContent=detail;
+    document.getElementById('kasBar').style.width=(prog*100).toFixed(0)+'%';
+  }
+  if(prog>=.995){ tk.unit.scale.setScalar(1); }
+}
+
+/* =====================================================================
+   UI
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+const stepsEl=$('steps');
+function renderSteps(){
+  stepsEl.innerHTML='';
+  for(const b of Object.keys(sim.flow)){
+    const h=document.createElement('div'); h.className='branch'; h.textContent=BRANCH_NAMES[b]; stepsEl.appendChild(h);
+    sim.flow[b].forEach(s=>{
+      const d=document.createElement('div'); d.className='step'; d.dataset.n=s._n;
+      d.innerHTML=`<div class="n">${s._n}</div><div><div class="t">${s.name}</div><div class="d">${ST[s.st].name.replace(/ · Nodo \d/,'')} — ${s.desc}${s.merge?` <b>⇢ espera ${s.merge.map(m=>BRANCH_NAMES[m].split('· ')[1]).join(' + ')}</b>`:''}</div></div>`;
+      d.onclick=()=>{ focusStation(s.st); showStationInfo(s.st); };
+      stepsEl.appendChild(d); s._el=d;
+    });
+  }
+}
+function markStep(s,cls){ if(!s||!s._el) return; s._el.classList.remove('active'); s._el.classList.add(cls); }
+function refreshStepMarks(){
+  const job=sim.focusJob; if(!job) return;
+  const all=Object.keys(sim.flow).flatMap(b=>sim.flow[b]);
+  for(const s of all){ if(!s._el) continue; if(!s._el.classList.contains('failed')) s._el.classList.remove('active'); }
+  let now='—';
+  for(const b of Object.keys(sim.flow)){
+    const tk=job.tokens[b]; const list=sim.flow[b];
+    list.forEach((s,i)=>{ if(!s._el||s._el.classList.contains('failed')) return;
+      const doneIdx = tk ? tk.idx : list.length; // rama absorbida = completa
+      s._el.classList.toggle('done', i<doneIdx || (tk&&tk.phase==='finished'));
+      if(tk && i===tk.idx && (tk.phase==='process'||tk.phase==='wait'||tk.phase==='travel')) s._el.classList.add('active');
+    });
+    if(b==='main'&&tk&&tk.idx<list.length&&tk.idx>=0){ const s=list[tk.idx]; now=(tk.phase==='travel'?'→ ':'')+s.name+(tk.phase==='wait'?' (esperando ruta paralela)':''); }
+  }
+  if(job.state==='done') now='✔ Terminado — PASS'; if(job.state==='failed') now='✖ FALLA';
+  $('hNow').textContent=now;
+}
+
+function setProduct(p){
+  sim.prod=p;
+  document.querySelectorAll('#prodSeg button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  const F=FLOWS[p]; const vs=$('variant'); vs.innerHTML=F.variants.map(([k,t])=>`<option value="${k}">${t}</option>`).join('');
+  sim.variant=F.variants[0][0];
+  $('hProd').textContent=F.name;
+  rebuild();
+}
+function rebuild(){
+  resetSim();
+  sim.flow=FLOWS[sim.prod].build(sim.variant);
+  drawRoute(sim.flow, sim.prod);
+  renderSteps();
+  // fallas aplicables
+  const avail=new Set(Object.values(sim.flow).flat().flatMap(s=>s.fails||[]));
+  $('failSel').innerHTML=FAILS.filter(([k])=>!k||avail.has(k)).map(([k,t])=>`<option value="${k}">${t}</option>`).join('');
+  sim.fail='';
+}
+function resetSim(){
+  for(const j of sim.jobs) j.remove(); sim.jobs=[]; sim.t=0; sim.nextSpawn=0; sim.ok=0; sim.failed=0; sim.focusJob=null;
+  for(const id in ST) ST[id].active=0;
+  kasPanel.classList.remove('show');
+  if(sim.flow) Object.values(sim.flow).flat().forEach(s=>s._el&&s._el.classList.remove('active','done','failed'));
+  $('hNow').textContent='—';
+}
+function spawn(){ const j=new Job(sim.flow); sim.jobs.push(j); if(!sim.focusJob||sim.focusJob.state!=='run') { sim.focusJob=j; Object.values(sim.flow).flat().forEach(s=>s._el&&s._el.classList.remove('active','done','failed')); } }
+
+$('prodSeg').onclick=e=>{ const b=e.target.closest('button'); if(b) setProduct(b.dataset.p); };
+$('variant').onchange=e=>{ sim.variant=e.target.value; rebuild(); };
+$('play').onclick=()=>{
+  sim.playing=!sim.playing;
+  if(sim.playing && !sim.jobs.some(j=>j.state==='run')) spawn();
+  $('play').textContent=sim.playing?'❚❚ Pausa':'▶ Correr';
+};
+$('reset').onclick=()=>{ sim.playing=false; $('play').textContent='▶ Correr'; resetSim(); };
+$('speed').onchange=e=>sim.speed=+e.target.value;
+$('continuous').onchange=e=>sim.continuous=e.target.checked;
+$('follow').onchange=e=>sim.follow=e.target.checked;
+$('failSel').onchange=e=>sim.fail=e.target.value;
+$('toggleLabels').onclick=()=>document.body.classList.toggle('hideLabels');
+$('mobileToggle').onclick=()=>$('left').classList.toggle('collapsed');
+if(innerWidth<820) $('left').classList.add('collapsed');
+
+let camAnim=null;
+function animateCam(pos,target,zoom){ camAnim={p0:camera.position.clone(),t0:controls.target.clone(),z0:camera.zoom,p1:pos,t1:target,z1:zoom??camera.zoom,k:0}; }
+$('viewIso').onclick=()=>animateCam(ISO.clone(),new THREE.Vector3(0,0,0),Z0());
+$('viewTop').onclick=()=>animateCam(new THREE.Vector3(0,150,.01),new THREE.Vector3(0,0,0),innerWidth<820?.38:.72);
+function focusStation(id){ const s=ST[id]; const t=new THREE.Vector3(s.cx,0,s.cz); animateCam(t.clone().add(ISO.clone().multiplyScalar(.6)),t,2.4); }
+
+/* info de estación */
+const infoEl=$('info');
+function lineTag(l){ const c={scorpion:'#2f6bff',moose:'#0ea5b7',gecko:'#f08c00',shared:'#6b7ea3',fail:'#e5484d'}[l]; const n={scorpion:'Scorpion',moose:'Moose',gecko:'Gecko',shared:'Compartido',fail:'Fallas'}[l]; return `<span class="tag" style="background:${c}">${n}</span>`; }
+function codeName(c){ const r=CODES&&CODES.plc.find(x=>String(x[0])===String(c)); return r? r[1] : (STEP_FAIL_LABEL[c]||''); }
+function showStationInfo(id, failCode){
+  const s=ST[id]; if(!s) return;
+  const uses=[];
+  for(const [pk,F] of Object.entries(FLOWS)){
+    for(const v of F.variants.slice(0,1)){ const fl=F.build(v[0]); const steps=Object.values(fl).flat().filter(x=>x.st===id); if(steps.length) uses.push(`${F.name}: ${steps.map(x=>x.name).join(', ')}`); }
+  }
+  const pcs=(PCS[id]||[]).map(([n,pc,sw])=>`<tr><td>${n}</td><td><b>${pc}</b><br><span style="color:var(--ink2)">${sw}</span></td></tr>`).join('');
+  const checks=(CHECKS[id]||[]).map(c=>`<li>${c}</li>`).join('');
+  const fails=[...new Set(Object.values(FLOWS).flatMap(F=>Object.values(F.build(F.variants[0][0])).flat()).filter(x=>x.st===id).flatMap(x=>x.fails||[]))];
+  let html=`<button class="close" onclick="this.parentNode.classList.remove('show')">✕</button><h2>${s.name}</h2>${lineTag(s.line)}${s.approx?'<span class="tag" style="background:#9aa7c0">Ubicación aproximada</span>':''}`;
+  if(failCode){ html+=`<div class="note" style="background:rgba(229,72,77,.1);border-color:rgba(229,72,77,.4)"><b>Falla simulada: ${failCode} ${codeName(failCode)}</b><br>${HINTS[failCode]||''}</div>`; }
+  if(uses.length) html+=`<h3>Se usa en</h3><ul>${uses.map(u=>`<li>${u}</li>`).join('')}</ul>`;
+  if(pcs) html+=`<h3>PC / software</h3><table>${pcs}</table>`;
+  if(checks) html+=`<h3>Qué revisar</h3><ul>${checks}</ul>`;
+  if(fails.length) html+=`<h3>Fallas asociadas</h3>${fails.map(f=>`<button class="chip" data-code="${f}">${f} ${codeName(f)}</button>`).join('')}`;
+  if(id==='kas'){
+    html+=`<h3>Secuencia BUILD (mesa rotatoria 4 estaciones)</h3><ol style="padding-left:18px;margin:4px 0">${KBUILD.map(k=>`<li><b>${k[0]}</b> — <span style="color:var(--ink2)">${k[2]}</span></li>`).join('')}</ol>
+    <h3>Parámetros dispense (archivo [DR] [LP] [ST])</h3><table>
+    <tr><td>Patrón</td><td>FebPreDispenseInspection_Moose_B4_LCP.hdb</td></tr>
+    <tr><td>ARC</td><td>X=9.2 Y=-6.4 R=8.9 IA=449° VS=20 VA=10</td></tr>
+    <tr><td>DR (dispense rate)</td><td><b>42 %</b></td></tr>
+    <tr><td>SR / ST (suck back)</td><td>50 % / <b>300 ms</b></td></tr>
+    <tr><td>PRT LP (luz partículas)</td><td><b>25 %</b> (dispense) · 100 % (spare STN=3)</td></tr>
+    <tr><td>PRT PT / NS / FS</td><td>1.0 % / 71 / 5 (dispense) · 0.8 / 131 / 7 (spare)</td></tr>
+    <tr><td>VIS (post-dispense)</td><td>LL=100 EXP=80 ST=50 área 10–25 %, bbox 60–80 %, perímetro 3000–8000 px</td></tr>
+    <tr><td>Pot life / volumen</td><td>72 h / 18 ml (warn 5 %·10 %, error 3 %·3 %)</td></tr>
+    <tr><td>Purga / prime</td><td>10 s @50 % · 5 ciclos</td></tr>
+    <tr><td>XYTraverseAccel</td><td>2.5 % (doc. recomienda ~50)</td></tr>
+    </table>
+    <h3>Otras Kasalis</h3><ul><li>Kasalis ELK (MXCHIM2PHO015) — línea ELK / In Furrow (Badger), contingencia de Moose. No está en este plano.</li><li>Kasalis Moose: falla de motor 27-AGO (análisis pendiente).</li></ul>`;
+  }
+  infoEl.innerHTML=html; infoEl.classList.add('show');
+  infoEl.querySelectorAll('.chip').forEach(c=>c.onclick=()=>openCodes(c.dataset.code));
+}
+// selección con clic
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let downAt=null;
+renderer.domElement.addEventListener('pointerdown',e=>downAt=[e.clientX,e.clientY]);
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downAt||Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5) return;
+  mouse.set(e.clientX/innerWidth*2-1, -e.clientY/innerHeight*2+1); ray.setFromCamera(mouse,camera);
+  const hit=ray.intersectObjects(pickables,false)[0];
+  if(hit) showStationInfo(hit.object.userData.station);
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+  mouse.set(e.clientX/innerWidth*2-1, -e.clientY/innerHeight*2+1); ray.setFromCamera(mouse,camera);
+  renderer.domElement.style.cursor = ray.intersectObjects(pickables,false).length ? 'pointer':'grab';
+});
+
+/* toast */
+let toastT=0; function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; toastT=5; }
+
+/* códigos */
+function renderCodes(){
+  const q=$('codeQ').value.trim().toLowerCase(); const src=$('codeSrc').value;
+  let rows=[];
+  if(src==='hint'){ rows=Object.keys(HINTS).map(k=>{ const r=CODES.plc.find(x=>String(x[0])===k); return [k, r?r[1]:(STEP_FAIL_LABEL[k]||k), r?r[2]:'proceso', HINTS[k]]; }); }
+  else if(src==='plc') rows=CODES.plc.map(r=>[String(r[0]).padStart(3,'0'),r[1],r[2],HINTS[String(r[0])]]);
+  else rows=CODES.ksv.map(r=>[String(r[0]),r[1],r[2],r[3]]);
+  if(q) rows=rows.filter(r=>r.join(' ').toLowerCase().includes(q) || String(+r[0])===q);
+  $('codeList').innerHTML=rows.slice(0,600).map(r=>`<div class="code"><b>${r[0]}</b><div>${r[1]}<div class="g">${r[2]||''}</div></div>${r[3]?`<div class="h">${r[3]}</div>`:''}</div>`).join('')||'<p style="color:var(--ink2)">Sin resultados</p>';
+}
+function openCodes(q=''){ $('codes').classList.add('show'); $('codeSrc').value=HINTS[q]&&!CODES.plc.find(x=>String(x[0])===q)?'hint':'plc'; $('codeQ').value=q; renderCodes(); }
+$('openCodes').onclick=()=>openCodes('');
+$('closeCodes').onclick=()=>$('codes').classList.remove('show');
+$('codeQ').oninput=renderCodes; $('codeSrc').onchange=renderCodes;
+
+/* =====================================================================
+   LOOP
+   ===================================================================== */
+const clock=new THREE.Clock();
+function tick(){
+  const rdt=Math.min(clock.getDelta(),.05); const dt=rdt*sim.speed; const now=performance.now()/1000;
+  if(sim.playing){
+    sim.t+=dt;
+    if(sim.continuous){ sim.nextSpawn-=dt; if(sim.nextSpawn<=0){ spawn(); sim.nextSpawn=14; } }
+    for(const j of sim.jobs) j.update(dt);
+    sim.jobs=sim.jobs.filter(j=>j.state!=='gone');
+    if(!sim.continuous && !sim.jobs.length){ sim.playing=false; $('play').textContent='▶ Correr'; }
+    if(sim.focusJob && sim.focusJob.state!=='run' && sim.continuous){ const nj=sim.jobs.find(j=>j.state==='run'); if(nj){ sim.focusJob=nj; Object.values(sim.flow).flat().forEach(s=>s._el&&s._el.classList.remove('active','done','failed')); } }
+  }
+  // kasalis panel
+  const kasBusy=sim.jobs.some(j=>Object.values(j.tokens).some(t=>t.phase==='process'&&t.steps[t.idx]&&t.steps[t.idx].k));
+  if(!kasBusy){ kasPanel.classList.remove('show'); const K=ST.kas.extra; K.uv.material.opacity=0; K.uvLight.intensity=0; K.table.rotation.y+=(Math.round(K.table.rotation.y/(Math.PI/2))*(Math.PI/2)-K.table.rotation.y)*.1; }
+  // estaciones activas
+  for(const id in ST){ const s=ST[id]; const on=s.active>0;
+    s.accentMat.emissiveIntensity += ((on?.9+.4*Math.sin(now*6):0)-s.accentMat.emissiveIntensity)*.2;
+    s.ring.material.opacity += ((on?.55:0)-s.ring.material.opacity)*.15; if(on) s.ring.scale.setScalar(1+.06*Math.sin(now*4));
+    if(s.extra.door) s.extra.door.material.emissiveIntensity = on? .6+.4*Math.sin(now*3) : 0;
+    if(s.extra.needle) s.extra.needle.position.x = on? Math.sin(now*2.2)*1.2 : 0;
+  }
+  for(const f of flowDots){ const k=((now*.18/Math.max(.4,f.c.getLength()/30))+f.off)%1; f.dot.position.copy(f.c.getPoint(k)); }
+  for(const p of people){ p.g.position.y=Math.abs(Math.sin(now*1.5+p.ph))*.05; p.g.rotation.y=Math.sin(now*.4+p.ph)*.6; }
+  if(sim.follow && sim.focusJob && sim.focusJob.tokens.main){ const p=sim.focusJob.tokens.main.unit.position; const tgt=new THREE.Vector3(p.x,0,p.z); const d=tgt.clone().sub(controls.target).multiplyScalar(.06); controls.target.add(d); camera.position.add(d); }
+  if(camAnim){ camAnim.k=Math.min(1,camAnim.k+rdt*1.6); const e=1-Math.pow(1-camAnim.k,3);
+    camera.position.lerpVectors(camAnim.p0,camAnim.p1,e); controls.target.lerpVectors(camAnim.t0,camAnim.t1,e); camera.zoom=camAnim.z0+(camAnim.z1-camAnim.z0)*e; camera.updateProjectionMatrix(); if(camAnim.k>=1) camAnim=null; }
+  $('hClock').textContent=sim.t.toFixed(1)+' s'; $('hOk').textContent=sim.ok; $('hFail').textContent=sim.failed;
+  refreshStepMarks();
+  if(toastT>0){ toastT-=rdt; if(toastT<=0) $('toast').style.display='none'; }
+  controls.update();
+  renderer.render(scene,camera); labelRenderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+addEventListener('resize',()=>{ aspect=innerWidth/innerHeight; camera.left=-FR*aspect/2; camera.right=FR*aspect/2; camera.top=FR/2; camera.bottom=-FR/2; viewOffset(); renderer.setSize(innerWidth,innerHeight); labelRenderer.setSize(innerWidth,innerHeight); });
+addEventListener('keydown',e=>{ if(e.code==='Space'&&e.target.tagName!=='INPUT'){ e.preventDefault(); $('play').click(); } if(e.key==='Escape'){ $('codes').classList.remove('show'); infoEl.classList.remove('show'); } });
+
+setProduct('scorpion');
+tick();
+window.__sim=sim;
+</script>
+</body>
+</html>
