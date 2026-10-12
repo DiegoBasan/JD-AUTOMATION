@@ -8,7 +8,7 @@ Repositorio de proyectos de automatización / troubleshooting de las líneas de 
 | Proyecto | Ruta | Estado |
 |---|---|---|
 | Simulador de flujo de líneas 3D | `simulador-lineas/` | activo |
-| Buscador de fallas Kasalis | `buscador-kasalis/` | activo |
+| Fallas Kasalis (app instalable en celular) | `buscador-kasalis/` | activo |
 | Tutorial Active Alignment | `Tutorial Active Alignment (1).html` | activo |
 | Monitor de línea en tiempo real (logs) | — | próximamente |
 
@@ -23,7 +23,9 @@ Repositorio de proyectos de automatización / troubleshooting de las líneas de 
 Los tiempos ciclo marcados como supuestos se ajustan en **⚙ Ajustes** (se guardan en el navegador).
 Se sirve como módulos ES: abrir por GitHub Pages o un servidor local (`python -m http.server`), no con doble clic.
 
-## Buscador de fallas Kasalis (`buscador-kasalis/`)
+## Fallas Kasalis (`buscador-kasalis/`)
+- App web instalable (iPhone: Safari → Compartir → Agregar a pantalla de inicio). Funciona sin red (`sw.js`).
+- `data/fallas.js` — **modos de falla con flujo de resolución** (paso a paso con ramas SÍ/NO), causas vistas → solución y tips; cada modo lista sus códigos y aparece al buscar cualquiera de ellos.
 - Busca por código (`105`, `161`, `-350`) o palabra (`gripper`, `DELLO`): significado traducido, estación/fase de la Kasalis,
   guía rápida, notas, procedimientos con fotos, páginas del manual y archivos del repo, códigos relacionados.
 - `data/notas.js` — **aquí se agregan tus notas por falla y procedimientos paso a paso** (fotos en `buscador-kasalis/fotos/<id>/`),
