@@ -1,12 +1,24 @@
 # JD-AUTOMATION
 
-**Simulador 3D isométrico del flujo de ensamble** (`index.html`, servido por GitHub Pages).
+Repositorio de proyectos de automatización / troubleshooting de las líneas de cámaras John Deere.
+`index.html` es el **hub de proyectos** (GitHub Pages). Cada proyecto vive en su carpeta.
 
-- Layout real (`layout moose scorpion gecko.png`): Moose, Scorpion, Gecko, celda Kasalis (Pixid 500-S) + horno + refri, Fisnar / Gecko Dispensing, plasma, EOLs.
-- Flujos por producto según *NPI Product Data* y *FLUJOS_COMPLETOS_CONTEXTO*: ruta principal (sensor) y rutas paralelas (housing/ventana, back assy) que convergen.
-- Animación interna de la Kasalis (mesa rotatoria Load → Dispense → Align → Spare) en BUILD y RETEST, con los parámetros del archivo de dispense.
-- Simulación de fallas (242, 233, 108, 131, 155, 161, tornillos elevados, leak, EOL): la pieza se manda a su caja de *Fallas* y se muestra qué revisar.
-- Buscador de códigos Kasalis (PLC KSmessage 001–1152 y KSvision negativos) con guías de troubleshooting.
-- Clic en cualquier estación: PC, software (ACURA/ARMI/KASALIS), en qué pasos se usa y qué revisar.
+## Proyectos
+| Proyecto | Ruta | Estado |
+|---|---|---|
+| Simulador de flujo de líneas 3D | `simulador-lineas/` | activo |
+| Códigos de falla Kasalis | `simulador-lineas/?codes=1` | activo |
+| Tutorial Active Alignment | `Tutorial Active Alignment (1).html` | activo |
+| Monitor de línea en tiempo real (logs) | — | próximamente |
 
-Estaciones marcadas con `*` no aparecen en el plano y su ubicación es aproximada.
+## Simulador de líneas (`simulador-lineas/`)
+- `js/data.js` — layout (coordenadas del plano), estaciones, PCs, rutas por producto, **tiempos ciclo por defecto (OPS)**.
+- `js/engine.js` — motor de simulación sin 3D: piezas, colas, lotes de transferencia, hornos por lote,
+  Kasalis con BUILD/RETEST excluyentes (campaña + cambio de modo). Pensado para alimentarse después con logs reales.
+- `js/world.js` — escena Three.js: estaciones automáticas (celda Gecko / mesa de atornillado Moose-Scorpion),
+  equipos (EOL, leak, ASELEC/Fisnar, hornos), mesas, pistas tipo PCB, piezas y resaltados.
+- `js/app.js` — UI: barra superior, menú retráctil (Ruta / Estaciones / Vista), seguimiento de pieza, modo ajuste, códigos.
+- `js/codes.js` — códigos Kasalis (KSmessage PLC y KSvision).
+
+Los tiempos ciclo marcados como supuestos se ajustan en **⚙ Ajustes** (se guardan en el navegador).
+Se sirve como módulos ES: abrir por GitHub Pages o un servidor local (`python -m http.server`), no con doble clic.

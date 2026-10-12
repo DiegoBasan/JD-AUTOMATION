@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de Líneas</title>
+<meta name="description" content="Simulación 3D en tiempo real del flujo de ensamble de cámaras John Deere (Scorpion, Moose, Gecko): WIP, lotes, horno, Kasalis BUILD/RETEST, seguimiento de pieza y tiempos ciclo ajustables.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ebef; --glass:rgba(250,251,253,.82); --glass2:rgba(255,255,255,.95); --ink:#16181d; --ink2:#6b7280; --ink3:#9aa1ad; --line:rgba(20,24,35,.08);
+  --blue:#2f6bff; --scorpion:#2f6bff; --moose:#0ea5b7; --gecko:#f08c00; --ok:#16a34a; --fail:#e5484d; --warn:#f2a23a; --yellow:#f2c94c;
+  --r:20px; --shadow:0 10px 40px rgba(25,30,45,.10), 0 1px 0 rgba(255,255,255,.7) inset; --top:60px; --side:300px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0f1218; --glass:rgba(24,28,36,.85); --glass2:rgba(30,35,45,.96); --ink:#eef1f6; --ink2:#a3aab8; --ink3:#6f7787; --line:rgba(255,255,255,.08); --shadow:0 10px 40px rgba(0,0,0,.45); } }
+:root[data-theme="dark"]{ --bg:#0f1218; --glass:rgba(24,28,36,.85); --glass2:rgba(30,35,45,.96); --ink:#eef1f6; --ink2:#a3aab8; --ink3:#6f7787; --line:rgba(255,255,255,.08); --shadow:0 10px 40px rgba(0,0,0,.45); }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+#stage{position:fixed;inset:0;background:radial-gradient(1200px 700px at 60% 40%,#f7f8fa,#e4e7ec)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #stage{background:radial-gradient(1200px 700px at 60% 40%,#1c2230,#0d1016)} }
+.glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--r)}
+/* top bar */
+#top{position:fixed;top:10px;left:10px;right:10px;height:var(--top);display:flex;align-items:center;gap:10px;padding:0 10px;z-index:20;border-radius:18px}
+#top .sep{width:1px;height:28px;background:var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;white-space:nowrap;text-decoration:none;color:inherit}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:conic-gradient(var(--yellow) 0 40%,var(--ink) 0 70%,var(--blue) 0)}
+.brand small{display:block;font-weight:500;color:var(--ink2);font-size:11px;margin-top:-2px}
+.ibtn{border:0;background:transparent;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;cursor:pointer;color:var(--ink2)}
+.ibtn:hover{background:rgba(127,135,150,.12);color:var(--ink)}
+.pill{border:1px solid var(--line);background:var(--glass2);height:36px;border-radius:12px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.pill:hover{border-color:rgba(47,107,255,.4)}
+.pill.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+:root[data-theme="dark"] .pill.primary{background:#fff;color:#111}
+.seg{display:flex;background:rgba(127,135,150,.12);border-radius:12px;padding:3px;gap:2px}
+.seg button{white-space:nowrap;border:0;background:transparent;padding:6px 11px;border-radius:9px;cursor:pointer;font-weight:600;font-size:12.5px;color:var(--ink2)}
+.seg button.on{background:var(--glass2);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.seg button.on::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--c,var(--blue))}
+select.sel{height:36px;border-radius:12px;border:1px solid var(--line);background:var(--glass2);padding:0 8px;max-width:190px}
+select option{color:#111}
+.clock{font-variant-numeric:tabular-nums;font-weight:600;min-width:84px;text-align:center}
+.clock small{display:block;font-size:10.5px;color:var(--ink2);font-weight:500;margin-top:-3px}
+.kpis{display:flex;gap:6px;margin-left:auto}
+.kpi{padding:3px 9px;border-radius:12px;background:var(--glass2);border:1px solid var(--line);min-width:50px}
+.kpi b{display:block;font-size:14px;font-variant-numeric:tabular-nums}
+.kpi span{font-size:10.5px;color:var(--ink2)}
+.src{font-size:11.5px;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.src i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+/* side */
+#side{position:fixed;top:calc(var(--top) + 20px);left:10px;bottom:10px;width:var(--side);z-index:15;display:flex;flex-direction:column;overflow:hidden;transition:transform .25s ease, opacity .25s}
+body.sideClosed #side{transform:translateX(calc(-100% - 20px));opacity:0;pointer-events:none}
+.tabs{display:flex;gap:4px;padding:10px 10px 6px}
+.tabs button{flex:1;border:0;background:transparent;padding:8px;border-radius:10px;cursor:pointer;font-weight:600;color:var(--ink2)}
+.tabs button.on{background:var(--glass2);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pane{flex:1;overflow:auto;padding:4px 10px 12px;display:none}
+.pane.on{display:block}
+.h{font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px;margin:12px 6px 6px}
+.card{background:var(--glass2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:6px 0}
+.step{display:flex;gap:10px;align-items:flex-start;padding:8px 8px;border-radius:12px;cursor:pointer}
+.step:hover{background:rgba(127,135,150,.1)}
+.step .n{flex:0 0 22px;height:22px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:11px;background:rgba(127,135,150,.14)}
+.step .t{font-weight:600}
+.step .d{color:var(--ink2);font-size:11.5px}
+.step .c{margin-left:auto;font-size:11px;color:var(--ink2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.step.hl{background:rgba(47,107,255,.10)} .step.hl .n{background:var(--blue);color:#fff}
+.stRow{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;padding:7px 8px;border-radius:10px;cursor:pointer}
+.stRow:hover{background:rgba(127,135,150,.1)}
+.stRow .dot{width:8px;height:8px;border-radius:50%;background:var(--ink3)}
+.stRow .dot.run{background:var(--ok);box-shadow:0 0 0 3px rgba(22,163,74,.15)} .stRow .dot.wait{background:var(--warn)} .stRow .dot.co{background:#8b5cf6}
+.stRow small{color:var(--ink2);font-variant-numeric:tabular-nums}
+.bar{height:4px;border-radius:3px;background:rgba(127,135,150,.18);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--blue)}
+.ctl{display:flex;align-items:center;gap:8px;margin:8px 4px}
+.ctl label{flex:1;color:var(--ink2)}
+.ctl input[type=range]{flex:1.4}
+.chk{display:flex;align-items:center;gap:8px;margin:8px 4px;cursor:pointer;color:var(--ink2)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 4px}
+/* right */
+#right{position:fixed;top:calc(var(--top) + 20px);right:10px;width:350px;max-height:calc(100% - var(--top) - 30px);z-index:15;overflow:auto;padding:14px;display:none}
+#right.on{display:block}
+#right h2{margin:0;font-size:17px;font-weight:600}
+.close{float:right;border:0;background:transparent;font-size:18px;color:var(--ink2);cursor:pointer}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;color:#fff;margin:6px 4px 0 0}
+.flow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0}
+.flow3 div{background:var(--glass2);border:1px solid var(--line);border-radius:12px;padding:8px}
+.flow3 small{display:block;color:var(--ink3);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px}
+.flow3 b{display:block;font-size:12px;margin-top:2px}
+.flow3 .cur{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,107,255,.12)}
+.tl{position:relative;margin:4px 0 0 6px;padding-left:14px;border-left:2px solid var(--line)}
+.tl .it{position:relative;padding:6px 0}
+.tl .it::before{content:"";position:absolute;left:-20px;top:10px;width:10px;height:10px;border-radius:50%;background:var(--glass2);border:2px solid var(--ink3)}
+.tl .it.done::before{background:var(--ok);border-color:var(--ok)} .tl .it.cur::before{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px rgba(47,107,255,.18)} .tl .it.fail::before{background:var(--fail);border-color:var(--fail)}
+.tl .it b{font-size:12.5px} .tl .it small{display:block;color:var(--ink2);font-variant-numeric:tabular-nums}
+table.kv{width:100%;border-collapse:collapse} table.kv td{padding:4px 0;border-bottom:1px dashed var(--line);vertical-align:top} table.kv td:first-child{color:var(--ink2);width:44%}
+.chip{display:inline-block;margin:2px 3px 2px 0;padding:2px 8px;border-radius:8px;background:rgba(229,72,77,.1);color:var(--fail);font-weight:600;font-size:11.5px;cursor:pointer;border:0}
+.note{background:rgba(242,162,58,.12);border:1px solid rgba(242,162,58,.35);border-radius:12px;padding:8px 10px;font-size:12px;margin-top:8px}
+ul.tight{margin:4px 0;padding-left:18px} ul.tight li{margin:2px 0}
+/* kasalis card */
+#kas{position:fixed;right:10px;bottom:10px;width:350px;z-index:14;padding:12px 14px}
+body.rightOpen #kas{right:370px}
+@media (max-width:1300px){ body.rightOpen #kas{display:none} .src{display:none} }
+@media (max-width:1500px){ .brand small{display:none} #top .kpis .kpi:nth-child(1){display:none} .src{display:none} .kpis{gap:4px} }
+@media (max-width:1440px){ .brand>span{display:none} #codesBtn .t{display:none} }
+#kas .mode{display:flex;gap:6px;margin:6px 0}
+#kas .mode span{flex:1;text-align:center;padding:6px;border-radius:10px;background:rgba(127,135,150,.12);font-weight:600;color:var(--ink3)}
+#kas .mode span.on{background:var(--ink);color:#fff}
+:root[data-theme="dark"] #kas .mode span.on{background:#fff;color:#111}
+#kas .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+#kas .grid div{background:var(--glass2);border:1px solid var(--line);border-radius:10px;padding:6px;text-align:center}
+#kas .grid b{display:block;font-size:15px;font-variant-numeric:tabular-nums} #kas .grid small{color:var(--ink2);font-size:10.5px}
+/* modales */
+.modal{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(20,24,32,.25);backdrop-filter:blur(2px)}
+.modal.on{display:flex}
+.modal .box{width:min(980px,94vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.modal .hd{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.modal .hd h3{margin:0;font-size:16px;font-weight:600}
+.modal .bd{overflow:auto;padding:12px 18px}
+.modal .ft{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+table.adj{width:100%;border-collapse:collapse}
+table.adj th{text-align:left;font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:6px}
+table.adj td{padding:4px 6px;border-top:1px solid var(--line)}
+table.adj input{width:90px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--glass2);padding:0 8px;font-variant-numeric:tabular-nums}
+table.adj input.wide{width:120px}
+.gparams{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0 14px}
+.gparams label{display:flex;flex-direction:column;gap:4px;color:var(--ink2);font-size:12px}
+.gparams input,.gparams select{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--glass2);padding:0 10px}
+.code{display:grid;grid-template-columns:70px 1fr;gap:8px;padding:7px 4px;border-bottom:1px solid var(--line)}
+.code b{font-variant-numeric:tabular-nums} .code .g{color:var(--ink2);font-size:11px}
+.code .hh{grid-column:2;background:rgba(47,107,255,.08);border-radius:8px;padding:6px 8px;font-size:12px}
+input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);background:var(--glass2);padding:0 12px;flex:1}
+#toasts{position:fixed;left:50%;top:calc(var(--top) + 22px);transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;align-items:center}
+.toast{padding:9px 14px;border-radius:12px;font-weight:600;color:#fff;background:var(--ink);box-shadow:var(--shadow);max-width:90vw;animation:tin .25s}
+.toast.fail{background:var(--fail)} .toast.info{background:#334155}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}}
+/* etiquetas 3D */
+.label3d{font-size:10.5px;color:#1e2635;background:rgba(255,255,255,.88);padding:2px 7px;border-radius:7px;border:1px solid rgba(30,40,70,.12);white-space:nowrap;pointer-events:none;text-align:center;line-height:1.3;transition:opacity .2s}
+.label3d b{font-weight:600;display:block}
+.label3d .st{display:block;font-size:9.5px;color:#4b5563;font-variant-numeric:tabular-nums}
+.label3d .st:empty{display:none}
+.label3d[data-state="run"]{border-color:rgba(22,163,74,.55)} .label3d[data-state="run"] .st{color:#15803d}
+.label3d[data-state="wait"] .st{color:#b45309}
+.label3d.fail b{color:#c22}
+.label3d.approx{border-style:dashed}
+.label3d.dim{opacity:.5;font-size:9px} .label3d.dim .st{display:none}
+.label3d.hl{background:#2f6bff;color:#fff;border-color:#2f6bff;box-shadow:0 4px 14px rgba(47,107,255,.4);opacity:1}
+.label3d.hl .st{color:#dbe6ff}
+.badge3d{font-size:10px;font-weight:700;color:#fff;padding:1px 7px;border-radius:9px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.hideLabels .label3d,.hideLabels .badge3d{display:none}
+@media (max-width:900px){
+  .kpis .kpi:nth-child(n+3), .src, #top .hideM{display:none}
+  #side{width:calc(100% - 20px)} #right{width:calc(100% - 20px)} #kas{width:calc(100% - 20px)}
+  select.sel{max-width:120px}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="stage"></div>
+
+<header id="top" class="glass">
+  <button class="ibtn" id="sideBtn" title="Menú">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+  </button>
+  <a class="brand hideM" href="../index.html" title="Volver a proyectos"><span class="dot"></span><span>Simulador de líneas<small>JD Automation</small></span></a>
+  <div class="sep hideM"></div>
+  <div class="seg" id="prodSeg">
+    <button data-p="scorpion" style="--c:var(--scorpion)">Scorpion</button>
+    <button data-p="moose" style="--c:var(--moose)">Moose</button>
+    <button data-p="gecko" style="--c:var(--gecko)">Gecko</button>
+  </div>
+  <select class="sel" id="variant"></select>
+  <div class="sep"></div>
+  <button class="ibtn" id="resetBtn" title="Reiniciar">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+  </button>
+  <button class="pill primary" id="playBtn"><span id="playIco">▶</span><span id="playTxt">Correr</span></button>
+  <select class="sel" id="speed" title="Velocidad de simulación" style="width:auto">
+    <option value="1">1×</option><option value="10">10×</option><option value="30">30×</option><option value="60" selected>60×</option><option value="120">120×</option><option value="300">300×</option><option value="600">600×</option>
+  </select>
+  <div class="clock"><span id="clock">0:00</span><small>tiempo sim.</small></div>
+  <div class="kpis">
+    <div class="kpi"><b id="kRel">0</b><span>liberadas</span></div>
+    <div class="kpi"><b id="kWip">0</b><span>WIP</span></div>
+    <div class="kpi"><b id="kOk" style="color:var(--ok)">0</b><span>OK</span></div>
+    <div class="kpi"><b id="kFail" style="color:var(--fail)">0</b><span>falla</span></div>
+    <div class="kpi"><b id="kThr">0</b><span>pzs/h</span></div>
+  </div>
+  <div class="src hideM" title="Fuente de datos: simulación (logs en vivo próximamente)"><i></i>Sim</div>
+  <button class="pill" id="adjBtn" title="Modo ajuste: tiempos ciclo">⚙ Ajustes</button>
+  <button class="pill hideM" id="codesBtn" title="Códigos de falla Kasalis">⚠<span class="t"> Códigos</span></button>
+</header>
+
+<aside id="side" class="glass">
+  <div class="tabs"><button data-t="ruta" class="on">Ruta</button><button data-t="est">Estaciones</button><button data-t="vista">Vista</button></div>
+  <div class="pane on" id="p-ruta"></div>
+  <div class="pane" id="p-est"></div>
+  <div class="pane" id="p-vista">
+    <div class="h">Fuente de datos</div>
+    <div class="card"><select class="sel" id="srcSel" style="width:100%;max-width:none"><option>Simulación</option><option disabled>Logs en vivo de máquinas (próximamente)</option></select>
+      <div style="color:var(--ink3);font-size:11.5px;margin-top:6px">Siguiente fase: leer las carpetas de logs (Kasalis, ACURA/ARMI, EOL) para ver el flujo real, material retenido y fallas.</div></div>
+    <div class="h">Cámara</div>
+    <div class="btnrow"><button class="pill" id="vIso">Vista iso</button><button class="pill" id="vTop">Planta</button></div>
+    <label class="chk"><input type="checkbox" id="follow"> Seguir pieza seleccionada</label>
+    <div class="h">Capas</div>
+    <label class="chk"><input type="checkbox" id="optLabels" checked> Etiquetas de estaciones</label>
+    <label class="chk"><input type="checkbox" id="optTraces" checked> Pistas de flujo (PCB) y zonas de WIP</label>
+    <div class="h">Sol y sombras</div>
+    <label class="chk"><input type="checkbox" id="optShadows" checked> Sombras</label>
+    <div class="ctl"><label>Dirección</label><input type="range" id="sunAz" min="0" max="360" value="215"></div>
+    <div class="ctl"><label>Altura</label><input type="range" id="sunEl" min="10" max="88" value="58"></div>
+    <div class="h">Fallas</div>
+    <div class="card">
+      <div style="color:var(--ink2);font-size:12px;margin-bottom:6px">Inyecta una falla en la próxima pieza que pase por la operación correspondiente.</div>
+      <select class="sel" id="failSel" style="width:100%;max-width:none"></select>
+      <div class="btnrow" style="margin:8px 0 0"><button class="pill" id="injectBtn">Inyectar falla</button></div>
+      <div style="color:var(--ink3);font-size:11.5px;margin-top:6px">El % de falla aleatorio por estación se configura en ⚙ Ajustes.</div>
+    </div>
+    <div class="h">Leyenda</div>
+    <div class="card" style="font-size:12px;color:var(--ink2);line-height:1.8">
+      <span style="color:var(--blue)">■</span> pista principal (sensor) · <span style="color:#7aa2ff">■</span> rama paralela<br>
+      <span style="color:#d4a73a">●</span> pad = punto de entrega de la estación<br>
+      Zonas de piso: <span style="color:#2f6bff">azul</span> cola · <span style="color:#16a34a">verde</span> lote listo · <span style="color:#f08c00">naranja</span> componentes<br>
+      Estaciones con marco/celda = máquinas automáticas · cuerpo redondeado = equipos · mesas = soporte
+    </div>
+  </div>
+</aside>
+
+<aside id="right" class="glass"></aside>
+
+<div id="kas" class="glass">
+  <div style="display:flex;align-items:center;justify-content:space-between"><b>Kasalis Pixid 500-S</b><small id="kasState" style="color:var(--ink2)"></small></div>
+  <div class="mode"><span id="mBuild">BUILD</span><span id="mRetest">RETEST</span></div>
+  <div id="kasSub" style="font-size:12px;color:var(--ink2);min-height:34px"></div>
+  <div class="bar"><i id="kasBar" style="width:0"></i></div>
+  <div class="grid">
+    <div><b id="kQb">0</b><small>cola build</small></div>
+    <div><b id="kOb">0</b><small>lote → horno</small></div>
+    <div><b id="kQr">0</b><small>cola retest</small></div>
+    <div><b id="kOr">0</b><small>lote retest</small></div>
+  </div>
+  <div id="ovenLine" style="font-size:12px;color:var(--ink2);margin-top:8px"></div>
+</div>
+
+<div id="toasts"></div>
+
+<div class="modal" id="adjModal"><div class="box glass">
+  <div class="hd"><h3>Modo ajuste · tiempos ciclo y lotes</h3><span style="color:var(--ink2);font-size:12px">Se guardan en este navegador. Se aplican en vivo.</span><button class="close" style="margin-left:auto" data-close>✕</button></div>
+  <div class="bd">
+    <div class="h" style="margin-left:0">Liberación y Kasalis</div>
+    <div class="gparams" id="gParams"></div>
+    <div class="h" style="margin-left:0">Operaciones de la ruta actual</div>
+    <table class="adj"><thead><tr><th>Operación</th><th>Estación</th><th>Tiempo ciclo (s)</th><th>Capacidad</th><th>Lote transferencia</th><th>% falla</th></tr></thead><tbody id="adjBody"></tbody></table>
+    <div class="note">Horno: <b>tiempo ciclo</b> = duración del lote y <b>capacidad</b> = piezas por carga. Kasalis BUILD (~1:40) y RETEST comparten máquina: mientras corre uno, el otro espera. Los demás tiempos son supuestos: ajústalos a la línea real.</div>
+  </div>
+  <div class="ft"><button class="pill" id="adjReset">Restablecer valores</button><button class="pill primary" data-close>Listo</button></div>
+</div></div>
+
+<div class="modal" id="codesModal"><div class="box glass">
+  <div class="hd"><h3>Códigos de falla Kasalis</h3><button class="close" style="margin-left:auto" data-close>✕</button></div>
+  <div class="bd" style="padding-bottom:0">
+    <div style="display:flex;gap:8px"><input type="search" id="codeQ" placeholder="Buscar: 161, RETEST, DISP, particle, -350 ..."><select class="sel" id="codeSrc"><option value="plc">Pixid PLC (KSmessage)</option><option value="ksv">KSvision (negativos)</option><option value="hint">Con guía de troubleshooting</option></select></div>
+    <div class="note"><b>Ojo con 161 / 155 / 108:</b> en la tabla Kasalis <b>161 = ALIGN_FT_RETEST_MTF</b> (falla MTF en RETEST), <b>155 = ALIGN_FT_UNGRIP_MTF</b> (MTF cae al soltar el lente, antes del horno), <b>108 = ALIGN_SCAN_FAIL</b>. "No llega a target en BUILD" es <b>131 = FT_PEAK_MTF</b>.</div>
+  </div>
+  <div class="bd" id="codeList"></div>
+</div></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
