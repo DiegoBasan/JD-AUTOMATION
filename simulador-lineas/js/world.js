@@ -40,7 +40,7 @@ export function createWorld(container){
   controls.addEventListener('change', ()=>{ labelsDirty = true; });
 
   /* ---------------- luces (sol ajustable) ---------------- */
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d6f0, 1.15));
+  const hemi=new THREE.HemisphereLight(0xffffff, 0xd6d6d6, 1.15); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1.55);
   sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
   Object.assign(sun.shadow.camera,{left:-100,right:100,top:100,bottom:-100,near:1,far:500});
@@ -60,7 +60,7 @@ export function createWorld(container){
   /* ---------------- materiales compartidos ---------------- */
   const M = (c,o={})=>new THREE.MeshStandardMaterial({color:c, roughness:.55, metalness:.05, ...o});
   const MAT = {
-    white:M(0xffffff), white2:M(0xeef2f8), floor:M(0xf6f8fc,{roughness:.9}), edge:M(0x2f6bff,{roughness:.4}),
+    white:M(0xffffff), white2:M(0xeef2f8), floor:M(0xf6f7f9,{roughness:.9}), edge:M(0x2f6bff,{roughness:.4}), slab:M(0xffffff),
     alu:M(0xc3ccd8,{metalness:.55,roughness:.35}), alu2:M(0x9aa6b8,{metalness:.5,roughness:.4}),
     blue:M(0x2c3fa8,{metalness:.25,roughness:.45}), table:M(0xdde3ea,{roughness:.7}), tableEdge:M(0x2e7d5b,{roughness:.6}),
     dark:M(0x1b2436,{roughness:.35}), screen:M(0x223a6e,{roughness:.2,emissive:0x1b3d8f,emissiveIntensity:.35}),
@@ -75,10 +75,9 @@ export function createWorld(container){
   /* ---------------- piso / zonas / paredes ---------------- */
   {
     const [x1,z1]=PX(120,178), [x2,z2]=PX(1578,938); const w=x2-x1, d=z2-z1, cx=(x1+x2)/2, cz=(z1+z2)/2;
-    const slab=new THREE.Mesh(new RoundedBoxGeometry(w+4,2,d+4,3,.6),MAT.white); slab.position.set(cx,-1.02,cz); slab.receiveShadow=true; scene.add(slab);
+    const slab=new THREE.Mesh(new RoundedBoxGeometry(w+4,2,d+4,3,.6),MAT.slab); slab.position.set(cx,-1.02,cz); slab.receiveShadow=true; scene.add(slab);
     const edge=new THREE.Mesh(new THREE.BoxGeometry(w+4.2,.25,d+4.2),MAT.edge); edge.position.set(cx,-1.9,cz); scene.add(edge);
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(w,d),MAT.floor); floor.rotation.x=-Math.PI/2; floor.position.set(cx,.005,cz); floor.receiveShadow=true; scene.add(floor);
-    const grid=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)/2),0xdde5f2,0xe9eef7); grid.position.set(cx,.012,cz); grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
   }
   const ZMAT={}; for(const k in LINE_COL) ZMAT[k]=new THREE.MeshBasicMaterial({color:LINE_COL[k],transparent:true,opacity:.06,depthWrite:false});
   for(const z of ZONES){ const [x1,z1]=PX(z.r[0],z.r[1]), [x2,z2]=PX(z.r[2],z.r[3]); const m=new THREE.Mesh(new THREE.PlaneGeometry(x2-x1,z2-z1),ZMAT[z.line]); m.rotation.x=-Math.PI/2; m.position.set((x1+x2)/2,.02,(z1+z2)/2); m.userData.dyn=true; scene.add(m); }
@@ -254,8 +253,10 @@ export function createWorld(container){
     el.innerHTML=`<b>${s.name}</b><span class="st"></span>`;
     const lb=new CSS2DObject(el); lb.position.set(0,r.height+.4,0); g.add(lb);
     scene.add(g);
+    const floorLbl=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({transparent:true,depthWrite:false}));
+    floorLbl.rotation.x=-Math.PI/2; floorLbl.position.set(cx,.11,cz+f*(D/2+.85)); floorLbl.userData.dyn=true; floorLbl.renderOrder=2; scene.add(floorLbl);
     const anchor=new THREE.Vector3(cx,0,cz+f*(D/2+1.8));
-    ST[s.id]={...s, g, accent, ring, top:r.top, height:r.height, extra:{...(r.extra||{}), carriage:r.carriage}, cx, cz, W, D, f, anchor, el, stEl:el.querySelector('.st'), badge:null};
+    ST[s.id]={...s, g, accent, ring, floorLbl, top:r.top, height:r.height, extra:{...(r.extra||{}), carriage:r.carriage}, cx, cz, W, D, f, anchor, el, stEl:el.querySelector('.st'), badge:null};
   }
   // carritos WIP de piso
   for(const r of WIPS){ const {cx,cz,w,d}=rectInfo(r); const W=Math.max(w-.5,1.4), D=Math.max(d-.5,1.4); const g=new THREE.Group(); g.position.set(cx,0,cz); scene.add(g);
@@ -274,6 +275,35 @@ export function createWorld(container){
     const c=new THREE.Mesh(headGeo,MAT.white); c.position.set(px,1.6*U,pz); c.scale.set(1.05,.6,1.05); scene.add(c);
   });
 
+  /* nombres pintados en el piso (menos ruido en isométrico) */
+  let dark = document.documentElement.dataset.theme==='dark';
+  function drawFloorLabel(S){
+    const name=S.name.replace(/ · Nodo \d/,'').replace(/\*$/,' *');
+    const cv=document.createElement('canvas'); const ctx=cv.getContext('2d'); const fs=44;
+    ctx.font=`600 ${fs}px Inter, system-ui, sans-serif`; const tw=Math.ceil(ctx.measureText(name).width)+24;
+    cv.width=tw; cv.height=fs+20; ctx.font=`600 ${fs}px Inter, system-ui, sans-serif`; ctx.textBaseline='middle';
+    ctx.fillStyle = S.line==='fail' ? (dark?'#f87171':'#c0392b') : (dark?'#d4d4d4':'#3f4652'); ctx.fillText(name,12,cv.height/2+2);
+    const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=4;
+    const m=S.floorLbl; if(m.material.map) m.material.map.dispose(); m.material.map=tex; m.material.needsUpdate=true;
+    const hU=1.05, wU=hU*cv.width/cv.height, maxW=Math.max(S.W+3,7), k=Math.min(1,maxW/wU);
+    m.scale.set(wU*k,hU*k,1);
+  }
+  function drawAllFloorLabels(){ for(const id in ST) drawFloorLabel(ST[id]); }
+  const THEMES={
+    light:{floor:0xf6f7f9,slab:0xffffff,wall:0xf3f6fb,edge:0x2f6bff,white:0xffffff,white2:0xeef2f8,eq:0xe8edf4,eq2:0xd3dbe7,table:0xdde3ea,wood:0xe9dfd0,wip:0xe3e9f4,tray:0xc5d3ee,tank:0xf2f5fb,alu:0xc3ccd8,sky:0xffffff,gnd:0xd6d6d6,hemi:1.15},
+    dark: {floor:0x232323,slab:0x1b1b1b,wall:0x2e2e2e,edge:0x4b4b4b,white:0xcfcfcf,white2:0xb8b8b8,eq:0xb3b3b3,eq2:0x959595,table:0x9f9f9f,wood:0x8b8379,wip:0x575757,tray:0x6b6b6b,tank:0x9a9a9a,alu:0x8f8f8f,sky:0xd0d0d0,gnd:0x262626,hemi:.95},
+  };
+  function setTheme(t){
+    dark = t==='dark'; const T=THEMES[dark?'dark':'light'];
+    for(const k of ['floor','slab','wall','edge','white','white2','eq','eq2','table','wood','wip','tray','tank','alu']) MAT[k].color.setHex(T[k]);
+    hemi.color.setHex(T.sky); hemi.groundColor.setHex(T.gnd); hemi.intensity=T.hemi;
+    for(const k in ZMAT) ZMAT[k].opacity = dark? .10 : .06;
+    drawAllFloorLabels(); renderer.shadowMap.needsUpdate=true; labelsDirty=true;
+  }
+  let labelMode='floor';
+  function setLabelMode(mode){ labelMode=mode; container.classList.toggle('lblFloor',mode==='floor'); container.classList.toggle('hideLabels',mode==='off');
+    for(const id in ST) ST[id].floorLbl.visible = mode==='floor'; labelsDirty=true; }
+
   /* fusión de geometría estática por material */
   (function mergeStatic(){
     scene.updateMatrixWorld(true); const buckets=new Map(), kill=[];
@@ -286,6 +316,8 @@ export function createWorld(container){
     kill.forEach(o=>o.parent.remove(o));
     for(const {mat,geos,cast} of buckets.values()){ const m=new THREE.Mesh(mergeGeometries(geos,false),mat); m.castShadow=cast&&!mat.transparent; m.receiveShadow=!mat.transparent; m.matrixAutoUpdate=false; m.updateMatrix(); scene.add(m); geos.forEach(g=>g.dispose()); }
   })();
+  setTheme(dark?'dark':'light'); setLabelMode('floor');
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{ drawAllFloorLabels(); labelsDirty=true; });
   renderer.shadowMap.needsUpdate = true;
 
   /* =====================================================================
@@ -352,7 +384,7 @@ export function createWorld(container){
     chevrons=new THREE.InstancedMesh(chevGeo,new THREE.MeshBasicMaterial({color:0xffffff}),Math.max(1,chevData.length)); chevrons.frustumCulled=false; traceGroup.add(chevrons);
     // badges de número de paso
     routeStations=new Set(Object.keys(nums)); routeStations.add(failBin);
-    for(const id in ST){ ST[id].el.classList.toggle('dim', !routeStations.has(id)); }
+    for(const id in ST){ ST[id].el.classList.toggle('dim', !routeStations.has(id)); ST[id].floorLbl.material.opacity = routeStations.has(id)? 1 : .38; }
     for(const id in nums){ const s=ST[id]; const el=document.createElement('div'); el.className='badge3d'; el.style.background='#'+col.toString(16).padStart(6,'0'); el.textContent=nums[id].join(' · ');
       const o=new CSS2DObject(el); o.position.set(0,s.height+2.6,0); s.g.add(o); s.badge=o; }
     // zonas de WIP por estación (cola / salida-lote / componentes)
@@ -511,7 +543,7 @@ export function createWorld(container){
         txt=parts.join(' · ');
         W.el.dataset.state = c.batch||c.inp ? 'run' : (c.q||c.kit) ? 'wait' : 'idle';
       } else if(id===E.failBin && c && c.fail){ txt=''; }
-      if(W._txt!==txt){ W._txt=txt; W.stEl.textContent=txt; }
+      if(W._txt!==txt){ W._txt=txt; W.stEl.textContent=txt; W.el.classList.toggle('empty',!txt); labelsDirty=true; }
     }
   }
   const _m4=new THREE.Matrix4(), _q=new THREE.Quaternion(), _s=new THREE.Vector3(1,1,1), _up=new THREE.Vector3(0,1,0), _d=new THREE.Vector3(), _p2=new THREE.Vector3();
@@ -558,7 +590,7 @@ export function createWorld(container){
     ST, scene, camera, renderer, setRoute, pathLen, frame, clearPieces, setHighlight,
     setSelected(id){ selected=id; }, get selected(){ return selected; },
     focusStation, viewIso, viewTop, setSun, setShadows, sunState,
-    setLabels(on){ container.classList.toggle('hideLabels',!on); labelsDirty=true; },
+    setLabelMode, setTheme,
     onPick(fn){ pickCbs.push(fn); }, kasSub(){ return ST.kas.extra.sub; }, markLabels(){ labelsDirty=true; },
   };
 }

@@ -4,160 +4,164 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>JD Automation</title>
-<meta name="description" content="Proyectos de automatización y troubleshooting de las líneas de cámaras John Deere (Moose, Scorpion, Gecko, ELK).">
+<meta name="description" content="Apps de automatización y troubleshooting de las líneas de cámaras John Deere: simulador de líneas, buscador de fallas Kasalis y más.">
+<script src="shared/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/ui.css">
 <style>
-:root{
-  --bg1:#d9dbe0; --bg2:#a9a29c; --panel:rgba(244,245,247,.86); --card:rgba(255,255,255,.92); --ink:#15171c; --ink2:#6b7280; --ink3:#a0a6b1;
-  --line:rgba(20,24,35,.07); --blue:#2f6bff; --yellow:#f2c94c; --red:#e8746b; --ok:#22a06b;
-  --shadow:0 20px 60px rgba(30,30,40,.12); --cshadow:0 6px 24px rgba(30,35,50,.07);
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg1:#1a1d24; --bg2:#0d0f13; --panel:rgba(26,29,37,.88); --card:rgba(36,40,50,.95); --ink:#eef0f4; --ink2:#a1a8b5; --ink3:#6c7381; --line:rgba(255,255,255,.07); --shadow:0 20px 60px rgba(0,0,0,.5); --cshadow:0 6px 24px rgba(0,0,0,.3);} }
-:root[data-theme="dark"]{ --bg1:#1a1d24; --bg2:#0d0f13; --panel:rgba(26,29,37,.88); --card:rgba(36,40,50,.95); --ink:#eef0f4; --ink2:#a1a8b5; --ink3:#6c7381; --line:rgba(255,255,255,.07); --shadow:0 20px 60px rgba(0,0,0,.5); --cshadow:0 6px 24px rgba(0,0,0,.3);}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%}
-body{background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;padding:28px 16px;min-height:100vh}
-a{color:inherit;text-decoration:none}
-.frame{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:270px 1fr;gap:18px;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:16px;min-height:calc(100vh - 56px)}
-.side{background:var(--card);border-radius:20px;padding:18px 14px;display:flex;flex-direction:column;box-shadow:var(--cshadow)}
-.logo{display:flex;align-items:center;gap:8px;font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.3px;padding:0 6px}
-.logo i{width:10px;height:10px;border-radius:50%;background:conic-gradient(var(--yellow) 0 40%,var(--ink) 0 70%,var(--blue) 0)}
-.title{font-size:26px;font-weight:300;line-height:1.15;margin:28px 6px 18px;letter-spacing:-.3px}
-.search{display:flex;align-items:center;gap:8px;padding:8px 10px;color:var(--ink3);border-bottom:1px solid var(--line);margin:0 4px 14px}
-.search input{border:0;background:transparent;outline:0;font:inherit;color:var(--ink);width:100%}
-.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;color:var(--ink2);font-size:13.5px}
-.nav a:hover{background:rgba(127,135,150,.1);color:var(--ink)}
-.nav a.on{background:var(--panel);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.06)}
-.nav svg{width:18px;height:18px;flex:0 0 18px}
-.side .grow{flex:1}
-.side .foot{font-size:12px;color:var(--ink3);padding:10px 8px 0;border-top:1px solid var(--line)}
-main{padding:6px 4px;min-width:0}
-.topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.chip{background:var(--card);border-radius:20px;padding:8px 14px;box-shadow:var(--cshadow);font-size:13px;color:var(--ink2)}
-.chip b{color:var(--ink);font-weight:500}
-.topbar .sp{flex:1}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
-.stat{background:var(--card);border-radius:20px;padding:16px 18px;box-shadow:var(--cshadow)}
-.stat h4{margin:0 0 10px;font-weight:500;font-size:14px}
-.stat .row{display:flex;gap:22px}
-.stat .num{font-size:22px;font-weight:400;letter-spacing:-.4px}
-.stat small{color:var(--ink2);font-size:12px;display:block}
-.stat .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.meter{height:3px;border-radius:2px;margin-top:12px;background:linear-gradient(90deg,var(--red),var(--red) 82%,var(--yellow) 82%)}
-.meter.y{background:linear-gradient(90deg,var(--yellow),var(--yellow) 62%,rgba(127,135,150,.18) 62%)}
-h2{font-weight:400;font-size:20px;margin:6px 4px 12px;letter-spacing:-.2px}
-.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.proj{background:var(--card);border-radius:22px;box-shadow:var(--cshadow);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s, box-shadow .2s}
-a.proj:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(30,35,50,.14)}
-.proj.featured{grid-column:1/-1;display:grid;grid-template-columns:1.35fr 1fr}
-.proj .img{background:#eef1f5 center/cover no-repeat;min-height:180px}
-.proj.featured .img{min-height:340px}
-.proj .body{padding:18px 20px;display:flex;flex-direction:column;gap:8px}
-.proj .body h3{margin:0;font-weight:500;font-size:17px}
-.proj .body p{margin:0;color:var(--ink2);font-size:13px}
-.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink2);background:rgba(127,135,150,.12);padding:3px 9px;border-radius:20px;width:max-content}
-.badge i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
-.badge.soon i{background:var(--yellow)}
-.feat{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px;font-size:13px;color:var(--ink2)}
-.feat li::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--blue);margin-right:9px;vertical-align:middle}
-.go{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:10px;font-weight:500}
-.go span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff}
-:root[data-theme="dark"] .go span{background:#fff;color:#111}
-.proj.soon{opacity:.78}
-.proj .ico{height:120px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(47,107,255,.10),rgba(242,201,76,.12))}
-.proj .ico svg{width:46px;height:46px;color:var(--ink)}
-.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:4px}
-.doc{background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:var(--cshadow);display:flex;gap:10px;align-items:center;font-size:13px}
-.doc em{font-style:normal;font-size:10.5px;color:#fff;background:#94a3b8;border-radius:6px;padding:2px 6px;font-weight:600}
-.doc small{display:block;color:var(--ink3);font-size:11.5px}
-@media (max-width:900px){ .frame{grid-template-columns:1fr} .side{display:none} .stats{grid-template-columns:1fr} .proj.featured{grid-template-columns:1fr} .proj.featured .img{min-height:220px} body{padding:12px 10px} }
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 130px}
+header{display:flex;align-items:center;gap:10px}
+.avatar{width:58px;height:58px;border-radius:50%;background:var(--invert);color:var(--invert-ink);display:grid;place-items:center;font-weight:600;font-size:22px;letter-spacing:-.5px}
+header .sp{flex:1}
+.bell{position:relative}
+.bell i{position:absolute;top:11px;right:12px;width:7px;height:7px;border-radius:50%;background:var(--fail)}
+h1{font-size:56px;font-weight:400;letter-spacing:-2px;margin:26px 0 0;line-height:1.05}
+h1 b{font-weight:700}
+.lead{color:var(--ink2);margin:4px 0 0;font-size:15px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin:22px 0 0}
+.filters .pill .ic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--surface2)}
+.filters .pill.on .ic{background:rgba(255,255,255,.18)}
+.tools{display:flex;align-items:center;justify-content:space-between;margin:26px 0 8px}
+.tools .search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;height:46px;padding:0 16px;background:transparent;min-width:0;flex:0 1 320px;margin-left:10px}
+.tools .search input{border:0;outline:0;background:transparent;width:100%}
+.tools .r{display:flex;gap:10px;align-items:center}
+/* carpetas */
+.folders{display:grid;grid-template-columns:repeat(2,1fr);gap:22px 22px;margin-top:18px}
+.folder{--fc:var(--surface2);--fi:var(--ink);position:relative;padding-top:58px;color:var(--fi);display:block;transition:transform .2s}
+.folder.dark{--fc:var(--invert);--fi:var(--invert-ink)}
+a.folder:hover{transform:translateY(-3px)}
+.folder .tabbar{position:absolute;top:0;left:0;height:62px;width:50%;min-width:230px;background:var(--fc);border-radius:28px 28px 0 0;display:flex;align-items:center;gap:8px;padding:0 14px}
+.folder .tabbar::after{content:"";position:absolute;top:0;right:-46px;width:92px;height:100%;background:var(--fc);border-top-right-radius:26px;transform:skewX(38deg);transform-origin:bottom;z-index:-0}
+.folder .tabbar > *{position:relative;z-index:1}
+.folder .owner{position:absolute;top:14px;right:16px;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.folder .owner b{color:var(--ink);font-weight:600}
+.folder .owner .mini{width:28px;height:28px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--ink)}
+.folder .body{position:relative;background:var(--fc);border-radius:0 30px 30px 30px;padding:20px 22px 22px;display:flex;align-items:center;gap:18px;min-height:132px}
+.folder .thumb{width:88px;height:88px;flex:0 0 88px;border-radius:50%;background:var(--surface) center/cover no-repeat;display:grid;place-items:center;font-size:26px;font-weight:500;color:var(--ink);border:1px solid var(--line)}
+.folder .thumb svg{width:36px;height:36px}
+.folder h3{margin:0;font-size:19px;font-weight:600;letter-spacing:-.2px}
+.folder p{margin:4px 0 0;font-size:13px;opacity:.72;line-height:1.45}
+.folder .prog{height:3px;border-radius:2px;background:rgba(127,127,127,.35);margin-top:12px;position:relative;max-width:340px}
+.folder .prog i{position:absolute;left:0;top:-1px;height:5px;border-radius:3px;background:var(--fi)}
+.folder .more{position:absolute;top:14px;right:20px;font-size:20px;letter-spacing:1px;opacity:.75;line-height:1}
+.folder .tag{color:var(--fi)}
+.ricon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--fi);color:var(--fc)}
+.ricon svg{width:16px;height:16px}
+.folder.soon .body,.folder.soon .tabbar,.folder.soon .tabbar::after{opacity:.85}
+.folder.soon .thumb{opacity:.7}
+h2{font-size:22px;font-weight:500;letter-spacing:-.4px;margin:44px 4px 12px}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.doc{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:22px;padding:12px 14px;background:var(--surface)}
+.doc .ext{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);font-size:10.5px;font-weight:700;color:var(--ink2)}
+.doc small{display:block;color:var(--ink3);font-size:12px}
+/* barra flotante */
+.dock{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:10px;padding:8px;border-radius:999px;background:rgba(160,160,160,.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);z-index:10}
+:root[data-theme="dark"] .dock{background:rgba(60,60,60,.55)}
+.dock a{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.35);color:var(--ink2)}
+.dock a.on{background:var(--surface);color:var(--ink);border-color:transparent;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.dock svg{width:22px;height:22px}
+.empty-f{color:var(--ink2);padding:20px;text-align:center;display:none}
+@media (max-width:560px){ .folder .owner .lbl{display:none} .folder .owner{font-size:11.5px;top:18px} .folder .tabbar{min-width:200px} .folder .body{flex-direction:column;align-items:flex-start} }
+@media (max-width:820px){ .folders{grid-template-columns:1fr} h1{font-size:42px} .tools .search{display:none} }
 </style>
 </head>
 <body>
-<div class="frame">
-  <aside class="side">
-    <div class="logo"><i></i>jd·automation</div>
-    <div class="title">Proyectos<br>de líneas</div>
-    <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar proyecto"></label>
-    <nav class="nav">
-      <a class="on" href="#proyectos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
-      <a href="simulador-lineas/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>Simulador de líneas</a>
-      <a href="simulador-lineas/?codes=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 9v4m0 4h.01M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Códigos Kasalis</a>
-      <a href="Tutorial%20Active%20Alignment%20(1).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>Active Alignment</a>
-      <a href="#documentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Documentos</a>
-    </nav>
-    <div class="grow"></div>
-    <div class="foot">Jabil · John Deere cameras<br>Moose · Scorpion · Gecko · ELK</div>
-  </aside>
+<div class="wrap">
+  <header>
+    <div class="avatar" title="Diego">D</div>
+    <div class="sp"></div>
+    <button class="round light bell" title="Novedades" onclick="document.getElementById('nov').scrollIntoView({behavior:'smooth'})"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><i></i></button>
+    <button class="round" data-theme-toggle></button>
+  </header>
 
-  <main id="proyectos">
-    <div class="topbar">
-      <div class="chip">Área <b>Automatización · cuarto limpio</b></div>
-      <div class="sp"></div>
-      <div class="chip" id="today"></div>
-    </div>
+  <h1>Hola, <b>Diego!</b></h1>
+  <p class="lead">Tus apps de automatización · líneas de cámaras John Deere.</p>
 
-    <div class="stats">
-      <div class="stat"><h4>Líneas modeladas</h4>
-        <div class="row"><div><span class="num">3</span><small><span class="dot" style="background:var(--blue)"></span>en simulador</small></div><div><span class="num">42</span><small><span class="dot" style="background:var(--yellow)"></span>estaciones</small></div><div><span class="num">1</span><small><span class="dot" style="background:var(--red)"></span>Kasalis 500-S</small></div></div>
-        <div class="meter"></div></div>
-      <div class="stat"><h4>Kasalis</h4>
-        <div class="row"><div><span class="num">1:40</span><small>BUILD / pieza</small></div><div><span class="num">1.5 h</span><small>horno por lote</small></div><div><span class="num">30</span><small>pzs por lote</small></div></div>
-        <div class="meter y"></div></div>
-      <div class="stat"><h4>Códigos de falla</h4>
-        <div class="row"><div><span class="num">400</span><small>PLC Pixid</small></div><div><span class="num">790</span><small>KSvision</small></div><div><span class="num">41</span><small>con guía</small></div></div>
-        <div class="meter y" style="background:linear-gradient(90deg,var(--yellow),var(--yellow) 30%,rgba(127,135,150,.18) 30%)"></div></div>
-    </div>
+  <div class="filters" id="filters">
+    <button class="pill on" data-f="all"><span>Todas (<b id="nAll">0</b>)</span></button>
+    <button class="pill" data-f="active">Activas <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg></span></button>
+    <button class="pill" data-f="soon">Próximamente <span class="ic">⏳</span></button>
+  </div>
 
-    <h2>Proyectos</h2>
-    <div class="projects" id="plist">
-      <a class="proj featured" href="simulador-lineas/" data-k="simulador lineas 3d flujo kasalis scorpion moose gecko">
-        <div class="img" style="background-image:url('assets/preview-simulador.jpg')"></div>
-        <div class="body">
-          <span class="badge"><i></i>Activo</span>
-          <h3>Simulador de flujo de líneas 3D</h3>
-          <p>Layout real del cuarto limpio con las estaciones de Moose, Scorpion y Gecko. Simulación completa con varias piezas a la vez, para troubleshooting y planeación.</p>
-          <ul class="feat">
-            <li>WIP, colas y lotes por estación; horno por lote</li>
-            <li>Kasalis BUILD / RETEST excluyentes en la misma máquina</li>
-            <li>Seguimiento de pieza: anterior · actual · siguiente</li>
-            <li>Modo ajuste de tiempos ciclo y % de falla</li>
-            <li>Rutas tipo pistas de PCB, sol y sombras ajustables</li>
-          </ul>
-          <div class="go">Abrir simulador <span>→</span></div>
-        </div>
-      </a>
-      <a class="proj" href="simulador-lineas/?codes=1" data-k="codigos falla kasalis error ksvision">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 9v4m0 4h.01M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
-        <div class="body"><span class="badge"><i></i>Activo</span><h3>Códigos de falla Kasalis</h3><p>Buscador de códigos PLC (001–1152) y KSvision con guías de troubleshooting. Incluye la aclaración de 161 / 155 / 108.</p><div class="go">Buscar códigos <span>→</span></div></div>
-      </a>
-      <a class="proj" href="Tutorial%20Active%20Alignment%20(1).html" data-k="tutorial active alignment sfr mtf eol">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg></div>
-        <div class="body"><span class="badge"><i></i>Activo</span><h3>Tutorial Active Alignment</h3><p>EOL vs Active Alignment, SFR / MTF, targets y diagnóstico con datos propios.</p><div class="go">Abrir tutorial <span>→</span></div></div>
-      </a>
-      <div class="proj soon" data-k="logs tiempo real monitor maquinas mes">
-        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
-        <div class="body"><span class="badge soon"><i></i>Próximamente</span><h3>Monitor de línea en tiempo real</h3><p>Leer las carpetas de logs de las máquinas para ver el flujo real: material retenido, máquinas sin producir y fallas, sobre el mismo modelo 3D.</p></div>
-      </div>
-    </div>
+  <div class="tools">
+    <a class="pill" href="https://github.com/DiegoBasan/JD-AUTOMATION" target="_blank" title="Cada app es una carpeta del repositorio">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Nueva app</a>
+    <div class="r"><label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink3)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar app"></label>
+      <button class="round" id="sortBtn" title="Ordenar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg></button></div>
+  </div>
 
-    <h2 id="documentos" style="margin-top:26px">Documentos de referencia</h2>
-    <div class="docs">
-      <a class="doc" href="KASALIS%20Pixid%20500%20Manual%20Rev%20022.pdf"><em>PDF</em><div>Manual Pixid 500<small>Kasalis · Rev 022</small></div></a>
-      <a class="doc" href="NPI%20Product%20Data%20-%20Camera%204.pdf"><em>PDF</em><div>NPI Product Data<small>Flujos y estructura por producto</small></div></a>
-      <a class="doc" href="Error%20Codes%201%20(1).pdf"><em>PDF</em><div>Error Codes<small>KSmessage (PLC)</small></div></a>
-      <a class="doc" href="Error%20Extra%20Codes%201%20(1).pdf"><em>PDF</em><div>Error Extra Codes<small>KSvision</small></div></a>
-      <a class="doc" href="Trace%20Log%20Bits%20(1).pdf"><em>PDF</em><div>Trace Log Bits<small>Máscaras de log</small></div></a>
-      <a class="doc" href="layout%20moose%20scorpion%20gecko.png"><em>PNG</em><div>Layout de instalación<small>Moose · Scorpion · Gecko</small></div></a>
-      <a class="doc" href="FLUJOS_COMPLETOS_CONTEXTO.txt"><em>TXT</em><div>Contexto de flujos<small>Descripción por línea</small></div></a>
-      <a class="doc" href="Par%C3%A1metros%20Kasalis%20%5BDR%5D%20%5BLP%5D%20%5BST%5D.txt"><em>TXT</em><div>Parámetros dispense<small>Kasalis [DR] [LP] [ST]</small></div></a>
-    </div>
-  </main>
+  <div class="folders" id="apps"></div>
+  <div class="empty-f" id="none">Ninguna app coincide.</div>
+
+  <h2 id="nov">Novedades</h2>
+  <div class="docs" id="news"></div>
+
+  <h2 id="docs">Documentos de referencia</h2>
+  <div class="docs">
+    <a class="doc" href="KASALIS%20Pixid%20500%20Manual%20Rev%20022.pdf"><span class="ext">PDF</span><div>Manual Pixid 500<small>Kasalis · Rev 022</small></div></a>
+    <a class="doc" href="NPI%20Product%20Data%20-%20Camera%204.pdf"><span class="ext">PDF</span><div>NPI Product Data<small>Flujos por producto</small></div></a>
+    <a class="doc" href="Error%20Codes%201%20(1).pdf"><span class="ext">PDF</span><div>Error Codes<small>KSmessage (PLC)</small></div></a>
+    <a class="doc" href="Error%20Extra%20Codes%201%20(1).pdf"><span class="ext">PDF</span><div>Error Extra Codes<small>KSvision</small></div></a>
+    <a class="doc" href="Trace%20Log%20Bits%20(1).pdf"><span class="ext">PDF</span><div>Trace Log Bits<small>Máscaras de log</small></div></a>
+    <a class="doc" href="layout%20moose%20scorpion%20gecko.png"><span class="ext">PNG</span><div>Layout de instalación<small>Moose · Scorpion · Gecko</small></div></a>
+    <a class="doc" href="FLUJOS_COMPLETOS_CONTEXTO.txt"><span class="ext">TXT</span><div>Contexto de flujos<small>Descripción por línea</small></div></a>
+    <a class="doc" href="Par%C3%A1metros%20Kasalis%20%5BDR%5D%20%5BLP%5D%20%5BST%5D.txt"><span class="ext">TXT</span><div>Parámetros dispense<small>Kasalis [DR] [LP] [ST]</small></div></a>
+  </div>
 </div>
+
+<nav class="dock">
+  <a href="#" class="on" title="Apps"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg></a>
+  <a href="buscador-kasalis/" title="Buscador de fallas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+  <a href="#docs" title="Documentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></a>
+</nav>
+
 <script>
-document.getElementById('today').textContent = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
-document.getElementById('q').addEventListener('input',e=>{ const q=e.target.value.toLowerCase(); document.querySelectorAll('#plist .proj').forEach(p=>{ p.style.display = !q || (p.dataset.k+' '+p.textContent).toLowerCase().includes(q) ? '' : 'none'; }); });
+/* Registro de apps: cada app = una carpeta del repo */
+const I = {
+  cube:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>',
+  steps:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M7 9h4M7 13h7"/></svg>',
+  pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  trend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg>',
+  clock:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/></svg>',
+};
+const APPS = [
+  {id:'simulador-lineas', title:'Simulador de líneas 3D', desc:'Flujo real Moose · Scorpion · Gecko: WIP, lotes, horno, Kasalis BUILD/RETEST, seguimiento de pieza.', href:'simulador-lineas/', status:'active', prog:.8, thumb:'assets/preview-simulador.jpg', area:'Kasalis + líneas'},
+  {id:'buscador-kasalis', title:'Buscador de fallas Kasalis', desc:'Escribe 105, 161 o una palabra: significado, guía, notas, procedimientos y páginas del manual.', href:'buscador-kasalis/', status:'active', prog:.6, icon:'search', area:'Kasalis', dark:true},
+  {id:'tutorial-aa', title:'Tutorial Active Alignment', desc:'EOL vs Active Alignment, SFR / MTF, targets y diagnóstico con tus datos.', href:'Tutorial%20Active%20Alignment%20(1).html', status:'active', prog:1, icon:'target', area:'Óptica'},
+  {id:'troubleshooting', title:'Troubleshooting guiado Kasalis', desc:'Tus notas por falla y secuencias de pantallas del programa (qué botón, qué parámetro). Se mostrarán también en el buscador.', status:'soon', prog:.15, icon:'steps', area:'Kasalis'},
+  {id:'logs', title:'Análisis de logs de corridas', desc:'Ranking de fallas más repetidas y por qué número, a partir de los logs de la Kasalis.', status:'soon', prog:.1, icon:'chart', area:'Kasalis'},
+  {id:'monitor', title:'Monitor de línea en vivo', desc:'Leer carpetas de logs de las máquinas: material retenido, máquinas sin producir y fallas sobre el modelo 3D.', status:'soon', prog:.05, icon:'pulse', area:'Líneas'},
+];
+const NEWS = [
+  ['Buscador de fallas Kasalis','Nueva app · códigos PLC + KSvision + manual'],
+  ['Simulador · modo claro / oscuro','Nombres en el piso, sin malla, menos ruido'],
+  ['Simulador · Kasalis BUILD / RETEST','Lotes de 30, horno 1.5 h, cambio de modo'],
+];
+let filter='all', sortAZ=false;
+function render(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  let list=APPS.filter(a=>(filter==='all'||a.status===filter) && (!q || (a.title+' '+a.desc+' '+a.area).toLowerCase().includes(q)));
+  if(sortAZ) list=[...list].sort((a,b)=>a.title.localeCompare(b.title));
+  document.getElementById('nAll').textContent=APPS.length;
+  document.getElementById('none').style.display=list.length?'none':'block';
+  document.getElementById('apps').innerHTML=list.map(a=>{
+    const tag=a.href? 'a' : 'div'; const soon=a.status==='soon';
+    const thumb=a.thumb? `<div class="thumb" style="background-image:url('${a.thumb}')"></div>` : `<div class="thumb">${I[a.icon]||a.title[0]}</div>`;
+    return `<${tag} class="folder ${a.dark?'dark':''} ${soon?'soon':''}" ${a.href?`href="${a.href}"`:''}>
+      <div class="tabbar"><span class="tag">${I.clock} ${soon?'Próximamente':'Activa'}</span><span class="ricon">${I.trend}</span></div>
+      <div class="owner"><span class="lbl">Carpeta</span> <b>/${a.id}</b></div>
+      <div class="body"><span class="more">···</span>${thumb}<div style="min-width:0;flex:1"><h3>${a.title}</h3><p>${a.desc}</p><div class="prog"><i style="width:${Math.round(a.prog*100)}%"></i></div></div></div>
+    </${tag}>`; }).join('');
+}
+document.getElementById('filters').onclick=e=>{ const b=e.target.closest('[data-f]'); if(!b) return; filter=b.dataset.f; document.querySelectorAll('#filters .pill').forEach(x=>x.classList.toggle('on',x===b)); render(); };
+document.getElementById('q').oninput=render;
+document.getElementById('sortBtn').onclick=()=>{ sortAZ=!sortAZ; render(); };
+document.getElementById('news').innerHTML=NEWS.map(([t,s])=>`<div class="doc"><span class="ext">${I.trend.replace('<svg','<svg width="16" height="16"')}</span><div>${t}<small>${s}</small></div></div>`).join('');
+render();
 </script>
 </body>
 </html>

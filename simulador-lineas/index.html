@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Simulador de Líneas</title>
 <meta name="description" content="Simulación 3D en tiempo real del flujo de ensamble de cámaras John Deere (Scorpion, Moose, Gecko): WIP, lotes, horno, Kasalis BUILD/RETEST, seguimiento de pieza y tiempos ciclo ajustables.">
+<script src="../shared/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -13,13 +14,12 @@
   --blue:#2f6bff; --scorpion:#2f6bff; --moose:#0ea5b7; --gecko:#f08c00; --ok:#16a34a; --fail:#e5484d; --warn:#f2a23a; --yellow:#f2c94c;
   --r:20px; --shadow:0 10px 40px rgba(25,30,45,.10), 0 1px 0 rgba(255,255,255,.7) inset; --top:60px; --side:300px;
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0f1218; --glass:rgba(24,28,36,.85); --glass2:rgba(30,35,45,.96); --ink:#eef1f6; --ink2:#a3aab8; --ink3:#6f7787; --line:rgba(255,255,255,.08); --shadow:0 10px 40px rgba(0,0,0,.45); } }
-:root[data-theme="dark"]{ --bg:#0f1218; --glass:rgba(24,28,36,.85); --glass2:rgba(30,35,45,.96); --ink:#eef1f6; --ink2:#a3aab8; --ink3:#6f7787; --line:rgba(255,255,255,.08); --shadow:0 10px 40px rgba(0,0,0,.45); }
+:root[data-theme="dark"]{ --bg:#121212; --glass:rgba(28,28,28,.86); --glass2:rgba(38,38,38,.96); --ink:#ededed; --ink2:#a3a3a3; --ink3:#6e6e6e; --line:rgba(255,255,255,.08); --shadow:0 10px 40px rgba(0,0,0,.5); }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:13px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 button,select,input{font:inherit;color:inherit}
 #stage{position:fixed;inset:0;background:radial-gradient(1200px 700px at 60% 40%,#f7f8fa,#e4e7ec)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #stage{background:radial-gradient(1200px 700px at 60% 40%,#1c2230,#0d1016)} }
+:root[data-theme="dark"] #stage{background:radial-gradient(1200px 700px at 60% 40%,#262626,#111)}
 .glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--r)}
 /* top bar */
 #top{position:fixed;top:10px;left:10px;right:10px;height:var(--top);display:flex;align-items:center;gap:10px;padding:0 10px;z-index:20;border-radius:18px}
@@ -147,6 +147,13 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
 .label3d.hl .st{color:#dbe6ff}
 .badge3d{font-size:10px;font-weight:700;color:#fff;padding:1px 7px;border-radius:9px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .hideLabels .label3d,.hideLabels .badge3d{display:none}
+.lblFloor .label3d b{display:none} .lblFloor .label3d.hl b{display:block} .lblFloor .label3d.empty:not(.hl){display:none}
+.lblFloor .label3d.dim{display:none}
+:root[data-theme="dark"] .label3d{background:rgba(32,32,32,.9);color:#e5e5e5;border-color:rgba(255,255,255,.12)}
+:root[data-theme="dark"] .label3d .st{color:#bdbdbd}
+:root[data-theme="dark"] .label3d[data-state="run"] .st{color:#4ade80} :root[data-theme="dark"] .label3d[data-state="wait"] .st{color:#fbbf24}
+:root[data-theme="dark"] .label3d.hl{background:#ededed;color:#111;border-color:#ededed} :root[data-theme="dark"] .label3d.hl .st{color:#333}
+:root[data-theme="dark"] .pill.primary, :root[data-theme="dark"] #kas .mode span.on{background:#ededed;color:#111;border-color:#ededed}
 @media (max-width:900px){
   .kpis .kpi:nth-child(n+3), .src, #top .hideM{display:none}
   #side{width:calc(100% - 20px)} #right{width:calc(100% - 20px)} #kas{width:calc(100% - 20px)}
@@ -164,7 +171,7 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
   <button class="ibtn" id="sideBtn" title="Menú">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
   </button>
-  <a class="brand hideM" href="../index.html" title="Volver a proyectos"><span class="dot"></span><span>Simulador de líneas<small>JD Automation</small></span></a>
+  <a class="brand hideM" href="../index.html" title="Volver a apps"><span class="dot"></span><span>Simulador de líneas<small>JD Automation</small></span></a>
   <div class="sep hideM"></div>
   <div class="seg" id="prodSeg">
     <button data-p="scorpion" style="--c:var(--scorpion)">Scorpion</button>
@@ -189,6 +196,7 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
     <div class="kpi"><b id="kThr">0</b><span>pzs/h</span></div>
   </div>
   <div class="src hideM" title="Fuente de datos: simulación (logs en vivo próximamente)"><i></i>Sim</div>
+  <button class="ibtn" data-theme-toggle></button>
   <button class="pill" id="adjBtn" title="Modo ajuste: tiempos ciclo">⚙ Ajustes</button>
   <button class="pill hideM" id="codesBtn" title="Códigos de falla Kasalis">⚠<span class="t"> Códigos</span></button>
 </header>
@@ -205,7 +213,7 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
     <div class="btnrow"><button class="pill" id="vIso">Vista iso</button><button class="pill" id="vTop">Planta</button></div>
     <label class="chk"><input type="checkbox" id="follow"> Seguir pieza seleccionada</label>
     <div class="h">Capas</div>
-    <label class="chk"><input type="checkbox" id="optLabels" checked> Etiquetas de estaciones</label>
+    <div class="ctl"><label>Nombres</label><select class="sel" id="lblMode" style="flex:1.4"><option value="floor">En el piso (limpio)</option><option value="float">Flotantes</option><option value="off">Ocultos</option></select></div>
     <label class="chk"><input type="checkbox" id="optTraces" checked> Pistas de flujo (PCB) y zonas de WIP</label>
     <div class="h">Sol y sombras</div>
     <label class="chk"><input type="checkbox" id="optShadows" checked> Sombras</label>

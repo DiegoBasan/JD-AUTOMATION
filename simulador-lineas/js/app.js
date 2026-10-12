@@ -5,7 +5,7 @@
 import {Engine, fmt} from './engine.js';
 import {createWorld, UNITS_PER_M} from './world.js';
 import {ROUTES, OPS, BRANCH_NAMES, PCS, CHECKS, HINTS, FAILS, STEP_FAIL_LABEL, KBUILD, LINE_COL} from './data.js';
-import {CODES} from './codes.js';
+import {CODES} from '../../shared/kasalis-codes.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -51,7 +51,8 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
 /* ---------------- vista ---------------- */
 $('vIso').onclick = ()=>world.viewIso(); $('vTop').onclick = ()=>world.viewTop();
 $('follow').onchange = e=>ui.follow = e.target.checked;
-$('optLabels').onchange = e=>world.setLabels(e.target.checked);
+$('lblMode').onchange = e=>world.setLabelMode(e.target.value);
+addEventListener('jdtheme', e=>world.setTheme(e.detail));
 $('optTraces').onchange = e=>ui.traces = e.target.checked;
 $('optShadows').onchange = e=>world.setShadows(e.target.checked);
 $('sunAz').oninput = $('sunEl').oninput = ()=>world.setSun(+$('sunAz').value, +$('sunEl').value);
