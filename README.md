@@ -35,7 +35,7 @@ Se sirve como módulos ES: abrir por GitHub Pages o un servidor local (`python -
 
 ## Kasalis 3D (`kasalis-3d/`)
 - `models/kasalis.glb` — modelo minimalista dividido en piezas móviles (`<grupo>__<color>`: rotary, plate, piston, disp_x/z/head, align_z/x/head, finger_a/b, lens, spare, base); mm, origen en el centro del rotary.
-  Se genera con un script que separa cada color en componentes conectados y los asigna por posición.
+  Se regenera con `python3 kasalis-3d/tools/split_kasalis.py <export.glb> kasalis-3d/models/kasalis.glb kasalis-3d/tools` (separa cada color en piezas y las asigna por posición).
 - `js/cycle.js` — secuencia BUILD / RETEST paso a paso con los parámetros reales (pistón 1.18 s, línea ARC/PRE/PRT/VIS del archivo de dispensado, UVCureTime) y los códigos de falla de cada paso.
 - `js/scene.js` — Three.js: jerarquía de ejes, cordón de DELO sobre el lens adapter, luces UV/domo, resaltado por estación.
 - `js/app.js` — línea de tiempo, controles, parámetros editables (se guardan en el navegador) y modo falla (salta al paso del código y muestra su flujo de Fallas Kasalis).
