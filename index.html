@@ -247,6 +247,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg
 <script type="module">
 import {FALLAS} from './buscador-kasalis/data/fallas.js';
 import {OPS, GLOBAL_DEFAULTS} from './simulador-lineas/js/data.js';
+import {DEFAULTS as K3D, buildCycle} from './kasalis-3d/js/cycle.js';
 
 /* ---------------- Apps ----------------
    Cada app vive en su carpeta del repo. Para agregar una: crea la carpeta y una entrada aquí.
@@ -254,6 +255,7 @@ import {OPS, GLOBAL_DEFAULTS} from './simulador-lineas/js/data.js';
 const PROJECTS=[
  {id:"simulador-lineas",name:"Simulador de líneas 3D",short:"Simulador",desc:"Flujo Moose · Scorpion · Gecko, WIP, horno y Kasalis BUILD/RETEST",href:"simulador-lineas/",status:"live",progress:80,icon:"assets/icons/simulador.svg",updated:"2026-10-12"},
  {id:"buscador-kasalis",name:"Fallas Kasalis",short:"Fallas Kasalis",desc:"Cada falla con su flujo de resolución, códigos y manual",href:"buscador-kasalis/",status:"live",progress:80,icon:"assets/icons/fallas.svg",updated:"2026-10-12"},
+ {id:"kasalis-3d",name:"Kasalis 3D",short:"Kasalis 3D",desc:"Ciclo de la Kasalis en 3D con pistón, ARC, gripper y UV reales",href:"kasalis-3d/",status:"live",progress:60,icon:"assets/icons/kasalis3d.svg",updated:"2026-10-13"},
  {id:"tutorial-aa",name:"Tutorial Active Alignment",short:"Tutorial AA",desc:"EOL vs Active Alignment, SFR / MTF y targets",href:"Tutorial%20Active%20Alignment%20(1).html",status:"live",progress:100,icon:"assets/icons/aa.svg",updated:"2026-10-11"},
  {id:"troubleshooting",name:"Troubleshooting guiado",desc:"Secuencias de pantallas del programa Pixid con fotos",status:"soon",progress:15,icon:"assets/icons/troubleshooting.svg",updated:"2026-10-12"},
  {id:"logs",name:"Análisis de logs",desc:"Fallas más repetidas a partir de los logs de corridas",status:"soon",progress:10,icon:"assets/icons/logs.svg",updated:"2026-10-11"},
@@ -261,6 +263,7 @@ const PROJECTS=[
 ];
 /* Bitácora de cambios: alimenta "Lo último que cambió" y Novedades */
 const LOG=[
+ {p:"kasalis-3d",d:"2026-10-13",t:"Nueva app: Kasalis 3D, el ciclo completo con tu modelo y los parámetros del ARC; modo falla por código"},
  {p:"hub",d:"2026-10-13",t:"Nuevo diseño del inicio: resumen del día, carpetas con íconos y tablero de escritorio"},
  {p:"buscador-kasalis",d:"2026-10-12",t:"Flujo de resolución por falla; comunicación empieza por pasar la golden"},
  {p:"buscador-kasalis",d:"2026-10-12",t:"Se vuelve app instalable para iPhone y funciona sin red"},
@@ -352,7 +355,14 @@ function wSim(){
   return W("simulador-lineas","Simulador de líneas"+(S.custom?' <em class="tag">ajustado</em>':""),"simulador-lineas/",`<img class="shot" src="assets/preview-simulador.jpg" alt="">
     <div class="kpis"><div><small>Kasalis BUILD</small><b>${mmss(o.kas_build.ct)}</b><em>lote ${o.kas_build.lot}</em></div><div><small>Horno sensor</small><b>${mmss(o.oven3.ct)}</b><em>cap. ${o.oven3.cap||"—"}</em></div><div><small>Kasalis RETEST</small><b>${mmss(o.kas_retest.ct)}</b><em>lote ${o.kas_retest.lot||"—"}</em></div><div><small>Corrida</small><b>${S.g.totalPieces}</b><em>piezas</em></div></div>`,"tall");
 }
-function wAA(){return W("tutorial-aa","Tutorial Active Alignment",PROJECTS[2].href,`<p class="wempty">Diferencias entre EOL y Active Alignment, cómo se mide SFR / MTF y qué revisar en los targets.</p><div class="chips2"><span>SFR vs MTF</span><span>Targets</span><span>EOL</span><span>Retest</span></div>`)}
+function wK3D(){
+  let p={...K3D};try{Object.assign(p,JSON.parse(localStorage.getItem("jd_k3d_params")||"{}"))}catch(e){}
+  const z=()=>[0,0,0],C=buildCycle({...p,mode:"build"},{dispCam:z(),alignAboveLens:z(),alignGripLens:z(),alignOverSensor:z(),alignPlace:z(),dispArcStart:z(),arcAt:z});
+  return W("kasalis-3d","Kasalis 3D","kasalis-3d/",`<div class="kpis"><div><small>Ciclo BUILD</small><b>${mmss(C.total)}</b><em>${(3600/C.total).toFixed(1)} UPH · 1 plato</em></div><div><small>Pistón</small><b>${p.piston} s</b><em>sube / baja</em></div></div>
+    <h4>ARC del archivo</h4><div class="chips2"><span>r ${p.XR} mm</span><span>${p.IA}°</span><span>VS ${p.VS} %</span><span>DR ${p.DR} %</span><span>LO ${p.LO}°</span><span>ST ${p.ST} ms</span></div>
+    <h4>Curado UV</h4><p class="wempty">${Math.round(p.uv*1000)} ms · arco de ${C.arcL.toFixed(0)} mm en ${C.arcT.toFixed(1)} s</p>`);
+}
+function wAA(){return W("tutorial-aa","Tutorial Active Alignment",P("tutorial-aa").href,`<p class="wempty">Diferencias entre EOL y Active Alignment, cómo se mide SFR / MTF y qué revisar en los targets.</p><div class="chips2"><span>SFR vs MTF</span><span>Targets</span><span>EOL</span><span>Retest</span></div>`)}
 function wDocs(){return W("hub","Documentos","",`<div class="rows2">${DOCS.map(([h,t,s,x])=>`<a href="${h}"><span>${t}<small>${s}</small></span><b class="muted2">${x}</b></a>`).join("")}</div>`,"tall")}
 function wProyectos(){return W("hub","Apps","",`<div class="pl">${PROJECTS.map(p=>`<a class="plr" ${p.href?`href="${p.href}"`:""}><span class="pi"><img src="${p.icon}" alt=""></span><span><b>${p.name}</b><small>${p.href?p.desc:"Próximamente · "+p.desc}</small></span><em><i style="width:${p.progress}%"></i></em></a>`).join("")}</div>`)}
 function wRecientes(){return W("hub","Lo último que cambió","",`<div class="rows2">${LOG.map(e=>`<div><span>${e.t}<small>${P(e.p).name}</small></span><b class="muted2">${fd(e.d)}</b></div>`).join("")}</div>`)}
@@ -361,7 +371,7 @@ function renderDesk(){
   $("#desk").innerHTML=`<div class="dkbar"><span class="dbrand"><span class="av">D</span><span>${h<12?"Buenos días":h<19?"Hola":"Buenas noches"}, Diego<small>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"})} · tus apps de las líneas John Deere</small></span></span><span class="sp"></span>
     ${PROJECTS.filter(p=>p.href).map(p=>`<a class="dtab" href="${p.href}"><img src="${p.icon}" alt="">${p.short}</a>`).join("")}
     <button class="dtab" id="dkTheme" aria-label="Cambiar tema">${svg(dark?ICON.sun:ICON.moon)}</button></div>
-    <div class="mega${renderDesk.done?"":" anim"}">${wFallas()}${wSim()}${wDocs()}${wProyectos()}${wRecientes()}${wAA()}</div>`;
+    <div class="mega${renderDesk.done?"":" anim"}">${wFallas()}${wSim()}${wDocs()}${wProyectos()}${wRecientes()}${wK3D()}${wAA()}</div>`;
   renderDesk.done=true;
 }
 

@@ -9,6 +9,7 @@ Repositorio de proyectos de automatización / troubleshooting de las líneas de 
 |---|---|---|
 | Simulador de flujo de líneas 3D | `simulador-lineas/` | activo |
 | Fallas Kasalis (app instalable en celular) | `buscador-kasalis/` | activo |
+| Kasalis 3D (ciclo de la máquina) | `kasalis-3d/` | activo |
 | Tutorial Active Alignment | `Tutorial Active Alignment (1).html` | activo |
 | Monitor de línea en tiempo real (logs) | — | próximamente |
 
@@ -31,3 +32,10 @@ Se sirve como módulos ES: abrir por GitHub Pages o un servidor local (`python -
 - `data/notas.js` — **aquí se agregan tus notas por falla y procedimientos paso a paso** (fotos en `buscador-kasalis/fotos/<id>/`),
   y la frecuencia de fallas cuando se procese el log de corridas.
 - `data/docs.js` — texto extraído del manual Pixid 500 y archivos del repo (generado).
+
+## Kasalis 3D (`kasalis-3d/`)
+- `models/kasalis.glb` — modelo minimalista dividido en piezas móviles (`<grupo>__<color>`: rotary, plate, piston, disp_x/z/head, align_z/x/head, finger_a/b, lens, spare, base); mm, origen en el centro del rotary.
+  Se genera con un script que separa cada color en componentes conectados y los asigna por posición.
+- `js/cycle.js` — secuencia BUILD / RETEST paso a paso con los parámetros reales (pistón 1.18 s, línea ARC/PRE/PRT/VIS del archivo de dispensado, UVCureTime) y los códigos de falla de cada paso.
+- `js/scene.js` — Three.js: jerarquía de ejes, cordón de DELO sobre el lens adapter, luces UV/domo, resaltado por estación.
+- `js/app.js` — línea de tiempo, controles, parámetros editables (se guardan en el navegador) y modo falla (salta al paso del código y muestra su flujo de Fallas Kasalis).
