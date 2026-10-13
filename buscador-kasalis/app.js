@@ -3,6 +3,7 @@
 import {CODES, HINTS} from '../shared/kasalis.js';
 import {DOCS} from './data/docs.js';
 import {FALLAS} from './data/fallas.js';
+import {PROCS, procBtn, openProc} from '../shared/procs.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
 
 const $ = id => document.getElementById(id);
@@ -116,7 +117,7 @@ function flowHTML(f){
   return `<div class="flow">${f.flujo.map((s,i)=>`<div class="st"><div class="n">${i+1}</div><div>
     <b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
     ${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}
-    ${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}</div></div>`).join('')}</div>`;
+    ${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}${s.proc?procBtn(s.proc):''}</div></div>`).join('')}</div>`;
 }
 function causesHTML(f){
   let h = '';
@@ -139,7 +140,11 @@ function docsHTML(docs, terms){
 /* ---------- vistas ---------- */
 function homeView(){
   return `<h3 class="lb">¿Qué está fallando?</h3><div class="modes">${FALLAS.map((f,i)=>`<div class="mode${i===0?' dark':''}" data-go="f/${f.id}">
-    <div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span>${codeChips(f.codigos.slice(0,4))}</div>`).join('')}</div>`;
+    <div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span>${codeChips(f.codigos.slice(0,4))}</div>`).join('')}</div>
+    <h3 class="lb">Guías del programa Kasalis</h3>${procList(Object.keys(PROCS))}`;
+}
+function procList(ids){
+  return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-proc="${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${p.pasos.length ? p.pasos.length+' pasos con foto' : 'faltan fotos · '+esc(p.permisos)}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
@@ -197,6 +202,7 @@ function infoTab(){
     <div class="faint" style="margin-top:6px">En Android: menú ⋮ → Instalar app.</div></div>
     <h3 class="lb">Qué hay aquí</h3><div class="install">
     <b>Fallas</b>: cada modo de falla con su flujo (primero checar esto, luego esto…), causas vistas en piso y tips.<br>
+    <b>Guías del programa</b>: en los pasos que dicen "Cómo hacerlo en el programa" se abre el paso a paso con fotos de las pantallas de la Kasalis (dónde picar y qué valor poner).<br>
     <b>Códigos</b>: todos los códigos PLC Pixid y KSvision, con significado, estación, manual y relacionados.<br>
     <b>Buscar</b>: escribe un código (102, -222) o una palabra (pogo, golden, DELO).</div>
     <div class="link" onclick="location.href='../index.html'"><span>Otras apps JD Automation</span><span class="faint">›</span></div>
@@ -216,7 +222,9 @@ function searchView(q){
   for(const c of PLC.values()) if(c.name.includes(qu) || translate(c.name).includes(ql) || (HINTS[c.code]||'').toLowerCase().includes(ql)) hits.push({...c,src:'plc'});
   for(const c of KSV.values()) if(c.name.includes(qu) || (c.comment||'').toLowerCase().includes(ql)) hits.push({...c,src:'ksv'});
   const docs = searchDocs([q], null);
+  const ps = Object.keys(PROCS).filter(id=>JSON.stringify(PROCS[id]).toLowerCase().includes(ql));
   let h = '';
+  if(ps.length) h += `<h3 class="lb">Guías del programa (${ps.length})</h3>${procList(ps)}`;
   if(fs.length) h += `<h3 class="lb">Fallas (${fs.length})</h3><div class="modes">${fs.map(f=>`<div class="mode" data-go="f/${f.id}"><div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span></div>`).join('')}</div>`;
   h += `<h3 class="lb">Códigos (${hits.length})</h3><div class="list">${hits.slice(0,50).map(c=>`<div class="row" data-go="c/${c.code}|${c.src}"><b>${c.code}</b><span>${esc(c.name)}<small>${esc(translate(c.name))}</small></span><span class="faint" style="font-size:11px">${c.src==='plc'?'PLC':'KSV'}</span></div>`).join('') || '<div class="empty">Ningún código coincide.</div>'}</div>`;
   h += `<details class="more"><summary>En el manual y documentos (${docs.length})</summary><div class="in">${docsHTML(docs,[q])}</div></details>`;
@@ -250,7 +258,8 @@ function route(){
 }
 let depth = 0;
 function go(h){ depth++; location.hash = h; }
-$('out').addEventListener('click', e=>{ const t = e.target.closest('[data-go]'); if(t){ e.preventDefault(); go(t.dataset.go); } });
+$('out').addEventListener('click', e=>{ const pr = e.target.closest('[data-proc]'); if(pr){ e.preventDefault(); openProc(pr.dataset.proc); return; }
+  const t = e.target.closest('[data-go]'); if(t){ e.preventDefault(); go(t.dataset.go); } });
 $('back').onclick = ()=>{ if(depth>0){ depth--; history.back(); } else location.hash=''; };
 let tmr;
 $('q').addEventListener('input', ()=>{ clearTimeout(tmr); const v=$('q').value.trim(); $('clr').style.display = v?'block':'none';

@@ -5,6 +5,7 @@ import {DEFAULTS, ASSUMED, LABELS, STATIONS, buildCycle} from './cycle.js';
 import {VIS_DEFAULTS, renderDispCam, analyzeVIS, drawVISOverlay, drawPattern, aaState, values, tilt, renderSensorCam, renderTF, ZONES, ZNAME, ZCOL, LIMIT} from './vision.js';
 import {FALLAS} from '../../buscador-kasalis/data/fallas.js';
 import {CODES} from '../../shared/kasalis-codes.js';
+import {procBtn, openProc} from '../../shared/procs.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -176,7 +177,7 @@ function closeBig(){ big = null; bigKey = ''; $('big').hidden = true; }
 
 /* ---------- panel: pasos, fallas, parámetros ---------- */
 function flowHTML(f){
-  return `<div class="flow">${f.flujo.map((s,i)=>`<div class="fs"><div class="n">${i+1}</div><div><b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}</div></div>`).join('')}</div>`;
+  return `<div class="flow">${f.flujo.map((s,i)=>`<div class="fs"><div class="n">${i+1}</div><div><b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}${s.proc?procBtn(s.proc):''}</div></div>`).join('')}</div>`;
 }
 function faultHTML(code){
   const f = FALLAS.find(x=>x.codigos.includes(String(code))), step = C.steps.find(s=>(s.codes||[]).includes(String(code)));
@@ -241,6 +242,7 @@ document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ P.mode = b.
 $('tabs').onclick = e=>{ const b = e.target.closest('[data-t]'); if(b){ tab = b.dataset.t; renderPane(); } };
 document.addEventListener('click', e=>{
   const g = s => e.target.closest(s); let x;
+  if(x = g('[data-proc]')){ e.preventDefault(); openProc(x.dataset.proc); return; }
   if(x = g('[data-code]')){ e.preventDefault(); setFault(fault==x.dataset.code ? null : x.dataset.code); if(fault) openSheet(); return; }
   if(g('#card')){ cardOpen = !cardOpen; $('card').classList.toggle('open', cardOpen); return; }
   if(x = g('[data-cam]')){ if(x.dataset.cam==='min'){ camMin = !camMin; } else { const {step} = poseAt(t); big = camCtx(step)==='disp' ? 'vis' : 'aa'; bigKey = ''; $('big').innerHTML = ''; renderBig(); } camKey = ''; return; }

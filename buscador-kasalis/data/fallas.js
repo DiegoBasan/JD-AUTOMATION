@@ -6,7 +6,7 @@
      id, titulo, corto,               // corto = 1 línea para la tarjeta
      codigos: ['102','231'],          // PLC como '102', KSvision como '-222'
      flujo: [                         // en orden: primero checar esto, luego esto…
-       {p:'Qué hacer', d:'detalle corto (opcional)',
+       {p:'Qué hacer', d:'detalle corto (opcional)', proc:'id de una guía del programa (opcional)',
         si:'si se cumple / pasa → …', no:'si no → …'}   // si/no opcionales
      ],
      causas: [['Causa encontrada', 'Lo que lo resolvió'], …],
@@ -29,7 +29,7 @@ export const FALLAS = [
     {p:'Pogo pins', d:'Limpiar dura poco: cambiar TODOS los pogos de la estación. En dispensado se pueden subir un poco.',
      si:'Ya pasa → listo.', no:'Paso 6.'},
     {p:'Módulo de pines del plato', d:'Cambiar módulo (revisar tornillos de la placa de pines).'},
-    {p:'Cable MIU → pogos e inicializar', d:'Reiniciar MIU / inicializar el equipo.',
+    {proc:'inicializar', p:'Cable MIU → pogos e inicializar', d:'Reiniciar MIU / inicializar el equipo.',
      no:'Sigue fallando → cambiar la MIU (fue la causa raíz del paro largo de julio).'},
   ],
   causas:[
@@ -53,12 +53,12 @@ export const FALLAS = [
      si:'Pasa → es el LENTE o la pieza. Paso 2.', no:'Falla → es la máquina. Paso 4.'},
     {p:'Limpiar lente y re-intentar', d:'Lentes sucios fallan mucho en 108/131.',
      si:'Pasa → listo.', no:'Paso 3.'},
-    {p:'Segregar el lente', d:'Programa de segregación de lentes en la Kasalis. Lente malo = 131 seguro.'},
+    {proc:'segregar-lente', p:'Segregar el lente', d:'Programa de segregación de lentes en la Kasalis. Lente malo = 131 seguro.'},
     {p:'Limpiar targets', d:'Targets sucios o desenfocados también dan 105/108.'},
-    {p:'Ajustar place X, Y, Z del plato', d:'De las 3 posiciones; si no basta, también theta X/Y. Regla: con 5 fallas seguidas ya se ajusta.',
+    {proc:'ajustar-place', p:'Ajustar place X, Y, Z del plato', d:'De las 3 posiciones; si no basta, también theta X/Y. Regla: con 5 fallas seguidas ya se ajusta.',
      no:'Sigue → correr con 1 plato mientras se ajusta el otro.'},
-    {p:'Teach Z / punto de inicio', d:'Si el scan arranca abajo del foco real (ej. 95: arranca 31.74, enfoca ~31.8).'},
-    {p:'Ajuste fino', d:'ROI / Align Extra Offset (95 corre con AEO −17). Solo con autorización.'},
+    {proc:'teach-z', p:'Teach Z / punto de inicio', d:'Si el scan arranca abajo del foco real (ej. 95: arranca 31.74, enfoca ~31.8).'},
+    {proc:'aeo-roi', p:'Ajuste fino', d:'ROI / Align Extra Offset (95 corre con AEO −17). Solo con autorización.'},
   ],
   causas:[
     ['Lente malo (lote)', 'Segregación: de 500 lentes 95, 234 malos'],
@@ -97,7 +97,7 @@ export const FALLAS = [
   id:'despega', titulo:'Lente se mueve o despega', corto:'155/149: el MTF cae al soltar o el DELO no pega',
   codigos:['155','149','143'],
   flujo:[
-    {p:'Revisar UVCureTime', d:'Está en ms: debe ser 15000–19500 (estuvo en 1950).',
+    {proc:'uv-cure-time', p:'Revisar UVCureTime', d:'Está en ms: debe ser 15000–19500 (estuvo en 1950).',
      si:'Estaba bajo → corregir.', no:'Paso 2.'},
     {p:'Revisar gripper', d:'Presión / si arrastra el lente al abrir.'},
     {p:'Altura de pick del lente', d:'Si toma el lente muy arriba no cura.'},
@@ -117,11 +117,11 @@ export const FALLAS = [
   id:'dispensado', titulo:'Dispensado', corto:'Círculo incompleto, no dispensa, bola, desfasado',
   codigos:['233','222','-222','230','277'],
   flujo:[
-    {p:'¿Sale DELO?', no:'Revisar: cartucho vacío → opción "dispense" activada → acople motor-dispensador → motor.'},
-    {p:'Purgar', d:'Burbujas o trazo bajo se arreglan purgando.', si:'Queda bien → paso 3.'},
-    {p:'Revisar altura de aguja', d:'Baja = raspa el lens adapter; alta = trazo malo.'},
-    {p:'Centrar offset X/Y', d:'Si el trazo sale desfasado.'},
-    {p:'"Bola" al inicio o final del arco', d:'Ajustar DR.'},
+    {proc:'activar-dispense', p:'¿Sale DELO?', no:'Revisar: cartucho vacío → opción "dispense" activada → acople motor-dispensador → motor.'},
+    {proc:'purga', p:'Purgar', d:'Burbujas o trazo bajo se arreglan purgando.', si:'Queda bien → paso 3.'},
+    {proc:'altura-aguja', p:'Revisar altura de aguja', d:'Baja = raspa el lens adapter; alta = trazo malo.'},
+    {proc:'offset-dispensado', p:'Centrar offset X/Y', d:'Si el trazo sale desfasado.'},
+    {proc:'editar-arc', p:'"Bola" al inicio o final del arco', d:'Ajustar DR.'},
     {p:'Círculo incompleto y la visión no lo detecta', d:'Enfocar el lente de la cámara de inspección y apuntar las line lights al lens adapter. Validar con una pieza incompleta.'},
     {p:'Pesar 3 dispensados + foto', d:'Siempre al terminar el ajuste o cambiar de modelo.'},
   ],
@@ -143,7 +143,7 @@ export const FALLAS = [
     {p:'Cambiar cartucho y asegurar conexiones'},
     {p:'Apretar el opresor', d:'Saltarse esto o el aire tiró DELO dos veces.'},
     {p:'Encender aire gradual y revisar fugas'},
-    {p:'Purgar, pesar 3 dispensados y foto'},
+    {proc:'purga', p:'Purgar, pesar 3 dispensados y foto'},
   ],
   causas:[
     ['Nivel bajo (235)', 'Cambiar cartucho'],
@@ -165,7 +165,7 @@ export const FALLAS = [
   flujo:[
     {p:'Limpiar el gripper', d:'DELO en el gripper.', si:'Pasa → listo.'},
     {p:'Ajustar sensor del gripper', d:'Si está recorrido (rojo), moverlo a la derecha.'},
-    {p:'Gripper ladeado → inicializar'},
+    {proc:'inicializar', p:'Gripper ladeado → inicializar'},
   ],
   causas:[['DELO en el gripper','Limpiar'],['Sensor recorrido','Ajustar'],['Gripper ladeado','Inicializar']],
   tips:[],
@@ -185,10 +185,10 @@ export const FALLAS = [
   id:'software', titulo:'Software / MES', corto:'Popup, programa equivocado, steps faltantes',
   codigos:['10','12','9'],
   flujo:[
-    {p:'Popup al iniciar el programa', d:'Iniciar sesión con credenciales de ingeniería. Ctrl+Shift+Esc abre el Administrador de tareas.'},
+    {proc:'login-popup', p:'Popup al iniciar el programa', d:'Iniciar sesión con credenciales de ingeniería. Ctrl+Shift+Esc abre el Administrador de tareas.'},
     {p:'Pieza no entra', d:'Revisar revisión del serial (MOGC vs MOHC).'},
     {p:'Falla en Front por "ensamble Kasalis"', d:'Falta step BUILD → BUILD manual (solo excepción).'},
-    {p:'Revisar programa cargado', d:'Se cambió solo a ELK de madrugada → piezas sin step de horno. Re-ingresar desde la carpeta de respaldo de seriales.'},
+    {proc:'cargar-programa', p:'Revisar programa cargado', d:'Se cambió solo a ELK de madrugada → piezas sin step de horno. Re-ingresar desde la carpeta de respaldo de seriales.'},
   ],
   causas:[['Certificación al reiniciar','Login'],['Serial de revisión anterior','Revisar MES'],['Programa cambiado','Recargar el correcto']],
   tips:['La ELK no tiene VNC.'],
