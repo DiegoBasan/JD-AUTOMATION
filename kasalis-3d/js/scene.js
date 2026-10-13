@@ -22,11 +22,16 @@ export async function createScene(container, url){
   const labels = new CSS2DRenderer(); labels.domElement.className = 'labels'; container.appendChild(labels.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(35, 1, 5, 20000);
+  // cámara ortográfica (sin perspectiva): FRUSTUM mm de alto con zoom 1
+  const FRUSTUM = 1000, DIST = 3000;
+  const camera = new THREE.OrthographicCamera(-FRUSTUM/2, FRUSTUM/2, FRUSTUM/2, -FRUSTUM/2, 1, 12000);
   camera.position.set(-1050, 780, 420);   // como el operador: carga al frente, dispensado a la derecha
+  camera.zoom = FRUSTUM/1250;
   const controls = new OrbitControls(camera, labels.domElement);
   controls.target.set(0, 140, 0); controls.enableDamping = true; controls.maxPolarAngle = Math.PI*0.49;
-  controls.minDistance = 150; controls.maxDistance = 4000;
+  controls.minZoom = .3; controls.maxZoom = 12;
+  let follow = true, onUnfollow = null;
+  controls.addEventListener('start', ()=>{ if(follow){ follow = false; onUnfollow && onUnfollow(); } });
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a90, 1.3));
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -109,10 +114,17 @@ export async function createScene(container, url){
   }
 
   /* ---------- luces de proceso ---------- */
-  const uvMat = new THREE.MeshBasicMaterial({color:0x8A6CFF, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide});
-  const uvCone = new THREE.Mesh(new THREE.ConeGeometry(22, 60, 32, 1, true), uvMat);
-  uvCone.position.set(sA.x, adapterTop + 25, sA.z); scene.add(uvCone);
-  const uvLight = new THREE.PointLight(0x8A6CFF, 0, 220); uvLight.position.set(sA.x, adapterTop + 40, sA.z); scene.add(uvLight);
+  // luces UV: anillo de LEDs debajo del gripper, apuntando hacia abajo al DELO (viajan con el cabezal)
+  const uvMat = new THREE.MeshBasicMaterial({color:0x9B7BFF, transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending});
+  const ledOff = new THREE.MeshStandardMaterial({color:0x3a3a40, roughness:.4}), ledOn = new THREE.MeshBasicMaterial({color:0xB69CFF});
+  const uv = new THREE.Group(); uv.position.set(fC.x, fa.min.y - 5, fC.z); grp('align_head').add(uv);
+  const leds = [];
+  for(let i=0;i<8;i++){ const a = i/8*Math.PI*2, m = new THREE.Mesh(new THREE.BoxGeometry(4,3,4), ledOff);
+    m.position.set(Math.cos(a)*19, 0, Math.sin(a)*19); uv.add(m); leds.push(m); }
+  const ringBody = new THREE.Mesh(new THREE.TorusGeometry(19, 2.2, 8, 40), new THREE.MeshStandardMaterial({color:0x2a2a2e, roughness:.5}));
+  ringBody.rotation.x = Math.PI/2; ringBody.position.y = 2; uv.add(ringBody);
+  const uvCone = new THREE.Mesh(new THREE.CylinderGeometry(18, 13, 26, 32, 1, true), uvMat); uvCone.position.y = -14; uv.add(uvCone);
+  const uvLight = new THREE.PointLight(0x9B7BFF, 0, 180); uvLight.position.y = -10; uv.add(uvLight);
   const spareC = v(box('spare'));
   const domeLight = new THREE.PointLight(0xffffff, 0, 300); domeLight.position.set(spareC.x, adapterTop + 40, spareC.z); scene.add(domeLight);
 
@@ -142,10 +154,14 @@ export async function createScene(container, url){
     if(pose.lens==='grip'){ if(L.parent!==grp('align_head')) grp('align_head').add(L); L.position.copy(lensInGrip); }
     else { if(L.parent!==grp('plate')) grp('plate').add(L); L.position.copy(pose.lens==='placed' ? lensPlaced : new THREE.Vector3()); }
     meshes.forEach(m=>{ if(m.userData.piece){ m.material.opacity = pose.piece; m.visible = pose.piece>0.02; } });
-    if(bead){ const idx = bead.geometry.index.count; bead.geometry.setDrawRange(0, Math.floor(idx*pose.bead/6)*6); bead.visible = pose.bead>0 && pose.piece>0.02; beadMat.opacity = .95*pose.piece; }
-    uvMat.opacity = .28*pose.uv; uvLight.intensity = 9000*pose.uv; domeLight.intensity = 12000*pose.dome;
+    if(bead){ const idx = bead.geometry.index.count, cap = extra.bead==='gap' ? .88 : 1, b = extra.bead==='none' ? 0 : pose.bead*cap;
+      bead.geometry.setDrawRange(0, Math.floor(idx*b/6)*6); bead.visible = b>0 && pose.piece>0.02; beadMat.opacity = .95*pose.piece;
+    }
+    const uvOn = pose.uv > .05, flick = .85 + .15*Math.sin(performance.now()/60);
+    uvMat.opacity = .38*pose.uv*flick; uvLight.intensity = 14000*pose.uv; leds.forEach(l=>l.material = uvOn ? ledOn : ledOff);
+    domeLight.intensity = 12000*pose.dome;
     if(hl){ const k = .35+.35*Math.sin(performance.now()/180); meshes.forEach(m=>m.material.emissive.setRGB(0,0,0));
-      for(const n of STGROUPS[hl]||[]) G[n].traverse(o=>{ if(o.isMesh) o.material.emissive.setRGB(k*.9, k*.12, k*.12); }); }
+      for(const n of STGROUPS[hl]||[]) G[n].traverse(o=>{ if(o.isMesh && o.material.emissive && meshes.includes(o)) o.material.emissive.setRGB(k*.9, k*.12, k*.12); }); }
   }
 
   /* ---------- tema, cámara y loop ---------- */
@@ -155,19 +171,49 @@ export async function createScene(container, url){
     load:[new THREE.Vector3(-720,400,180), new THREE.Vector3(-270,190,0)], disp:[new THREE.Vector3(-260,430,720), new THREE.Vector3(0,190,280)],
     align:[new THREE.Vector3(-120,460,260), new THREE.Vector3(272,190,10)], spare:[new THREE.Vector3(-420,470,-700), new THREE.Vector3(0,170,-280)],
   };
+  const VZOOM = {iso:1250, top:1250, load:420, disp:360, align:340, spare:420};
   let fly = null;
-  function view(name){ const v = VIEWS[name]; if(!v) return;
-    const k = container.clientWidth < 700 ? 2.2 : 1, p1 = v[1].clone().add(v[0].clone().sub(v[1]).multiplyScalar(k));   // en celular, más lejos
-    fly = {p0:camera.position.clone(), t0:controls.target.clone(), p1, t1:v[1].clone(), s:performance.now()}; }
-  function resize(){ const w = container.clientWidth, h = container.clientHeight; renderer.setSize(w,h); labels.setSize(w,h); camera.aspect = w/h;
-    // en celular la tarjeta tapa la mitad de abajo: subir la imagen
-    if(w < 700) camera.setViewOffset(w, h, 0, h*0.2, w, h); else camera.clearViewOffset();
-    camera.updateProjectionMatrix();
-    if(w < 700 && !resize.done){ camera.position.multiplyScalar(1.35); resize.done = true; } }
+  function view(name){ const v = VIEWS[name]; if(!v) return; follow = false; onUnfollow && onUnfollow();
+    const p1 = v[1].clone().add(v[0].clone().sub(v[1]).normalize().multiplyScalar(DIST));
+    fly = {p0:camera.position.clone(), t0:controls.target.clone(), z0:camera.zoom, p1, t1:v[1].clone(), z1:FRUSTUM/(VZOOM[name]*mob()), s:performance.now()}; }
+  const mob = () => container.clientWidth < 700 ? 1.45 : 1;
+  /* Seguir la pieza: la cámara mira desde el centro del rotary hacia la estación (nada queda enfrente),
+     en carga mira desde el lado del operador. */
+  const FOLLOW = {load:{size:430, off:-25, out:true}, disp:{size:330, off:28}, align:{size:300, off:-28}, spare:{size:380, off:25}, rotary:{size:600, off:0}};
+  let fAz = null, fSt = 'load', fLift = 30, snap = true;
+  const pieceWorld = new THREE.Vector3();
+  function setFollow(on){ follow = on; if(on) fly = null; }
+  function followStation(st){ fSt = st; }
+  function snapFollow(){ snap = true; }
+  function updateFollow(dt){
+    grp('plate').updateWorldMatrix(true, false);
+    pieceWorld.copy(sensor).applyMatrix4(grp('plate').matrixWorld);
+    const F = FOLLOW[fSt] || FOLLOW.rotary, phi = Math.atan2(pieceWorld.z, pieceWorld.x);
+    const out = fSt==='load' || (fSt==='rotary' && Math.abs(Math.cos(phi)+1) < .25);
+    let az = phi + (out ? 0 : Math.PI) + THREE.MathUtils.degToRad(F.off);
+    if(fAz===null) fAz = az; let d = az - fAz; d = Math.atan2(Math.sin(d), Math.cos(d));
+    const k = snap ? 1 : 1 - Math.exp(-dt*3.2); fAz += d*k; snap = false;
+    // alto (55°) para que la línea de vista pase por encima de las estaciones de enfrente
+    const el = THREE.MathUtils.degToRad(out ? 45 : fSt==='spare' ? 40 : 55), dir = new THREE.Vector3(Math.cos(fAz)*Math.cos(el), Math.sin(el), Math.sin(fAz)*Math.cos(el));
+    const tgt = pieceWorld.clone(); tgt.y += fLift;
+    controls.target.lerp(tgt, k);
+    camera.position.copy(controls.target).addScaledVector(dir, DIST);
+    camera.zoom += (FRUSTUM/(F.size*mob()) - camera.zoom)*k; camera.updateProjectionMatrix();
+  }
+  function resize(){ const w = container.clientWidth, h = container.clientHeight, a = w/h; renderer.setSize(w,h); labels.setSize(w,h);
+    camera.left = -FRUSTUM*a/2; camera.right = FRUSTUM*a/2; camera.top = FRUSTUM/2; camera.bottom = -FRUSTUM/2;
+    // en celular los controles tapan abajo: subir un poco la imagen
+    if(w < 700) camera.setViewOffset(w, h, 0, h*0.1, w, h); else camera.clearViewOffset();
+    camera.updateProjectionMatrix(); }
   addEventListener('resize', resize); resize();
+  let lastT = performance.now();
   function render(){
-    if(fly){ const k = Math.min(1,(performance.now()-fly.s)/900), e = 1-Math.pow(1-k,3); camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e); if(k>=1) fly = null; }
+    const now = performance.now(), dt = Math.min(.1, (now-lastT)/1000); lastT = now;
+    if(fly){ const k = Math.min(1,(now-fly.s)/900), e = 1-Math.pow(1-k,3); camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+      camera.zoom = fly.z0 + (fly.z1-fly.z0)*e; camera.updateProjectionMatrix(); if(k>=1) fly = null; }
+    else if(follow) updateFollow(dt);
     controls.update(); renderer.render(scene, camera); labels.render(scene, camera);
   }
-  return {apply, render, setTheme, view, highlight, buildBead, geo, info:{drop, close, lensH, sensor, arcCenterDisp:sD}};
+  return {apply, render, setTheme, view, highlight, buildBead, geo, setFollow, followStation, snapFollow, get following(){ return follow; }, set onUnfollow(f){ onUnfollow = f; },
+    info:{drop, close, lensH, sensor, arcCenterDisp:sD}};
 }

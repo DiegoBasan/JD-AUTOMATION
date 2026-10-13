@@ -38,4 +38,7 @@ Se sirve como módulos ES: abrir por GitHub Pages o un servidor local (`python -
   Se regenera con `python3 kasalis-3d/tools/split_kasalis.py <export.glb> kasalis-3d/models/kasalis.glb kasalis-3d/tools` (separa cada color en piezas y las asigna por posición).
 - `js/cycle.js` — secuencia BUILD / RETEST paso a paso con los parámetros reales (pistón 1.18 s, línea ARC/PRE/PRT/VIS del archivo de dispensado, UVCureTime) y los códigos de falla de cada paso.
 - `js/scene.js` — Three.js: jerarquía de ejes, cordón de DELO sobre el lens adapter, luces UV/domo, resaltado por estación.
-- `js/app.js` — línea de tiempo, controles, parámetros editables (se guardan en el navegador) y modo falla (salta al paso del código y muestra su flujo de Fallas Kasalis).
+- `js/vision.js` — cámaras simuladas: cámara de dispensado con la inspección VIS (SM, ST, ROI, AMN/AMX, BMN/BMX, PMN/PMX, LL, LD, EXP del archivo)
+  y cámara del sensor en AA (5 targets, curvas through-focus SFR @ Ny/4, picos, tilt y lock como en el Tutorial Active Alignment).
+- `js/app.js` — cámara ortográfica que sigue la pieza, línea de tiempo, parámetros editables (se guardan en el navegador),
+  cámara PiP / vista ampliada y fallas: cada código salta a su paso, se ve en la máquina y en las cámaras, con su flujo de resolución de Fallas Kasalis.

@@ -113,7 +113,7 @@ export function buildCycle(p, geo){
       {desc:'Barrido en Z y tilt hasta el pico de MTF (movimiento exagerado para que se vea). Lente malo o sucio: 108 / 131.', codes:['108','170','131','137'], fx:'scan',
        params:['95: alinea ~31.8 · inicio programado 31.9']});
     add('align','align_uv','Curado UV', p.uv, {uv:1},
-      {desc:'UV con el gripper sosteniendo el lente. UVCureTime en ms (15000–19500).', codes:['143','149'], params:[`UVCureTime ${Math.round(p.uv*1000)} ms`]});
+      {desc:'Al final de la alineación, con el lente todavía en el gripper, se prenden las luces UV de abajo del gripper y curan el DELO (15–19 s).', codes:['143','149'], params:[`UVCureTime ${Math.round(p.uv*1000)} ms`, '15000–19500 ms']});
     add('align','align_ungrip','Suelta el lente y mide', 1.0, {uv:0, grip:0, lens:'placed'},
       {desc:'Abre el gripper y vuelve a medir MTF. Si cae al soltar: 155.', codes:['155']});
     add('align','align_home','Gripper a home', 1.0, {align:[0,0,0], cam:0});
