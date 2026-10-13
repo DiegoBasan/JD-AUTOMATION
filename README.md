@@ -1,7 +1,7 @@
 # JD-AUTOMATION
 
 Repositorio de proyectos de automatización / troubleshooting de las líneas de cámaras John Deere.
-`index.html` es el **hub de apps** (GitHub Pages). Cada app vive en su carpeta; lo compartido está en `shared/`
+`index.html` es el **hub de apps** (GitHub Pages), con el mismo diseño que Diapps: en celular resumen del día + carpetas + barra de vidrio; en escritorio (≥1100 px) un tablero con un widget por app. Las apps se registran en `PROJECTS` y los cambios en `LOG` dentro de `index.html`; íconos en `assets/icons/`. Cada app vive en su carpeta; lo compartido está en `shared/`
 (tema claro/oscuro `theme.js`, estilos `ui.css`, conocimiento Kasalis `kasalis.js` + `kasalis-codes.js`).
 
 ## Proyectos
