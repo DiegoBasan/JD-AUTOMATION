@@ -46,3 +46,18 @@ export const HINTS = {
   'eol':'EOL: comparar MTF de EOL vs datos de Kasalis RETEST; targets/ROIs de EOL, distancia de target por variante, conexión/serializer.',
 };
 export const STEP_FAIL_LABEL = {screws:'Tornillos elevados', leak:'Leak FAIL', eol:'EOL FAIL'};
+
+/* Nombre original del código (como viene en KSmessage / KSerror.h) y su lectura en inglés. */
+const EN = {FT:'final test', DISP:'dispense', DSP:'dispense', INSP:'inspection', CAM:'camera', VIS:'vision', PAT:'pattern', TGT:'target', TGTZ:'target Z',
+  CTR:'center', SYM:'symmetry', FC:'field corners', UT:'uniformity/tilt', DZ:'delta Z', PRT:'particle test', ST:'sensor test', ALN:'align', STN:'station',
+  FXT:'fixture', TBL:'table', VAC:'vacuum', CYL:'cylinder', EXT:'extend', RETR:'retract', HDOWN:'hold-down', UVMEASURE:'UV measure', POSTCURE:'post-cure',
+  UNGRIP:'ungrip', TRYS:'tries', ITER:'iterations', POS:'position', MEAS:'measure', SERNUM:'serial number', NF:'not found', INIT:'init', CFG:'config',
+  GS:'golden sample', PICKPOS:'pick position', VISIMG:'vision image', GRDCTR:'grid center', TF:'tip find', TIPFIND:'tip find', EOT:'end of travel',
+  CALIB:'calibration', CAL:'calibration', INCR:'increment', MP:'MasterProcess', DEV:'device', LIB:'library', PROC:'process', CTRL:'control',
+  PARS:'parameters', INVAL:'invalid', UPCAL:'upper calibration', DOWNCAL:'lower calibration', STAB:'stability', STABIL:'stability', HEAD1:'head 1', HEAD2:'head 2',
+  POTLIFE:'pot life', PART:'particle', REG:'register', DSTN:'distance', SENS:'sensor', VOL:'volume', IDX:'index', COUNTR:'counter', SPR:'spare', RTN:'rotation',
+  ENCLO:'enclosure', DUT:'device under test', PREALIGN:'pre-align', APTR:'aperture', MTF:'MTF', UV:'UV', MES:'MES', IPC:'IPC', ESTOP:'E-stop', SEQINIT:'sequence init',
+  EXTLIB:'external library', PARTDONE:'part done', INDEXREQUEST:'index request', RECV:'receive', RESP:'response', ERR:'error', MSG:'message', DLI:'DLI', LCOS:'LCOS',
+  SDCAL:'SD calibration', VPP:'VPP', LP:'LP', MIU:'MIU', TS1:'test station 1', TS2:'test station 2', ALIGN2:'align 2', EXPTIME:'exposure time'};
+export function englishName(name){ const s = String(name||'').split('_').map(t=>EN[t] || t.toLowerCase()).join(' '); return s.charAt(0).toUpperCase() + s.slice(1); }
+export function originalName(name, src){ return (src==='ksv' ? 'ERR_' : 'ERR_TEXT_') + name; }

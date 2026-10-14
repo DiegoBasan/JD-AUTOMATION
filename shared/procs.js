@@ -47,14 +47,16 @@ let styled = false;
 function style(){ if(styled) return; const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); styled = true; }
 
 /* Botón para poner debajo de un paso del flujo. */
-export function procBtn(id, cls='procbtn'){
-  const p = PROCS[id]; if(!p) return '';
-  return `<button class="${cls}" data-proc="${id}">${p.pasos.length ? '▶ Paso a paso en el programa' : 'Cómo hacerlo en el programa'} <small>${p.pasos.length ? p.pasos.length+' fotos' : 'faltan fotos'}</small></button>`;
+export function procBtn(id, cls='procbtn', db=PROCS){
+  const p = db[id]; if(!p) return '';
+  return `<button class="${cls}" data-proc="${id}">${p.pasos.length ? '▶ Paso a paso en el programa' : 'Cómo hacerlo en el programa'} <small>${p.pasos.length ? p.pasos.length+(p.pasos.length>1?' fotos':' foto') : 'faltan fotos'}</small></button>`;
 }
 
 /* Abre la guía. */
-export function openProc(id){
-  const p = PROCS[id]; if(!p) return; style();
+export function openProc(id){ const p = PROCS[id]; if(p) openGuide(p, BASE, '#FF7F66'); }
+/* Abre cualquier guía {titulo, estacion, permisos, cuando, sabemos, pasos, necesito}; las fotos se resuelven contra 'base'. */
+export function openGuide(p, base=BASE, accent='#FF7F66'){
+  style();
   let i = 0, zoom = false;
   const el = document.createElement('div'); el.className = 'pv'; el.setAttribute('role','dialog');
   const close = () => { el.remove(); removeEventListener('keydown', key); };
@@ -66,7 +68,7 @@ export function openProc(id){
     if(p.pasos.length){
       const s = p.pasos[i];
       body += `<div class="dots">${p.pasos.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
-        <div class="shot${zoom?' zoom':''}" id="pvShot">${s.foto?`<img src="${new URL(s.foto, BASE).href}" alt="Paso ${i+1}">`:''}
+        <div class="shot${zoom?' zoom':''}" id="pvShot">${s.foto?`<img src="${new URL(s.foto, base).href}" alt="Paso ${i+1}">`:''}
           ${(s.marcas||[]).map(m=>`<div class="mk" style="left:${m.x}%;top:${m.y}%"><i></i>${m.t?`<span>${esc(m.t)}</span>`:''}</div>`).join('')}</div>
         <div class="stxt">${i+1}. ${esc(s.texto)}</div>${s.valor?`<span class="sval">${esc(s.valor)}</span>`:''}${s.ojo?`<div class="sojo">⚠︎ ${esc(s.ojo)}</div>`:''}`;
       if(i===p.pasos.length-1 && p.sabemos?.length) body += `<h4>Para recordar</h4><ul>${p.sabemos.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
@@ -74,7 +76,7 @@ export function openProc(id){
       if(p.sabemos?.length) body += `<h4>Lo que ya sabemos</h4><ul>${p.sabemos.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
       body += `<div class="todo"><b>Guía en construcción: faltan las fotos del programa</b><ul>${(p.necesito||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
     }
-    el.innerHTML = `<div class="pp"><div class="ph"><b>${esc(p.titulo)}</b><button data-x aria-label="Cerrar">✕</button></div>${meta}<div class="pb">${body}</div>
+    el.innerHTML = `<div class="pp" style="box-shadow:inset 0 6px 0 ${accent}"><div class="ph"><b>${esc(p.titulo)}</b><button data-x aria-label="Cerrar">✕</button></div>${meta}<div class="pb">${body}</div>
       ${p.pasos.length?`<div class="nav"><button data-d="-1" ${i===0?'disabled':''}>Anterior</button><button class="dk" data-d="1">${i===p.pasos.length-1?'Listo':'Siguiente'}</button></div>`:''}</div>`;
     const shot = el.querySelector('#pvShot');
     if(shot){ let x0 = null;

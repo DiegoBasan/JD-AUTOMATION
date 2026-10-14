@@ -1,6 +1,6 @@
 /* Fallas Kasalis — app (instalable en el celular): modos de falla con flujo de resolución,
    búsqueda por código o palabra, manual y documentos relacionados. */
-import {CODES, HINTS} from '../shared/kasalis.js';
+import {CODES, HINTS, englishName, originalName} from '../shared/kasalis.js';
 import {DOCS} from './data/docs.js';
 import {FALLAS} from './data/fallas.js';
 import {PROCS, procBtn, openProc} from '../shared/procs.js';
@@ -109,6 +109,7 @@ const ICONS = {
   particulas:'<circle cx="7" cy="8" r="2"/><circle cx="16" cy="6" r="1.5"/><circle cx="14" cy="15" r="2.5"/><circle cx="6" cy="17" r="1.2"/>',
   software:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
   vis233:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  progresion:'<path d="M4 12h11M11 6l6 6-6 6M20 5v14"/>',
   mecanico:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M2 12h3m14 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
 };
 const icon = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]||ICONS.mecanico}</svg>`;
@@ -142,15 +143,16 @@ function docsHTML(docs, terms){
 function homeView(){
   return `<h3 class="lb">¿Qué está fallando?</h3><div class="modes">${FALLAS.map((f,i)=>`<div class="mode${i===0?' dark':''}" data-go="f/${f.id}">
     <div class="ic">${icon(f.id)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span>${codeChips(f.codigos.slice(0,4))}</div>`).join('')}</div>
-    <h3 class="lb">Guías del programa Kasalis</h3>${procList(Object.keys(PROCS))}`;
+    <h3 class="lb">Guías y procesos Kasalis</h3>${procList(Object.keys(PROCS))}`;
 }
 function procList(ids){
   return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-proc="${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${p.pasos.length ? p.pasos.length+' pasos con foto' : 'faltan fotos · '+esc(p.permisos)}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
-  return `<div class="head"><div class="k">Modo de falla</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
-    <h3 class="lb">Flujo de resolución</h3>${flowHTML(f)}${causesHTML(f)}`;
+  const rows = f.codigos.map(c=>{ const n = codeName(c); return n ? `<div class="row" data-go="c/${c}${+c<0?'|ksv':''}"><b>${c}</b><span>${esc(translate(n).charAt(0).toUpperCase()+translate(n).slice(1))}<small class="en">${esc(originalName(n, +c<0?'ksv':'plc'))} · ${esc(englishName(n))}</small></span><span class="faint">›</span></div>` : ''; }).join('');
+  return `<div class="head"><div class="k">Modo de falla · Kasalis</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
+    <h3 class="lb">Flujo de resolución</h3>${flowHTML(f)}${causesHTML(f)}${rows?`<h3 class="lb">Códigos de esta falla</h3><div class="list">${rows}</div>`:''}`;
 }
 function codeView(code, src){
   const c = src==='ksv' ? KSV.get(code) : PLC.get(code);
@@ -166,7 +168,7 @@ function codeView(code, src){
   const pool = src==='ksv' ? [...KSV.values()] : [...PLC.values()];
   const rel = pool.filter(x=>x.code!==code && x.group===c.group).map(x=>({x, s:x.name.split('_').filter(t=>toks.has(t)).length + (Math.abs(x.code-code)<=2?.5:0)})).filter(o=>o.s>=1).sort((a,b)=>b.s-a.s).slice(0,8);
   let h = `<div class="head"><div class="k">${src==='ksv'?'KSvision':'PLC Pixid'} · ${esc(w.st)}</div>
-    <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div class="big">${code}</div><div style="min-width:0"><h2 style="font-size:17px;margin:0">${esc(c.name)}</h2><p>${esc(tr.charAt(0).toUpperCase()+tr.slice(1))}</p></div></div>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div class="big">${code}</div><div style="min-width:0"><h2 style="font-size:17px;margin:0">${esc(c.name)}</h2><p>${esc(tr.charAt(0).toUpperCase()+tr.slice(1))}</p><p class="en">${esc(originalName(c.name, src))} · ${esc(englishName(c.name))}${c.comment?' — '+esc(c.comment):''}</p></div></div>
     <p style="margin-top:10px;font-size:12.5px">${esc(w.ph)}${freq?` · ${freq}× en logs`:''}</p></div>`;
   if(fs.length){
     const f = fs[0];
@@ -191,7 +193,7 @@ function codesTab(){
   const fr = Object.entries(FRECUENCIA).sort((a,b)=>b[1]-a[1]).slice(0,12);
   let h = '';
   if(fr.length) h += `<h3 class="lb">Más frecuentes en tus corridas</h3><div class="list">${fr.map(([k,v])=>`<div class="row" data-go="c/${k}"><b>${k}</b><span>${esc(codeName(k))}</span><span class="faint">${v}×</span></div>`).join('')}</div><div class="faint" style="font-size:12px;margin:6px 4px">${esc(FRECUENCIA_FUENTE)}</div>`;
-  h += `<h3 class="lb">Códigos con flujo de resolución</h3><div class="list">${withFlow.map(k=>`<div class="row" data-go="c/${k}${+k<0?'|ksv':''}"><b>${k}</b><span>${esc(codeName(k))}<small>${esc(fallasDe(k).map(f=>f.titulo).join(' · '))}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
+  h += `<h3 class="lb">Códigos con flujo de resolución</h3><div class="list">${withFlow.map(k=>`<div class="row" data-go="c/${k}${+k<0?'|ksv':''}"><b>${k}</b><span>${esc(codeName(k))}<small class="en">${esc(englishName(codeName(k)))}</small><small>${esc(fallasDe(k).map(f=>f.titulo).join(' · '))}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
   const other = Object.keys(HINTS).filter(k=>!withFlow.includes(k) && !PROCESS[k]);
   h += `<h3 class="lb">Otros códigos con guía</h3><div class="list">${other.map(k=>`<div class="row" data-go="c/${k}"><b>${k}</b><span>${esc(codeName(k))}</span><span class="faint">›</span></div>`).join('')}</div>`;
   h += `<h3 class="lb">Fallas de proceso</h3><div class="list">${Object.keys(PROCESS).map(k=>`<div class="row" data-go="s/${k}"><b style="font-size:13px">${k}</b><span>${esc(PROCESS[k])}</span><span class="faint">›</span></div>`).join('')}</div>`;

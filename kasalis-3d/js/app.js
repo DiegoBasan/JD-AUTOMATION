@@ -5,6 +5,7 @@ import {DEFAULTS, ASSUMED, LABELS, STATIONS, buildCycle} from './cycle.js';
 import {VIS_DEFAULTS, renderDispCam, analyzeVIS, drawVISOverlay, drawPattern, aaState, values, tilt, renderSensorCam, renderTF, ZONES, ZNAME, ZCOL, LIMIT} from './vision.js';
 import {FALLAS} from '../../buscador-kasalis/data/fallas.js';
 import {CODES} from '../../shared/kasalis-codes.js';
+import {englishName, originalName} from '../../shared/kasalis.js';
 import {procBtn, openProc} from '../../shared/procs.js';
 
 const $ = id => document.getElementById(id);
@@ -183,7 +184,7 @@ function faultHTML(code){
   const f = FALLAS.find(x=>x.codigos.includes(String(code))), step = C.steps.find(s=>(s.codes||[]).includes(String(code)));
   const aa = step && step.st==='align' ? aaState(step.id, step.fx==='scan' ? .9 : 1, code) : null;
   const note = (FX[code]||{}).note || (aa && aa.msg) || '';
-  let h = `<div class="fhead"><small>${step?STATIONS[step.st].name+' · '+esc(step.title):'Fuera de este ciclo'}</small><h3>${esc(code)} · ${esc(CODE_NAME[code]||'')}</h3>${f?`<p>${esc(f.titulo)} — ${esc(f.corto)}</p>`:''}</div>`;
+  let h = `<div class="fhead"><small>${step?STATIONS[step.st].name+' · '+esc(step.title):'Fuera de este ciclo'}</small><h3>${esc(code)} · ${esc(CODE_NAME[code]||'')}</h3><div style="font:11px ui-monospace,Menlo,monospace;opacity:.7;margin:-2px 0 6px">${esc(originalName(CODE_NAME[code]||'', +code<0?'ksv':'plc'))} · ${esc(englishName(CODE_NAME[code]||''))}</div>${f?`<p>${esc(f.titulo)} — ${esc(f.corto)}</p>`:''}</div>`;
   if(note) h += `<div class="simnote"><b>En la simulación:</b> ${esc(note)}</div>`;
   if(f){ h += `<div class="lb">Qué hacer, en orden</div>${flowHTML(f)}`;
     if(f.causas.length) h += `<div class="lb">Causas vistas → solución</div><div class="ca">${f.causas.map(([a,b])=>`<div><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;

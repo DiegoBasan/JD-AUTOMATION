@@ -11,7 +11,7 @@
        { foto: 'fotos/ajustar-place/01.jpg',        // relativa a buscador-kasalis/
          texto: 'Pica en Setup',                     // qué hacer en esta pantalla
          marcas: [{x:42, y:18, t:'Setup'}],          // dónde picar: % del ancho/alto de la foto
-         valor: 'Z = 31.80',                         // opcional: valor a escribir / revisar
+         valor: 'valor a escribir',                  // opcional: valor a escribir / revisar
          ojo: 'No cierres sin guardar' },            // opcional: advertencia
      ],
      necesito: ['captura que falta', …],            // lo que hay que fotografiar para completar la guía
@@ -28,13 +28,13 @@ export const PROCS = {
   'teach-z': {
     titulo:'Teach Z / punto de inicio del scan', estacion:'Alineación', permisos:'Ingeniería', codigos:['108','131'],
     cuando:'El scan arranca abajo del foco real o la Z de alineación varía entre piezas.',
-    sabemos:['Scorpion 95: alinea en ~31.8, el scan arranca en ~31.74 aunque está programado 31.9.','Cambiar interposer no lo corrige.'],
+    sabemos:['La Z de inicio depende del modelo de lente.','Cambiar interposer no lo corrige.'],
     pasos:[], necesito:['Dónde está el parámetro de Z de inicio / teach','Cómo se enseña la Z con una pieza buena','Cómo se guarda y se valida'],
   },
   'aeo-roi': {
     titulo:'Align Extra Offset (AEO) y ROI', estacion:'Alineación', permisos:'Ingeniería (con autorización)', codigos:['131','161'],
     cuando:'Ajuste fino de SFR cuando la máquina y el lente están bien.',
-    sabemos:['Scorpion 95 corre con AEO −17 (se probó −15 con 10 piezas).','El cambio de ROI lo hizo ingeniería por SFR.','Requiere autorización.'],
+    sabemos:['El valor de AEO depende del modelo: probar primero con pocas piezas.','El cambio de ROI lo hace ingeniería por SFR.','Requiere autorización.'],
     pasos:[], necesito:['Dónde está el AEO','Dónde se editan las ROI','Cómo se guarda'],
   },
   'uv-cure-time': {
@@ -64,19 +64,19 @@ export const PROCS = {
   'offset-dispensado': {
     titulo:'Centrar offset X / Y del dispensado', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
     cuando:'El círculo sale desfasado respecto al lens adapter.',
-    sabemos:['ARC actual: X 9.2, Y −6.4, XR/YR 8.9.'],
+    sabemos:['Los valores de X / Y dependen del modelo: mover poco a poco y validar.'],
     pasos:[], necesito:['Dónde se cambian X / Y del arco o el offset','Cómo se prueba'],
   },
   'enfoque-vis': {
     titulo:'Enfocar y ajustar brillo de la cámara de inspección (VIS)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
     cuando:'El dispensado está bien (centrado y completo) pero la VIS sigue dando 233.',
-    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','VIS del archivo: LL 100, LD 0, EXP 80, ST 50, área 10–25 %, caja 60–80 %, perímetro 3000–8000 px.','Validar con una pieza incompleta: debe fallar.'],
+    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','Validar con una pieza incompleta: debe fallar.'],
     pasos:[], necesito:['Dónde se guardan / abren las imágenes de la VIS en los logs','Foto de referencia buena por modelo (Moose, Scorpion, Gecko)','Cómo ver la imagen en vivo para enfocar','Dónde se ajusta el brillo / exposición (si es por programa)'],
   },
   'editar-arc': {
     titulo:'Editar la línea ARC (DR, LI, LO, cambio de modelo)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233','235'],
     cuando:'"Bola" al inicio o final del arco, poco o mucho DELO, o cambio de modelo (95 ↔ 133).',
-    sabemos:['ARC HD=1, X=9.2, Y=-6.4, XR=8.9, YR=8.9, SA=0, IA=449, VS=20, VA=10, LI=1.0, LO=20.0, DR=42, SR=50, ST=300, ZR=1.0.','Comentar la línea anterior con #, no borrarla.','Al cambiar a 133 se cambia una línea comentada; al regresar al 95 se regresa.','Guardar con "save and close" y revisar que sea la carpeta correcta.','Después: pesar 3 dispensados y foto.'],
+    sabemos:['Comentar la línea anterior con #, no borrarla.','Al cambiar a 133 se cambia una línea comentada; al regresar al 95 se regresa.','Guardar con "save and close" y revisar que sea la carpeta correcta.','Después: pesar 3 dispensados y foto.'],
     pasos:[], necesito:['Dónde está el archivo de dispensado / cómo se abre','Cómo se guarda y se recarga en el programa'],
   },
   'inicializar': {
@@ -98,10 +98,32 @@ export const PROCS = {
     pasos:[], necesito:['Dónde se ve el programa cargado','Cómo se cambia de modelo','Dónde está el respaldo'],
   },
   'segregar-lente': {
-    titulo:'Programa de segregación de lente', estacion:'Alineación', permisos:'Ingeniería', codigos:['131','108'],
-    cuando:'Muchas fallas de lente seguidas y la golden pasa.',
-    sabemos:['Escanea el ID del lente y prueba si alinea.','Scorpion 95: de 500 lentes, 234 salieron malos.','Un lente segregado como malo da 131.'],
+    titulo:'Programa de segregación de lente (Scorpion 95)', estacion:'Alineación', permisos:'Ingeniería', codigos:['131','108'],
+    cuando:'Scorpion 95: muchas fallas de lente seguidas y la golden pasa.',
+    sabemos:['Solo existe para Scorpion 95.','Escanea el ID del lente y prueba si alinea.','Un lente segregado como malo da 131.','Al terminar, revisar que no queden logs de segregación en D:\\TARS\\Valid (si quedan, las piezas no progresan en MES).'],
     pasos:[], necesito:['Cómo se entra al modo de segregación','Qué se escanea y qué resultado muestra','Cómo se regresa a producción'],
+  },
+  'logs-segregacion': {
+    titulo:'Borrar logs de segregación atorados', estacion:'Software / MES', permisos:'Ingeniería', codigos:[],
+    cuando:'Las piezas pasan la Kasalis pero no progresan en MES (sin step BUILD), sobre todo después de usar el programa de segregación del 95.',
+    sabemos:['Si quedan logs de segregación en la carpeta, el preparser no puede mover los logs buenos.','Al borrarlos, las demás piezas progresan solas.','Borrar solo los logs de segregación, no los de producción.'],
+    pasos:[
+      {foto:'fotos/progresion/01-ruta-valid.png', texto:'Abrir el Explorador y entrar a This PC › Data (D:) › TARS › Valid', marcas:[{x:38,y:5,t:'D:\\TARS\\Valid'}], valor:'D:\\TARS\\Valid', ojo:'Así se ve ya limpia (vacía). Si hay logs de segregación, borrar solo esos.'},
+    ],
+    necesito:['Cómo se ve la carpeta con logs de segregación atorados (para distinguirlos)','Confirmación en MES de que ya progresaron'],
+  },
+  'cambio-delo': {
+    titulo:'Cambio de DELO en la Kasalis', estacion:'Dispensado', permisos:'Operador / técnico', codigos:['235','236'],
+    cuando:'DELO acabado (235), pot life vencido (236) o cambio de material.',
+    sabemos:['Ambientar 1.5 h antes de usarlo (el de MRO llega congelado).','Si cambia de cuarto: 30 min de refri y luego ambientar.','Registrar cada DELO en la base de datos.'],
+    pasos:[
+      {texto:'Cerrar el aire y validar 0 PSI.'},
+      {texto:'Cambiar el cartucho y asegurar las conexiones.'},
+      {texto:'Apretar el opresor.', ojo:'Saltarse el aire o el opresor ya tiró DELO dos veces.'},
+      {texto:'Encender el aire gradual y revisar fugas.'},
+      {texto:'Purgar, pesar 3 dispensados y tomar foto.'},
+    ],
+    necesito:['Fotos del dispensador (opresor, válvula de aire) y de la pantalla de purga'],
   },
   'candado': {
     titulo:'Candado 3-5-10 (bloqueo por fallas)', estacion:'Alineación', permisos:'Ingeniería', codigos:[],
