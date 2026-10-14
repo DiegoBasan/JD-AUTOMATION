@@ -67,6 +67,12 @@ export const PROCS = {
     sabemos:['ARC actual: X 9.2, Y −6.4, XR/YR 8.9.'],
     pasos:[], necesito:['Dónde se cambian X / Y del arco o el offset','Cómo se prueba'],
   },
+  'enfoque-vis': {
+    titulo:'Enfocar y ajustar brillo de la cámara de inspección (VIS)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
+    cuando:'El dispensado está bien (centrado y completo) pero la VIS sigue dando 233.',
+    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','VIS del archivo: LL 100, LD 0, EXP 80, ST 50, área 10–25 %, caja 60–80 %, perímetro 3000–8000 px.','Validar con una pieza incompleta: debe fallar.'],
+    pasos:[], necesito:['Dónde se guardan / abren las imágenes de la VIS en los logs','Foto de referencia buena por modelo (Moose, Scorpion, Gecko)','Cómo ver la imagen en vivo para enfocar','Dónde se ajusta el brillo / exposición (si es por programa)'],
+  },
   'editar-arc': {
     titulo:'Editar la línea ARC (DR, LI, LO, cambio de modelo)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233','235'],
     cuando:'"Bola" al inicio o final del arco, poco o mucho DELO, o cambio de modelo (95 ↔ 133).',

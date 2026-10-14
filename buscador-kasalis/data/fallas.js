@@ -114,6 +114,33 @@ export const FALLAS = [
   tips:['Lens adapter Moose con DELO no se re-plasmea → MRB.'],
 },
 {
+  id:'vis233', titulo:'233 · Falla de visión post-dispensado', corto:'Primero validar el dispensado; si está bien, es la cámara de inspección',
+  codigos:['233'],
+  flujo:[
+    {p:'Revisar el dispensado de la pieza fallada', d:'Ver la pieza o la imagen de la VIS: círculo completo, cerrado y centrado en el lens adapter, sin bola ni burbujas.',
+     si:'Está bien → el dispensado no es el problema. Paso 4.', no:'Está mal → paso 2.'},
+    {proc:'offset-dispensado', p:'Si está descentrado: mover X / Y del ARC', d:'ARC actual: X 9.2 · Y −6.4. Mover poco a poco hacia donde falta DELO.'},
+    {proc:'editar-arc', p:'Si está incompleto, con bola o poco DELO: ajustar el ARC', d:'IA (ángulo), LO (lead out), DR (rate) y altura. Comentar la línea anterior, no borrarla. Pesar 3 dispensados + foto.',
+     si:'Queda bien y pasa la VIS → listo.'},
+    {proc:'enfoque-vis', p:'Dispensado bien pero la VIS da 233: enfocar la cámara de inspección', d:'Comparar contra la foto de referencia de logs pasados (pieza buena que pasó). Enfocar hasta que el cordón se vea igual de nítido.'},
+    {proc:'enfoque-vis', p:'Ajustar el brillo', d:'Line lights apuntando al lens adapter y brillo igual que la foto de referencia: el cordón claro, lo demás oscuro.'},
+    {p:'Validar', d:'Correr piezas buenas (deben pasar) y una con dispensado incompleto (debe fallar).',
+     no:'Sigue fallando con dispensado bueno → revisar con ingeniería los parámetros de la VIS (ST, área, perímetro).'},
+  ],
+  causas:[
+    ['Dispensado desfasado', 'Mover X / Y del ARC'],
+    ['Círculo incompleto o bola', 'Ajustar ARC (IA, LO, DR)'],
+    ['Cámara de inspección desenfocada (al cambiar Moose ↔ ELK cambia la altura)', 'Re-enfocar con la foto de referencia'],
+    ['Line lights sin apuntar al lens adapter', 'Ajustar tornillos de las barras LED'],
+    ['Brillo distinto a la referencia', 'Ajustar brillo / exposición'],
+  ],
+  tips:[
+    'Contención: primero el dispensado, después la cámara. No mover las dos cosas a la vez.',
+    'Tener una foto de referencia de la VIS de una pieza buena por modelo (de los logs).',
+    'Una VIS desenfocada puede pasar un círculo incompleto: validar siempre con una pieza mala.',
+  ],
+},
+{
   id:'dispensado', titulo:'Dispensado', corto:'Círculo incompleto, no dispensa, bola, desfasado',
   codigos:['233','222','-222','230','277'],
   flujo:[
@@ -122,7 +149,7 @@ export const FALLAS = [
     {proc:'altura-aguja', p:'Revisar altura de aguja', d:'Baja = raspa el lens adapter; alta = trazo malo.'},
     {proc:'offset-dispensado', p:'Centrar offset X/Y', d:'Si el trazo sale desfasado.'},
     {proc:'editar-arc', p:'"Bola" al inicio o final del arco', d:'Ajustar DR.'},
-    {p:'Círculo incompleto y la visión no lo detecta', d:'Enfocar el lente de la cámara de inspección y apuntar las line lights al lens adapter. Validar con una pieza incompleta.'},
+    {proc:'enfoque-vis', p:'Círculo incompleto y la visión no lo detecta', d:'Enfocar el lente de la cámara de inspección y apuntar las line lights al lens adapter. Validar con una pieza incompleta.'},
     {p:'Pesar 3 dispensados + foto', d:'Siempre al terminar el ajuste o cambiar de modelo.'},
   ],
   causas:[
