@@ -228,6 +228,7 @@ export const FALLAS = [
     {proc:'logs-segregacion', p:'Revisar la carpeta D:\\TARS\\Valid', d:'Si quedaron logs de segregación ahí, el preparser no puede mover los logs buenos y ninguna pieza progresa.',
      si:'Hay logs de segregación → borrar solo esos. Las demás piezas progresan solas.', no:'Está vacía → paso 3.'},
     {p:'Esperar y revisar en MES', d:'Después de borrar, confirmar en MES que las piezas ya tienen el step BUILD.'},
+    {proc:'segregar-lente', p:'Revisar la ruta de datos del programa', d:'Después de segregar, la ruta debe regresar a "valid" (la de segregación termina en "valid1") y cargar el programa de BUILD. Pasar una pieza y validar en MES.'},
     {proc:'cargar-programa', p:'Revisar el programa cargado', d:'Si el programa se cambió de modelo, las piezas no tienen la ruta correcta. Re-ingresar desde la carpeta de respaldo de seriales.'},
     {p:'Revisar el serial', d:'Revisión del número de serie / ensamble (ej. serial de revisión anterior o número de lens adapter en vez del de la Kasalis).'},
     {p:'Último recurso: BUILD manual', d:'Solo como excepción y con autorización.'},

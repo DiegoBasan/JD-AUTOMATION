@@ -12,13 +12,13 @@ const pasa = x => filtro==='todas' || x.linea===filtro || (x.lineas||[]).include
 
 /* ---------- piezas ---------- */
 const tags = x => [x.linea, ...(x.lineas||[])].filter((v,i,a)=>v && a.indexOf(v)===i).map(l=>`<span class="tag" style="--m:${col(l)}">${esc(MAQ[l]?.n||l)}</span>`).join('');
-function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div>${tags(f)}</div><b>${esc(f.titulo)}</b><span>${esc(f.maquina)} · ${esc(f.corto)}</span></div>`; }
+function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div>${tags(f)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span></div>`; }
 function procRow(id){ const p = PROCESOS[id]; return `<div class="row" data-go="p/${id}" style="--m:${col(p.linea)}"><b style="font-size:12px"><span class="tag" style="--m:${col(p.linea)}">${esc(MAQ[p.linea]?.n||'')}</span></b><span>${esc(p.titulo)}<small>${esc(p.maquina||'')} · ${p.pasos.length ? p.pasos.length+' pasos' : 'en construcción'}</small></span><span class="faint">›</span></div>`; }
 function flowHTML(f){
   return `<div class="flow">${f.flujo.map((s,i)=>`<div class="st"><div class="n" style="background:${col(f.linea)};color:#fff">${i+1}</div><div>
-    <b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
+    <b>${esc(s.p==='Ver el proceso' && s.proc && PROCESOS[s.proc] ? PROCESOS[s.proc].titulo : s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
     ${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}
-    ${s.proc && PROCESOS[s.proc]?`<button class="procbtn" data-go="p/${s.proc}">Cómo hacerlo <small>${esc(PROCESOS[s.proc].titulo)}</small></button>`:''}</div></div>`).join('')}</div>`;
+    ${s.proc && PROCESOS[s.proc]?`<button class="procbtn" data-go="p/${s.proc}">Cómo hacerlo ›</button>`:''}</div></div>`).join('')}</div>`;
 }
 function renderFilters(){
   const keys = ['todas', ...Object.keys(MAQ)];

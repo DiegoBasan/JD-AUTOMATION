@@ -100,7 +100,7 @@ export const PROCS = {
   'segregar-lente': {
     titulo:'Programa de segregación de lente (Scorpion 95)', estacion:'Alineación', permisos:'Ingeniería', codigos:['131','108'],
     cuando:'Scorpion 95: muchas fallas de lente seguidas y la golden pasa.',
-    sabemos:['Solo existe para Scorpion 95.','Escanea el ID del lente y prueba si alinea.','Un lente segregado como malo da 131.','Al terminar, revisar que no queden logs de segregación en D:\\TARS\\Valid (si quedan, las piezas no progresan en MES).'],
+    sabemos:['Solo existe para Scorpion 95.','Escanea el ID del lente y prueba si alinea.','Un lente segregado como malo da 131.','Al terminar, revisar que no queden logs de segregación en D:\\TARS\\Valid (si quedan, las piezas no progresan en MES).','Durante la segregación no se mandan datos a MES (solo se escanea el lente).','Para regresar a producción: quitar el "1" de la ruta "valid1" para que apunte a "valid", cambiar al programa de BUILD, pasar una pieza y validar el historial en MES.'],
     pasos:[], necesito:['Cómo se entra al modo de segregación','Qué se escanea y qué resultado muestra','Cómo se regresa a producción'],
   },
   'logs-segregacion': {
