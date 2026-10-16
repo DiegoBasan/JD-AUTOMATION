@@ -35,7 +35,7 @@ function homeView(){
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
-  let h = `<div class="head" style="--m:${col(f.linea)}"><div class="k">${esc(MAQ[f.linea]?.n||'')} · ${esc(f.maquina)}</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p></div>
+  let h = `<div class="head" style="--m:${col(f.linea)}"><div class="k"><span class="tag">${esc(MAQ[f.linea]?.n||'')}</span> ${esc(f.maquina)}</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p></div>
     <h3 class="lb">Qué hacer, en orden</h3>${flowHTML(f)}`;
   if(f.causas?.length) h += `<h3 class="lb">Causas vistas → solución</h3><div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
   if(f.tips?.length) h += `<h3 class="lb">Para recordar</h3><div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
@@ -43,7 +43,7 @@ function fallaView(id){
 }
 function procesoView(id){
   const p = PROCESOS[id]; if(!p) return procesosTab();
-  let h = `<div class="head" style="--m:${col(p.linea)}"><div class="k">Proceso · ${esc(MAQ[p.linea]?.n||'')}${p.maquina?' · '+esc(p.maquina):''}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando||'')}</p></div>`;
+  let h = `<div class="head" style="--m:${col(p.linea)}"><div class="k"><span class="tag">${esc(MAQ[p.linea]?.n||'')}</span> Proceso${p.maquina?' · '+esc(p.maquina):''}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando||'')}</p></div>`;
   if(p.pasos.length){
     h += `<h3 class="lb">Pasos</h3><div class="steps" style="--m:${col(p.linea)}">${p.pasos.map((s,i)=>`<div class="pstep"><div class="n">${i+1}</div><div><b>${esc(s.texto)}</b>${s.valor?`<span class="v">${esc(s.valor)}</span>`:''}${s.ojo?`<div class="o">⚠︎ ${esc(s.ojo)}</div>`:''}</div></div>`).join('')}</div>
       <button class="btn" data-guide="${id}">▶ Ver paso a paso${p.pasos.some(s=>s.foto)?' con fotos':''}</button>`;

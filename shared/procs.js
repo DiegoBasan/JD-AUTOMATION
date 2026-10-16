@@ -16,6 +16,8 @@ const CSS = `
 .pv .ph button{width:36px;height:36px;border-radius:50%;border:0;background:var(--bg,#f2f2f3);color:inherit;font-weight:800;cursor:pointer}
 .pv .pm{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 8px}
 .pv .pm span{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--bg,#f2f2f3)}
+.pv .pm .ac{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--a) 16%,transparent)}
+.pv .pm .ac::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--a)}
 .pv .pm .w{background:rgba(229,72,77,.14);color:#C2292E}
 .pv .pb{overflow:auto;padding:0 16px 16px;flex:1}
 .pv .when{font-size:13.5px;color:var(--ink2,#7c7c84);margin:2px 0 10px}
@@ -63,7 +65,7 @@ export function openGuide(p, base=BASE, accent='#FF7F66'){
   const key = e => { if(e.key==='Escape') close(); if(e.key==='ArrowRight') go(1); if(e.key==='ArrowLeft') go(-1); };
   const go = d => { if(!p.pasos.length) return; i = Math.max(0, Math.min(p.pasos.length-1, i+d)); zoom = false; draw(); };
   function draw(){
-    const meta = `<div class="pm"><span>${esc(p.estacion)}</span><span class="${/Ingenier/.test(p.permisos)?'w':''}">${esc(p.permisos)}</span>${(p.codigos||[]).map(c=>`<span>${esc(c)}</span>`).join('')}</div>`;
+    const meta = `<div class="pm"><span class="ac" style="--a:${accent}">${esc(p.estacion)}</span><span class="${/Ingenier/.test(p.permisos)?'w':''}">${esc(p.permisos)}</span>${(p.codigos||[]).map(c=>`<span>${esc(c)}</span>`).join('')}</div>`;
     let body = `<div class="when"><b>Cuándo:</b> ${esc(p.cuando)}</div>`;
     if(p.pasos.length){
       const s = p.pasos[i];
@@ -76,7 +78,7 @@ export function openGuide(p, base=BASE, accent='#FF7F66'){
       if(p.sabemos?.length) body += `<h4>Lo que ya sabemos</h4><ul>${p.sabemos.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
       body += `<div class="todo"><b>Guía en construcción: faltan las fotos del programa</b><ul>${(p.necesito||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
     }
-    el.innerHTML = `<div class="pp" style="box-shadow:inset 0 6px 0 ${accent}"><div class="ph"><b>${esc(p.titulo)}</b><button data-x aria-label="Cerrar">✕</button></div>${meta}<div class="pb">${body}</div>
+    el.innerHTML = `<div class="pp"><div class="ph"><b>${esc(p.titulo)}</b><button data-x aria-label="Cerrar">✕</button></div>${meta}<div class="pb">${body}</div>
       ${p.pasos.length?`<div class="nav"><button data-d="-1" ${i===0?'disabled':''}>Anterior</button><button class="dk" data-d="1">${i===p.pasos.length-1?'Listo':'Siguiente'}</button></div>`:''}</div>`;
     const shot = el.querySelector('#pvShot');
     if(shot){ let x0 = null;
