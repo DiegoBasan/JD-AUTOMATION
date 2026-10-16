@@ -4,6 +4,7 @@ import {CODES, HINTS, englishName, originalName} from '../shared/kasalis.js';
 import {DOCS} from './data/docs.js';
 import {FALLAS} from './data/fallas.js';
 import {PROCS, procBtn, openProc} from '../shared/procs.js';
+import {mountFlow} from '../shared/flow.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
 
 const $ = id => document.getElementById(id);
@@ -115,6 +116,10 @@ const ICONS = {
 const icon = id => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]||ICONS.mecanico}</svg>`;
 const codeChips = (list, btn) => `<div class="codes">${list.map(c=> btn ? `<button data-go="c/${c}${+c<0?'|ksv':''}">${c}</button>` : `<i>${c}</i>`).join('')}</div>`;
 
+/* iconos de sección: lo primario (qué hacer) arriba y grande; lo de apoyo en la columna lateral */
+const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', code:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>', doc:'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>'};
+const sh = (ic, t, main) => `<h3 class="${main?'sh':'lb'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI[ic]}</svg>${t}</h3>`;
+const gflow = f => `<div class="gflow" data-fid="${f.id}"></div>`;
 function flowHTML(f){
   return `<div class="flow">${f.flujo.map((s,i)=>`<div class="st"><div class="n">${i+1}</div><div>
     <b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
@@ -123,8 +128,8 @@ function flowHTML(f){
 }
 function causesHTML(f){
   let h = '';
-  if(f.causas.length) h += `<h3 class="lb">Causas vistas → solución</h3><div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
-  if(f.tips.length) h += `<h3 class="lb">Para recordar</h3><div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
+  if(f.causas.length) h += `${sh('cause','Causas vistas en piso → solución')}<div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
+  if(f.tips.length) h += `${sh('tip','Para recordar')}<div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
   return h;
 }
 function notesHTML(key){
@@ -141,9 +146,9 @@ function docsHTML(docs, terms){
 
 /* ---------- vistas ---------- */
 function homeView(){
-  return `<h3 class="lb">¿Qué está fallando?</h3><div class="modes">${FALLAS.map((f,i)=>`<div class="mode${i===0?' dark':''}" data-go="f/${f.id}">
+  return `${sh('cause','¿Qué está fallando?',1)}<div class="modes">${FALLAS.map((f,i)=>`<div class="mode" data-go="f/${f.id}">
     <div class="top-r"><div class="ic">${icon(f.id)}</div><span class="tag">Kasalis</span></div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span>${codeChips(f.codigos.slice(0,4))}</div>`).join('')}</div>
-    <h3 class="lb">Guías y procesos Kasalis</h3>${procList(Object.keys(PROCS))}`;
+    <hr class="sep">${sh('book','Guías y procesos Kasalis',1)}${procList(Object.keys(PROCS))}`;
 }
 function procList(ids){
   return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-proc="${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${p.pasos.length ? p.pasos.length+' pasos con foto' : 'faltan fotos · '+esc(p.permisos)}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
@@ -152,7 +157,8 @@ function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
   const rows = f.codigos.map(c=>{ const n = codeName(c); return n ? `<div class="row" data-go="c/${c}${+c<0?'|ksv':''}"><b>${c}</b><span>${esc(translate(n).charAt(0).toUpperCase()+translate(n).slice(1))}<small class="en">${esc(originalName(n, +c<0?'ksv':'plc'))} · ${esc(englishName(n))}</small></span><span class="faint">›</span></div>` : ''; }).join('');
   return `<div class="head"><div class="k"><span class="tag">Kasalis</span> Modo de falla</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
-    <h3 class="lb">Flujo de resolución</h3>${flowHTML(f)}${f.link?`<a class="link" href="${f.link.href}"><span>${esc(f.link.t)}</span><span class="faint">↗</span></a>`:''}${causesHTML(f)}${rows?`<h3 class="lb">Códigos de esta falla</h3><div class="list">${rows}</div>`:''}`;
+    <div class="fv"><section>${sh('steps','Qué hacer, paso a paso',1)}${gflow(f)}${f.link?`<a class="link" href="${f.link.href}"><span>${esc(f.link.t)}</span><span class="faint">↗</span></a>`:''}</section>
+    <aside>${causesHTML(f)}${rows?`<details class="more"><summary>${sh('code','Códigos de esta falla ('+f.codigos.length+')')}</summary><div class="in"><div class="list">${rows}</div></div></details>`:''}</aside></div>`;
 }
 function codeView(code, src){
   const c = src==='ksv' ? KSV.get(code) : PLC.get(code);
@@ -170,19 +176,20 @@ function codeView(code, src){
   let h = `<div class="head"><div class="k">${src==='ksv'?'KSvision':'PLC Pixid'} · ${esc(w.st)}</div>
     <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div class="big">${code}</div><div style="min-width:0"><h2 style="font-size:17px;margin:0">${esc(c.name)}</h2><p>${esc(tr.charAt(0).toUpperCase()+tr.slice(1))}</p><p class="en">${esc(originalName(c.name, src))} · ${esc(englishName(c.name))}${c.comment?' — '+esc(c.comment):''}</p></div></div>
     <p style="margin-top:10px;font-size:12.5px">${esc(w.ph)}${freq?` · ${freq}× en logs`:''}</p></div>`;
+  h += `<div class="fv"><section>`;
   if(fs.length){
     const f = fs[0];
-    h += `<h3 class="lb">Flujo de resolución · ${esc(f.titulo)}</h3>${flowHTML(f)}`;
-    h += `<div class="link" data-go="f/${f.id}"><span>Causas vistas y tips de ${esc(f.titulo.toLowerCase())}</span><span class="faint">›</span></div>`;
+    h += `${sh('steps','Qué hacer, paso a paso',1)}<div class="faint" style="margin:-4px 4px 10px;font-size:12.5px">${esc(f.titulo)}</div>${gflow(f)}`;
+  } else h += `${sh('info','Qué significa',1)}<div class="card"><div class="hint ${HINTS[key]?'':'muted'}">${esc(HINTS[key]||'Sin guía todavía. Revisa el manual.')}</div></div>`;
+  h += `</section><aside>`;
+  if(fs.length){ h += sh('book','Más de esta falla') + `<div class="link" data-go="f/${fs[0].id}"><span>Causas vistas y tips</span><span class="faint">›</span></div>`;
     fs.slice(1).forEach(o=>{ h += `<div class="link" data-go="f/${o.id}"><span>También: ${esc(o.titulo)}</span><span class="faint">›</span></div>`; });
-  }
-  if(HINTS[key]) h += `<h3 class="lb">Qué significa</h3><div class="card"><div class="hint">${esc(HINTS[key])}</div></div>`;
-  else if(!fs.length) h += `<h3 class="lb">Qué significa</h3><div class="card"><div class="hint muted">Sin guía todavía. Revisa el manual abajo.</div></div>`;
+    if(HINTS[key]) h += `${sh('info','Qué significa')}<div class="card"><div class="hint">${esc(HINTS[key])}</div></div>`; }
   h += notesHTML(key);
   if(other) h += `<div class="link" data-go="c/${other.code}|${src==='plc'?'ksv':'plc'}"><span>También existe ${other.code} en ${src==='plc'?'KSvision':'PLC'}: ${esc(other.name)}</span><span class="faint">›</span></div>`;
   h += `<details class="more"><summary>Manual y documentos (${docs.length})</summary><div class="in">${docsHTML(docs, [...terms, String(code)])}</div></details>`;
   if(rel.length) h += `<details class="more"><summary>Códigos relacionados (${rel.length})</summary><div class="in rel">${rel.map(o=>`<button data-go="c/${o.x.code}|${src}">${o.x.code} · ${esc(o.x.name)}</button>`).join('')}</div></details>`;
-  return h;
+  return h + `</aside></div>`;
 }
 function processView(key){
   return `<div class="head"><div class="k">Falla de proceso (no es código Kasalis)</div><h2>${esc(PROCESS[key])}</h2></div>
@@ -242,6 +249,7 @@ function route(){
   else if(raw==='codigos'){ html = codesTab(); title='Códigos'; tab='codigos'; }
   else if(raw==='info'){ html = infoTab(); title='Más'; tab='info'; }
   else if(raw.startsWith('f/')){ const f=FALLAS.find(x=>x.id===raw.slice(2)); html = fallaView(raw.slice(2)); title = f?f.titulo:title; sub = true; }
+  else if(raw.startsWith('p/')){ html = homeView(); const id = raw.slice(2); setTimeout(()=>openProc(id), 50); }
   else if(raw.startsWith('s/')){ const q=raw.slice(2); html = searchView(q); title = 'Buscar'; tab=''; sub = true; if(document.activeElement!==$('q')) $('q').value=q; }
   else {
     const [c, s] = (raw.startsWith('c/') ? raw.slice(2) : raw).split('|');
@@ -254,6 +262,7 @@ function route(){
   }
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value='';
   $('out').innerHTML = html; $('ttl').textContent = title;
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'kasalis', accent:'#FF7F66', procHTML: st => st.proc ? procBtn(st.proc) : ''}); });
   $('back').style.display = sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';

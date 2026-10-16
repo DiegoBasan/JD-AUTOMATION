@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>JD Automation</title>
-<meta name="description" content="Apps de automatización y troubleshooting de las líneas de cámaras John Deere: simulador de líneas, fallas Kasalis y más.">
+<meta name="description" content="Apps de troubleshooting y simulación de las líneas de cámaras John Deere: fallas Kasalis y de línea, procesos, Kasalis 3D, laboratorio VIS y simulador.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="JD Apps">
@@ -15,255 +15,198 @@
 <script src="shared/theme.js"></script>
 <link rel="apple-touch-icon" href="assets/icons/hub-180.png">
 <link rel="icon" type="image/svg+xml" href="assets/icons/hub.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
 <style>
-/* Hub de apps JD Automation — mismo lenguaje visual que Diapps:
-   celular = carpetas + resumen del día + barra de vidrio; escritorio (≥1100px) = tablero con un widget por app. */
-:root{
-  --bg:#F2F2F3; --ink:#141416; --ink2:#7C7C84; --line:#D6D6DA; --chip:#FFFFFF;
-  --f1:#DCDCDF; --f1back:#E8E8EA; --f1ink:#141416;
-  --f2:#2E2E31; --f2back:#E3E3E6; --f2ink:#FFFFFF;
-  --glass:rgba(255,255,255,.55); --glassBorder:rgba(255,255,255,.8); --glassShadow:rgba(20,20,25,.16);
-  --lime:#C6EE3A; --scrim:rgba(0,0,0,.3); --sheet:#FFFFFF;
-  --font:"Urbanist",-apple-system,"SF Pro Text",system-ui,sans-serif;
-}
-:root[data-theme="dark"]{color-scheme:dark;
-  --bg:#0E0E10; --ink:#F2F2F4; --ink2:#8C8C94; --line:#2C2C31; --chip:#1A1A1D;
-  --f1:#232327; --f1back:#18181B; --f1ink:#F2F2F4;
-  --f2:#ECECEE; --f2back:#1C1C1F; --f2ink:#141416;
-  --glass:rgba(38,38,44,.6); --glassBorder:rgba(255,255,255,.1); --glassShadow:rgba(0,0,0,.5);
-  --scrim:rgba(0,0,0,.55); --sheet:#1A1A1D;
-}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-html{background:var(--bg);-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-body{margin:0;min-height:100dvh;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.35;-webkit-font-smoothing:antialiased}
-body.lock{overflow:hidden}
-button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+/* Inicio ordenado por lo que vienes a hacer: 1) atender una falla, 2) seguir un proceso, 3) simular / analizar.
+   Una sola búsqueda para todas las apps. Lo secundario (documentos, novedades, en desarrollo) va plegado al final. */
+:root{--bg:#F2F2F3;--ink:#141416;--ink2:#6E6E76;--ink3:#A0A0A8;--line:#DEDEE2;--chip:#FFFFFF;--soft:#F7F7F8;
+  --kas:#FF7F66;--gecko:#8B5CF6;--moose:#F08C00;--scorpion:#2F6BFF;--horno:#8A8A90;--ok:#1F9D55;--bad:#E5484D;
+  --font:"Urbanist",-apple-system,"SF Pro Text",system-ui,sans-serif}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0E0E10;--ink:#F2F2F4;--ink2:#9A9AA2;--ink3:#66666E;--line:#2A2A2F;--chip:#18181B;--soft:#1F1F23;--ok:#3DD68C}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100dvh;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
-button,a,h1{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.app{max-width:440px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 18px calc(120px + env(safe-area-inset-bottom,0px))}
-.press{transition:transform .18s cubic-bezier(.2,.8,.2,1)}
-.press:active{transform:scale(.95)}
-
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+svg.i{width:20px;height:20px;flex:none}
+.wrap{max-width:1180px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 18px calc(40px + env(safe-area-inset-bottom,0px))}
 /* encabezado */
-.top{display:flex;align-items:center;gap:8px;padding-top:6px}
-.top .sp{flex:1}
-.av{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:20px;flex:none}
-.rb{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
-.rb svg{width:21px;height:21px}
-.rb.line{border:1.5px solid var(--line)}
-.rb.fill{background:var(--line)}
-.rb .dot{position:absolute;top:14px;right:15px;width:7px;height:7px;border-radius:50%;background:#E5484D}
-h1{font-size:44px;font-weight:400;letter-spacing:-.035em;line-height:1.05;margin:20px 0 4px}
-h1 b{font-weight:700}
-.lead{color:var(--ink);opacity:.75;font-size:15px;margin:0}
-
-/* resumen del día */
-.today{margin-top:14px}
-.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tcard{display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:22px;background:var(--chip);min-width:0;animation:wIn2 .45s cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--i) * 50ms)}
-@keyframes wIn2{from{opacity:0;transform:translateY(8px)}}
-.tcard:first-child{grid-column:span 2}
-.tcard .th{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
-.tcard .th img{width:22px;height:22px;border-radius:7px}
-.tcard b{font-size:22px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tcard small{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tcard em{font-style:normal;font-size:12px;font-weight:700;margin-top:6px;color:color-mix(in srgb,var(--tc) 70%,var(--ink))}
-.sech{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px}.sech h2{margin:0;font-size:20px;letter-spacing:-.02em}
-
-/* carpetas */
-.list{display:flex;flex-direction:column;gap:14px}
-.folder{cursor:pointer;--f:var(--f1);--back:var(--f1back);--fi:var(--f1ink);display:block;position:relative;border-radius:30px;background:var(--back);color:var(--fi);transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .3s;animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
-.folder.dark{--f:var(--f2);--back:var(--f2back);--fi:var(--f2ink)}
-.folder:active{transform:scale(.97)}
-.folder.opening{transform:scale(.96);opacity:.6}
-@keyframes rise{from{opacity:0;transform:translateY(22px)}}
-.f-top{display:flex;align-items:flex-end;height:58px}
-.tab{position:relative;background:var(--f);border-radius:28px 28px 0 0;height:100%;display:flex;align-items:center;gap:8px;padding:0 12px 0 14px;flex:none;width:52%}
-.tab::after{content:"";position:absolute;right:-30px;bottom:0;width:30px;height:30px;background:radial-gradient(circle at 100% 0,transparent 29.5px,var(--f) 30px)}
-.st{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 12px 0 9px;border-radius:99px;border:1.5px solid currentColor;font-size:14.5px;font-weight:600;white-space:nowrap}
-.st svg{width:14px;height:14px}
-.tr{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--fi);color:var(--f);flex:none}
-.tr svg{width:17px;height:17px}
-.by{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 14px 14px 30px;font-size:12.5px;color:var(--ink2);white-space:nowrap;align-self:center}
-.by b{color:var(--ink);font-weight:600}
-.by .mini{width:26px;height:26px;flex:none;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:11.5px;font-weight:700}
-.f-body{background:var(--f);border-radius:0 30px 30px 30px;display:flex;align-items:center;gap:16px;padding:12px 18px 22px 14px;position:relative;min-height:112px}
-.thumb{width:70px;height:70px;margin:2px;border-radius:22.5%;flex:none;overflow:hidden;display:block;box-shadow:0 0 0 1px color-mix(in srgb,var(--fi) 10%,transparent)}
-.thumb img{display:block;width:100%;height:100%;object-fit:cover}
-.folder.soon .thumb{opacity:.55}
-.f-main{flex:1;min-width:0;padding-top:8px}
-.f-main b{display:block;font-size:19px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.f-main span{display:block;font-size:13px;opacity:.6;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prog{position:relative;height:3px;border-radius:99px;background:color-mix(in srgb,var(--fi) 22%,transparent);margin-top:12px;overflow:hidden}
-.prog i{position:absolute;inset:0 auto 0 0;background:var(--fi);border-radius:99px;width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1) .25s}
-.more{position:absolute;top:8px;right:14px;width:40px;height:30px;display:grid;place-items:center;color:var(--fi)}
-.more svg{width:20px;height:20px}
-.panel{display:flex;align-items:center;gap:18px;background:var(--f1);border-radius:30px;padding:18px;margin-bottom:12px;animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
-.panel h4{margin:2px 4px 12px;font-size:17px;font-weight:600}
-.ring{position:relative;width:120px;height:120px;flex:none}
-.ring svg{width:100%;height:100%}
-.ring .arc{transition:stroke-dashoffset 1.2s cubic-bezier(.2,.9,.25,1)}
-.ring span{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font-size:12px;color:var(--ink2);font-weight:500}
-.ring b{display:block;font-size:30px;color:var(--ink);letter-spacing:-.03em;font-weight:700}
-.kp{display:grid;gap:10px;flex:1}
-.kp div{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--ink2);font-weight:500}
-.kp b{font-size:22px;color:var(--ink);font-weight:700}
-.prow,.te{display:flex;align-items:center;gap:12px;width:100%;padding:10px 4px;text-align:left}
-.prow+.prow,.te+.te{border-top:1px solid color-mix(in srgb,var(--ink) 8%,transparent)}
-.pi{width:40px;height:40px;border-radius:12px;overflow:hidden;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 10%,transparent);font-weight:700}
-.pi img{width:100%;height:100%;display:block}
-.pm{flex:1;min-width:0}
-.pm b{display:block;font-size:15px;font-weight:600}
-.pm>span:not(.pb){display:block;font-size:13px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pb{display:block;height:6px;border-radius:99px;background:color-mix(in srgb,var(--ink) 12%,transparent);margin-top:7px;overflow:hidden}
-.pb i{display:block;height:100%;width:0;border-radius:99px;background:var(--ink);transition:width 1.1s cubic-bezier(.2,.9,.25,1) .2s}
-.prow em,.te em{font-style:normal;font-weight:700;font-size:14px;flex:none}
-.te em{font-weight:500;color:var(--ink2);font-size:12.5px}
-.te{animation:rise .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i) * 50ms)}
-
-/* navegación inferior de vidrio */
-.nav{position:fixed;left:50%;bottom:max(14px,calc(env(safe-area-inset-bottom,0px) - 4px));transform:translateX(-50%);display:flex;gap:6px;padding:6px;border-radius:99px;z-index:8;background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--glassBorder);box-shadow:inset 0 1px 0 var(--glassBorder),0 14px 34px var(--glassShadow)}
-.nav button{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;border:1.5px solid color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink2);transition:background-color .25s,color .25s,transform .18s}
-.nav button:active{transform:scale(.92)}
-.nav button svg{width:22px;height:22px}
-.nav button[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-:root:not([data-theme="dark"]) .nav button[aria-current="page"]{background:#fff;color:#141416;border-color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
-
-/* hoja inferior y avisos */
-.scrim{position:fixed;inset:0;background:var(--scrim);z-index:9;opacity:0;transition:opacity .25s}
-.scrim.on{opacity:1}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:10;max-width:440px;margin:0 auto;background:var(--sheet);border-radius:30px 30px 0 0;padding:10px 22px calc(26px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .38s cubic-bezier(.2,.9,.25,1);max-height:88dvh;overflow:auto}
-.sheet.on{transform:none}
-.grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 14px}
-.sheet h3{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:4px 0 6px}
-.sheet p{margin:6px 0;color:var(--ink2)}
-.rows{background:var(--bg);border-radius:20px;padding:2px 16px;margin-top:14px}
-.rows>div,.rows>a{display:flex;justify-content:space-between;gap:12px;padding:12px 0;font-size:15px}
-.rows>*+*{border-top:1px solid var(--line)}
-.rows span:first-child{color:var(--ink2)}
-.rows span:last-child{font-weight:600;text-align:right}
-.btns{display:flex;gap:10px;margin-top:18px}
-.btn{flex:1;height:52px;border-radius:99px;display:grid;place-items:center;font-weight:600;font-size:16px;border:1.5px solid var(--line)}
-.btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--bg);padding:2px 6px;border-radius:6px}
-.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:99px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:20;pointer-events:none;white-space:nowrap}
-.toast.on{opacity:1;transform:translate(-50%,0)}
-
-/* ---------- tablero de escritorio ---------- */
-.deskwrap{display:none}
-@media (min-width:1100px){
-  body.desk .app,body.desk .nav{display:none}
-  body.desk .deskwrap{display:block;padding:0 28px 40px;max-width:1800px;margin:0 auto}
-  body.desk .sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(560px,calc(100vw - 48px));max-width:none;margin:0;max-height:min(86vh,860px);border-radius:28px;padding:18px 24px 24px;transform:translate(-50%,-47%) scale(.97);opacity:0;transition:transform .32s cubic-bezier(.2,.9,.25,1),opacity .2s;box-shadow:0 30px 80px rgba(0,0,0,.25)}
-  body.desk .sheet.on{transform:translate(-50%,-50%);opacity:1}
-  body.desk .sheet .grab{display:none}
-  body.desk .toast{bottom:28px}
-  .dkbar{position:sticky;top:0;z-index:7;display:flex;align-items:center;gap:12px;padding:14px 28px;margin:0 -28px 6px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%)}
-  .dkbar .dbrand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
-  .dkbar .dbrand small{display:block;font-size:12px;font-weight:500;color:var(--ink2)}
-  .dkbar .av{width:38px;height:38px;font-size:16px}
-  .dkbar .sp{flex:1}
-  .dkbar .dtab{height:38px;padding:0 15px;border-radius:99px;font-size:13.5px;font-weight:600;color:var(--ink2);display:inline-flex;align-items:center;gap:7px;white-space:nowrap;transition:background-color .2s,color .2s}
-  .dkbar .dtab:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
-  .dkbar .dtab svg{width:17px;height:17px}
-  .dkbar .dtab img{width:20px;height:20px;border-radius:6px}
-  .mega{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;grid-auto-flow:dense}
-  .w{background:var(--chip);border-radius:28px;padding:18px 20px;min-width:0}
-  .mega.anim .w{animation:wIn .5s cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--i) * 45ms)}
-  @keyframes wIn{from{opacity:0;transform:translateY(12px)}}
-  .w.span2{grid-column:span 2}.w.tall{grid-row:span 2}
-  .w header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-  .w header h3{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;flex:1}
-  .w .wi img{width:30px;height:30px;border-radius:9px;display:block}
-  .w .wo{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--ink2);padding:6px 10px;border-radius:99px;background:var(--bg)}
-  .w .wo svg{width:14px;height:14px}.w .wo:hover{color:var(--ink)}
-  .w h4{margin:14px 0 8px;font-size:12.5px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
-  .tag{font-style:normal;font-size:11px;font-weight:700;background:var(--lime);color:#26300a;padding:2px 8px;border-radius:99px;vertical-align:3px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-  .kpis>div{background:var(--bg);border-radius:18px;padding:12px 14px;min-width:0}
-  .kpis small{display:block;font-size:12px;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .kpis b{display:block;font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
-  .kpis em{font-style:normal;font-size:12px;font-weight:600;color:var(--ink2)}
-  .wcols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  .rows2>div,.rows2>a{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
-  .rows2>:first-child{border-top:0}
-  .rows2 span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-  .rows2 small{display:block;font-size:12px;color:var(--ink2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rows2 b{font-variant-numeric:tabular-nums;white-space:nowrap}
-  .rows2 a:hover span{text-decoration:underline}
-  .muted2{color:var(--ink2);font-weight:600}
-  .chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips2 a,.chips2 span{background:var(--bg);border-radius:12px;padding:6px 10px;font-size:12.5px;font-weight:600}
-  .chips2 a:hover{background:var(--line)}
-  .flowmini{display:grid;gap:8px}
-  .flowmini div{display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start;font-size:14px;font-weight:600}
-  .flowmini i{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-style:normal;font-size:12px}
-  .flowmini small{display:block;color:var(--ink2);font-weight:500;font-size:12.5px}
-  .shot{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;background:var(--bg);margin-bottom:10px}
-  .pl{display:flex;flex-direction:column;gap:4px}
-  .plr{display:grid;grid-template-columns:34px 1fr 60px;gap:10px;align-items:center;padding:6px;border-radius:14px}.plr[href]:hover{background:var(--bg)}
-  .plr .pi{width:34px;height:34px;border-radius:10px}
-  .plr>span:nth-child(2){min-width:0}
-  .plr b{display:block;font-size:14px}.plr small{display:block;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .plr em{display:block;height:6px;border-radius:9px;background:var(--line);overflow:hidden}.plr em i{display:block;height:100%;background:var(--ink)}
-  .wempty{color:var(--ink2);font-size:13.5px;margin:0}
+.top{display:flex;align-items:center;gap:12px}
+.av{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+.hi{flex:1;min-width:0}
+.hi b{display:block;font-size:20px;letter-spacing:-.02em}
+.hi small{color:var(--ink2);font-size:13px;font-weight:600}
+.rb{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);flex:none}
+.rb svg{width:19px;height:19px}
+/* búsqueda */
+.search{margin:18px 0 6px;display:flex;align-items:center;gap:10px;background:var(--chip);border:1.5px solid var(--line);border-radius:18px;padding:0 8px 0 16px;height:58px;box-shadow:0 8px 24px rgba(0,0,0,.05)}
+.search:focus-within{border-color:var(--ink)}
+.search input{flex:1;border:0;outline:0;background:transparent;font-size:17px;min-width:0;height:100%}
+.search .x{width:34px;height:34px;border-radius:50%;background:var(--soft);display:none;font-weight:800}
+.hint{color:var(--ink3);font-size:12.5px;margin:0 4px 4px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.quick a{height:34px;padding:0 12px;border-radius:99px;background:var(--chip);border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.quick a i,.dot{width:8px;height:8px;border-radius:50%;background:var(--c);display:inline-block;flex:none}
+/* secciones */
+.sec{margin-top:26px}
+.sec>h2{display:flex;align-items:center;gap:10px;margin:0 2px 12px;font-size:18px;letter-spacing:-.01em}
+.sec>h2 .n{width:26px;height:26px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;font-weight:800}
+.sec>h2 small{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink2)}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0 0}
+.grid{display:grid;gap:10px}
+.big2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.cols>div{min-width:0}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+/* tarjeta grande de acción */
+.act{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:22px;background:var(--chip);border:1px solid var(--line);min-height:150px;transition:transform .15s,border-color .15s}
+.act:hover{border-color:var(--ink3)}
+.act:active{transform:scale(.98)}
+.act .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.act .ic svg{width:24px;height:24px}
+.act b{font-size:17px;line-height:1.2}
+.act span{color:var(--ink2);font-size:13px;line-height:1.35}
+.act .dots{display:flex;gap:5px;margin-top:auto}
+.act .dots i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.act .go{margin-top:auto;font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px}
+/* filas */
+.rows{background:var(--chip);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);min-height:58px}
+.row:first-child{border-top:0}
+.row:hover{background:var(--soft)}
+.row .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c,#888) 15%,transparent);color:var(--c,var(--ink));flex:none}
+.row .ic svg{width:19px;height:19px}
+.row .ic img{width:36px;height:36px;border-radius:11px;display:block}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t small{display:block;color:var(--ink2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:color-mix(in srgb,var(--c,#888) 15%,transparent);white-space:nowrap}
+.row .ch{color:var(--ink3);font-size:18px}
+.empty{padding:16px;color:var(--ink2);font-size:13.5px}
+/* resultados */
+.res h3{font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;margin:16px 4px 8px;display:flex;align-items:center;gap:6px}
+/* plegables */
+details.fold{background:var(--chip);border:1px solid var(--line);border-radius:20px;margin-top:10px}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;font-weight:700}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary small{margin-left:auto;color:var(--ink2);font-weight:600;font-size:12.5px}
+details.fold>summary::after{content:"+";color:var(--ink3);font-size:20px;line-height:1}
+details.fold[open]>summary::after{content:"–"}
+details.fold .rows{border:0;border-top:1px solid var(--line);border-radius:0 0 20px 20px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+/* compu: dos columnas — izquierda lo urgente, derecha herramientas */
+.cols{display:grid;gap:0}
+@media (min-width:1000px){
+  .cols{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:30px;align-items:start}
+  .search{height:64px}
+  .act{min-height:170px}
 }
-@media (min-width:1100px) and (max-width:1399px){.mega{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:380px){ .big2{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
-<div id="desk" class="deskwrap"></div>
-<main class="app">
-  <div class="top">
+<div class="wrap">
+  <header class="top">
     <span class="av" aria-hidden="true">D</span>
-    <span class="sp"></span>
-    <button class="rb line press" id="bell" aria-label="Novedades"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
-    <button class="rb fill press" id="grid" aria-label="Menú"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="6" r="1.8"/><circle cx="12" cy="6" r="1.8"/><circle cx="18" cy="6" r="1.8"/><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/><circle cx="6" cy="18" r="1.8"/><circle cx="12" cy="18" r="1.8"/><circle cx="18" cy="18" r="1.8"/></svg></button>
+    <div class="hi"><b id="hola">Hola, Diego</b><small>Líneas de cámaras John Deere</small></div>
+    <button class="rb" data-theme-toggle aria-label="Tema"></button>
+  </header>
+
+  <label class="search"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--ink3)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Código, falla o proceso…"><button class="x" id="clr" type="button" aria-label="Borrar">✕</button></label>
+  <div class="hint">Busca en Fallas Kasalis, Fallas de línea y todas las guías al mismo tiempo.</div>
+  <div class="res" id="res" hidden></div>
+
+  <div id="home" class="cols">
+    <div>
+      <section class="sec">
+        <h2><span class="n">1</span>Atender una falla</h2>
+        <div class="grid big2">
+          <a class="act" href="buscador-kasalis/" style="--c:var(--kas)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span><b>Fallas Kasalis</b><span>Códigos PLC y KSvision con su flujo SÍ / NO</span><span class="go">Abrir ›</span></a>
+          <a class="act" href="fallas-linea/" style="--c:var(--moose)"><span class="ic" style="--c:var(--ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V9l4 3V9l4 3V9l4 3V5h2v15"/></svg></span><b>Fallas de línea</b><span>Gecko, Moose, Scorpion y hornos</span><span class="dots"><i style="--c:var(--gecko)"></i><i style="--c:var(--moose)"></i><i style="--c:var(--scorpion)"></i><i style="--c:var(--horno)"></i></span></a>
+        </div>
+        <div class="quick" id="quick"></div>
+      </section>
+      <section class="sec" id="histSec" hidden>
+        <h2><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Lo último que atendiste <small>en este teléfono</small></h2>
+        <div class="rows" id="hist"></div>
+      </section>
+      <hr>
+      <section class="sec">
+        <h2><span class="n">2</span>Seguir un proceso</h2>
+        <div class="rows" id="procs"></div>
+      </section>
+    </div>
+    <div>
+      <section class="sec">
+        <h2><span class="n">3</span>Simular y analizar</h2>
+        <div class="rows" id="tools"></div>
+      </section>
+      <section class="sec">
+        <details class="fold"><summary><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/></svg>Documentos de referencia<small id="nDocs"></small></summary><div class="rows" id="docs"></div></details>
+        <details class="fold"><summary><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>Novedades<small id="nLog"></small></summary><div class="rows" id="log"></div></details>
+        <details class="fold"><summary><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>En desarrollo<small>2</small></summary><div class="rows">
+          <div class="row" style="--c:var(--ink3)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="t"><b>Análisis de logs</b><small>Fallas más repetidas a partir de los logs de corridas</small></span></div>
+          <div class="row" style="--c:var(--ink3)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span class="t"><b>Monitor de línea en vivo</b><small>Material retenido y máquinas paradas desde los logs</small></span></div></div></details>
+      </section>
+    </div>
   </div>
-
-  <h1><span id="hi">Hola</span>, <b>Diego!</b></h1>
-  <p class="lead">Así van tus líneas John Deere.</p>
-
-  <div class="today" id="today"></div>
-  <div class="sech"><h2 id="listTitle">Tus apps</h2><button class="rb fill press" id="sort" aria-label="Ordenar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg></button></div>
-  <div class="list" id="list"></div>
-</main>
-
-<nav class="nav" aria-label="Vistas">
-  <button data-v="stats" aria-label="Avance"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="13" width="3" height="6" rx="1"/><rect x="10.5" y="9" width="3" height="10" rx="1"/><rect x="16" y="5" width="3" height="14" rx="1"/></svg></button>
-  <button data-v="folders" aria-label="Apps" aria-current="page"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg></button>
-  <button data-v="docs" aria-label="Documentos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></button>
-</nav>
-
-<div class="scrim" id="scrim" hidden></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden><div class="grab"></div><div id="sheetBody"></div></div>
-<div class="toast" id="toast"></div>
+</div>
 
 <script type="module">
-import {FALLAS} from './buscador-kasalis/data/fallas.js';
-import {OPS, GLOBAL_DEFAULTS} from './simulador-lineas/js/data.js';
-import {DEFAULTS as K3D, buildCycle} from './kasalis-3d/js/cycle.js';
+import {FALLAS as KF} from './buscador-kasalis/data/fallas.js';
+import {PROCS as KP} from './buscador-kasalis/data/procedimientos.js';
+import {CODES} from './shared/kasalis-codes.js';
+import {englishName} from './shared/kasalis.js';
+import {MAQ, FALLAS as LF, PROCESOS as LP} from './fallas-linea/data/lineas.js';
+import {historial} from './shared/flow.js';
 
-/* ---------------- Apps ----------------
-   Cada app vive en su carpeta del repo. Para agregar una: crea la carpeta y una entrada aquí.
-   Sin "href" se muestra como "Próximamente". */
-const PROJECTS=[
- {id:"simulador-lineas",name:"Simulador de líneas 3D",short:"Simulador",desc:"Flujo Moose · Scorpion · Gecko, WIP, horno y Kasalis BUILD/RETEST",href:"simulador-lineas/",status:"live",progress:80,icon:"assets/icons/simulador.svg",updated:"2026-10-12"},
- {id:"buscador-kasalis",name:"Fallas Kasalis",short:"Fallas Kasalis",desc:"Cada falla con su flujo de resolución, códigos y manual",href:"buscador-kasalis/",status:"live",progress:80,icon:"assets/icons/fallas.svg",updated:"2026-10-12"},
- {id:"fallas-linea",name:"Fallas de línea",short:"Fallas de línea",desc:"Gecko, Moose, Scorpion y hornos: fallas con su flujo y guías de procesos",href:"fallas-linea/",status:"live",progress:30,icon:"assets/icons/fallas-linea.svg",updated:"2026-10-14"},
- {id:"kasalis-3d",name:"Kasalis 3D",short:"Kasalis 3D",desc:"Ciclo de la Kasalis en 3D con pistón, ARC, gripper y UV reales",href:"kasalis-3d/",status:"live",progress:60,icon:"assets/icons/kasalis3d.svg",updated:"2026-10-13"},
- {id:"tutorial-aa",name:"Tutorial Active Alignment",short:"Tutorial AA",desc:"EOL vs Active Alignment, SFR / MTF y targets",href:"Tutorial%20Active%20Alignment%20(1).html",status:"live",progress:100,icon:"assets/icons/aa.svg",updated:"2026-10-11"},
- {id:"troubleshooting",name:"Troubleshooting guiado",desc:"Secuencias de pantallas del programa Pixid con fotos",status:"soon",progress:15,icon:"assets/icons/troubleshooting.svg",updated:"2026-10-12"},
- {id:"logs",name:"Análisis de logs",desc:"Fallas más repetidas a partir de los logs de corridas",status:"soon",progress:10,icon:"assets/icons/logs.svg",updated:"2026-10-11"},
- {id:"monitor",name:"Monitor de línea en vivo",desc:"Carpetas de logs: material retenido y máquinas paradas",status:"soon",progress:5,icon:"assets/icons/monitor.svg",updated:"2026-10-11"},
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const IC = {
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  code:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',
+  doc:'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/>', ok:'<path d="M5 12l5 5L20 7"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>'};
+const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const col = l => `var(--${l in {gecko:1,moose:1,scorpion:1,horno:1} ? l : 'ink3'})`;
+
+/* ---------- 1. accesos rápidos a los códigos más vistos ---------- */
+const QUICK = ['102','108','131','161','155','233','242'];
+const CN = Object.fromEntries([...CODES.plc.map(r=>[String(r[0]), r[1]]), ...CODES.ksv.map(r=>[String(r[0]), r[1]])]);
+$('quick').innerHTML = QUICK.map(c=>`<a href="buscador-kasalis/#c/${c}" title="${esc(CN[c]||'')}"><i style="--c:var(--kas)"></i>${c}</a>`).join('');
+
+/* ---------- 2. procesos (los más usados primero) ---------- */
+const PROCS = [
+  ...['horno-housing','cambio-delo','receta-dogbone','receta-lens-adapter','contencion-leak','horno-cargas'].filter(id=>LP[id]).map(id=>({href:`fallas-linea/#p/${id}`, t:LP[id].titulo, s:(MAQ[LP[id].linea]?.n||'')+(LP[id].pasos.length?` · ${LP[id].pasos.length} paso${LP[id].pasos.length>1?'s':''}`:' · en construcción'), c:col(LP[id].linea), tag:MAQ[LP[id].linea]?.n})),
+  ...['logs-segregacion','cambio-delo','ajustar-place'].filter(id=>KP[id]).map(id=>({href:`buscador-kasalis/#p/${id}`, t:KP[id].titulo, s:'Kasalis'+(KP[id].pasos.length?` · ${KP[id].pasos.length} paso${KP[id].pasos.length>1?'s':''}`:' · faltan fotos'), c:'var(--kas)', tag:'Kasalis'})),
 ];
-/* Bitácora de cambios: alimenta "Lo último que cambió" y Novedades */
+$('procs').innerHTML = PROCS.map(p=>`<a class="row" href="${p.href}" style="--c:${p.c}"><span class="ic">${svg('book')}</span><span class="t"><b>${esc(p.t)}</b><small>${esc(p.s)}</small></span><span class="ch">›</span></a>`).join('')
+  + `<a class="row" href="fallas-linea/#procesos"><span class="t"><b style="font-weight:600;color:var(--ink2)">Ver todos los procesos</b></span><span class="ch">›</span></a>`;
+
+/* ---------- 3. herramientas ---------- */
+const TOOLS = [
+  ['kasalis-3d/','Kasalis 3D','Ciclo completo en 3D, cámaras y fallas por paso','assets/icons/kasalis3d.svg'],
+  ['kasalis-3d/vis.html','Laboratorio VIS','Sube fotos reales y prueba los parámetros de la VIS','assets/icons/fallas.svg'],
+  ['simulador-lineas/','Simulador de líneas','Flujo Moose · Scorpion · Gecko con horno y Kasalis','assets/icons/simulador.svg'],
+  ['Tutorial%20Active%20Alignment%20(1).html','Tutorial Active Alignment','Cómo miden la EOL y la Kasalis (SFR / MTF)','assets/icons/aa.svg'],
+];
+$('tools').innerHTML = TOOLS.map(([h,t,s,i])=>`<a class="row" href="${h}"><span class="ic"><img src="${i}" alt=""></span><span class="t"><b>${t}</b><small>${s}</small></span><span class="ch">›</span></a>`).join('');
+
+/* ---------- plegables ---------- */
+const DOCS = [
+ ["KASALIS%20Pixid%20500%20Manual%20Rev%20022.pdf","Manual Pixid 500","Kasalis · Rev 022","PDF"],
+ ["NPI%20Product%20Data%20-%20Camera%204.pdf","NPI Product Data","Flujos por producto","PDF"],
+ ["Error%20Codes%201%20(1).pdf","Error Codes","KSmessage (PLC)","PDF"],
+ ["Error%20Extra%20Codes%201%20(1).pdf","Error Extra Codes","KSvision","PDF"],
+ ["Trace%20Log%20Bits%20(1).pdf","Trace Log Bits","Máscaras de log","PDF"],
+ ["layout%20moose%20scorpion%20gecko.png","Layout de instalación","Moose · Scorpion · Gecko","PNG"],
+ ["FLUJOS_COMPLETOS_CONTEXTO.txt","Contexto de flujos","Descripción por línea","TXT"],
+ ["Par%C3%A1metros%20Kasalis%20%5BDR%5D%20%5BLP%5D%20%5BST%5D.txt","Parámetros dispense","Kasalis [DR] [LP] [ST]","TXT"],
+];
+$('nDocs').textContent = DOCS.length; $('docs').innerHTML = DOCS.map(([h,t,s,x])=>`<a class="row" href="${h}"><span class="ic">${svg('doc')}</span><span class="t"><b>${t}</b><small>${s}</small></span><span class="tag">${x}</span></a>`).join('');
 const LOG=[
+ {p:"hub",d:"2026-10-16",t:"Inicio rediseñado: búsqueda única, 3 secciones (falla, proceso, simular) y flujo guiado SÍ / NO en las fallas"},
  {p:"kasalis-3d",d:"2026-10-16",t:"Laboratorio VIS: sube fotos reales de la VIS, prueba umbral, ROI, área, caja y perímetro y copia la línea VIS nueva"},
  {p:"fallas-linea",d:"2026-10-14",t:"Nueva app: Fallas de línea (Gecko, Moose, Scorpion, hornos) con guías de procesos; proceso de horneado de housing"},
  {p:"buscador-kasalis",d:"2026-10-14",t:"Flujo de progresión (logs de segregación en D:\\TARS\\Valid), 233 con contención y nombre original en inglés de cada código"},
@@ -277,145 +220,42 @@ const LOG=[
  {p:"simulador-lineas",d:"2026-10-10",t:"Kasalis BUILD / RETEST: lotes de 30, horno 1.5 h y cambio de modo"},
  {p:"simulador-lineas",d:"2026-10-10",t:"Estaciones a escala real y rotary en sentido antihorario"},
 ];
-const DOCS=[
- ["KASALIS%20Pixid%20500%20Manual%20Rev%20022.pdf","Manual Pixid 500","Kasalis · Rev 022","PDF"],
- ["NPI%20Product%20Data%20-%20Camera%204.pdf","NPI Product Data","Flujos por producto","PDF"],
- ["Error%20Codes%201%20(1).pdf","Error Codes","KSmessage (PLC)","PDF"],
- ["Error%20Extra%20Codes%201%20(1).pdf","Error Extra Codes","KSvision","PDF"],
- ["Trace%20Log%20Bits%20(1).pdf","Trace Log Bits","Máscaras de log","PDF"],
- ["layout%20moose%20scorpion%20gecko.png","Layout de instalación","Moose · Scorpion · Gecko","PNG"],
- ["FLUJOS_COMPLETOS_CONTEXTO.txt","Contexto de flujos","Descripción por línea","TXT"],
- ["Par%C3%A1metros%20Kasalis%20%5BDR%5D%20%5BLP%5D%20%5BST%5D.txt","Parámetros dispense","Kasalis [DR] [LP] [ST]","TXT"],
+const fd = s => new Date(s+'T12:00').toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+$('nLog').textContent = 'último ' + fd(LOG[0].d);
+$('log').innerHTML = LOG.slice(0,10).map(e=>`<div class="row"><span class="t"><b style="font-weight:600;white-space:normal">${esc(e.t)}</b></span><span class="tag" style="--c:var(--ink3)">${fd(e.d)}</span></div>`).join('');
+
+/* ---------- historial local (de los flujos guiados) ---------- */
+const H = historial();
+if(H.length){ $('histSec').hidden = false;
+  $('hist').innerHTML = H.slice(0,4).map(r=>{ const href = r.app==='linea' ? `fallas-linea/#f/${r.id}` : `buscador-kasalis/#f/${r.id}`;
+    return `<a class="row" href="${href}" style="--c:${r.ok?'var(--ok)':'var(--bad)'}"><span class="ic">${svg(r.ok?'ok':'x')}</span><span class="t"><b>${esc(r.titulo)}</b><small>${r.ok?'Resuelto: '+esc(r.solucion):'Sin resolver'} · ${new Date(r.fecha).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></span><span class="ch">›</span></a>`; }).join(''); }
+
+/* ---------- búsqueda única ---------- */
+const IDX = [
+  ...KF.map(f=>({k:'Falla Kasalis', c:'var(--kas)', ic:'wrench', t:f.titulo, s:f.corto, href:`buscador-kasalis/#f/${f.id}`, txt:JSON.stringify(f), codes:f.codigos})),
+  ...Object.entries(CN).filter(([c])=>+c>0 || c.startsWith('-')).map(([c,n])=>({k:'Código Kasalis', c:'var(--kas)', ic:'code', t:`${c} · ${n}`, s:englishName(n), href:`buscador-kasalis/#c/${c}${+c<0?'|ksv':''}`, txt:c+' '+n, code:c})),
+  ...Object.entries(KP).map(([id,p])=>({k:'Guía Kasalis', c:'var(--kas)', ic:'book', t:p.titulo, s:p.cuando, href:`buscador-kasalis/#p/${id}`, txt:JSON.stringify(p), codes:p.codigos||[]})),
+  ...LF.map(f=>({k:'Falla de línea · '+(MAQ[f.linea]?.n||''), c:col(f.linea), ic:'wrench', t:f.titulo, s:f.corto, href:`fallas-linea/#f/${f.id}`, txt:JSON.stringify(f)})),
+  ...Object.entries(LP).map(([id,p])=>({k:'Proceso · '+(MAQ[p.linea]?.n||''), c:col(p.linea), ic:'book', t:p.titulo, s:p.cuando, href:`fallas-linea/#p/${id}`, txt:JSON.stringify(p)})),
 ];
-const STATUS={live:"Activa",soon:"Próximamente"};
-const $=s=>document.querySelector(s);
-const svg=(p,f)=>`<svg viewBox="0 0 24 24" fill="${f?"currentColor":"none"}" stroke="${f?"none":"currentColor"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const ICON={glass:'<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/>',trend:'<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',dots:'<circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>',
-  open:'<path d="M7 17L17 7M9 7h8v8"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.5 12h2M19.5 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'};
-const P=id=>PROJECTS.find(p=>p.id===id)||{name:"JD Automation",icon:"assets/icons/hub.svg"};
-const fd=s=>new Date(s+"T12:00").toLocaleDateString("es-MX",{day:"numeric",month:"short"});
-const mmss=s=>{s=Math.round(s);return s>=3600?(s/3600).toFixed(s%3600?1:0)+" h":s>=60?`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")} min`:s+" s"};
-let view="folders",sortMode=0;
-const SORTS=[["Orden manual",null],["Por avance",(a,b)=>b.progress-a.progress],["Por nombre",(a,b)=>a.name.localeCompare(b.name,"es")]];
-
-/* parámetros del simulador (los que ajustaste en ⚙ Ajustes, o los de fábrica) */
-function simParams(){
-  const ops=JSON.parse(JSON.stringify(OPS)),g={...GLOBAL_DEFAULTS};let custom=false;
-  try{const s=JSON.parse(localStorage.getItem("jd_sim_params")||"null");if(s){custom=true;for(const k in s.ops||{})if(ops[k])Object.assign(ops[k],s.ops[k]);Object.assign(g,s.g||{})}}catch(e){}
-  return {ops,g,custom};
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+IDX.forEach(x=>x.n = norm(x.t+' '+x.s+' '+x.txt));
+function search(q){
+  const qn = norm(q.trim()); if(!qn){ $('res').hidden = true; $('home').hidden = false; $('clr').style.display = 'none'; return; }
+  $('clr').style.display = 'block'; $('home').hidden = true; $('res').hidden = false;
+  const words = qn.split(/\s+/);
+  let hits = IDX.filter(x=>words.every(w=>x.n.includes(w)));
+  if(/^-?\d+$/.test(qn)) hits = IDX.filter(x=>x.code===qn || (x.codes||[]).includes(qn) || new RegExp('(^|[^\\d.,-])'+qn.replace('-','\\-')+'(?![\\d.,])').test(x.t+' '+x.s));
+  const groups = {}; hits.forEach(h=>{ const g = h.k.split(' · ')[0]; (groups[g] ||= []).push(h); });
+  const ORDER = ['Código Kasalis','Falla Kasalis','Falla de línea','Guía Kasalis','Proceso'];
+  $('res').innerHTML = hits.length ? ORDER.filter(g=>groups[g]).map(g=>`<h3>${g} <span style="font-weight:600">(${groups[g].length})</span></h3><div class="rows">${groups[g].slice(0,8).map(h=>`<a class="row" href="${h.href}" style="--c:${h.c}"><span class="ic">${svg(h.ic)}</span><span class="t"><b>${esc(h.t)}</b><small>${esc(h.s||'')}</small></span><span class="tag">${esc(h.k.split(' · ')[1]||h.k.split(' ')[1]||'')}</span></a>`).join('')}</div>`).join('')
+    : `<div class="rows"><div class="empty">Sin resultados para "${esc(q)}". Prueba con otra palabra o el número de código.</div></div>`;
 }
-const FLOW_CODES=[...new Set(FALLAS.flatMap(f=>f.codigos))];
-const STEPS=FALLAS.reduce((n,f)=>n+f.flujo.length,0);
-
-/* ---------- celular ---------- */
-function render(){
-  renderToday();
-  $("#listTitle").textContent=view==="docs"?"Documentos":view==="stats"?"Avance":"Tus apps";
-  $("#sort").hidden=view!=="folders";
-  if(view==="stats")return renderStats();
-  if(view==="docs")return renderDocs();
-  const l=SORTS[sortMode][1]?[...PROJECTS].sort(SORTS[sortMode][1]):PROJECTS;
-  $("#list").innerHTML=l.map((p,i)=>`<div class="folder${i%3===1?" dark":""}${p.href?"":" soon"}" style="--i:${i}" role="link" tabindex="0" aria-label="${p.name}" data-id="${p.id}">
-    <div class="f-top"><div class="tab"><span class="st">${svg(ICON.glass)}${STATUS[p.status]}</span><span class="tr">${svg(ICON.trend)}</span></div>
-      <div class="by">Creado por <b>Diego</b><span class="mini">D</span></div></div>
-    <div class="f-body"><span class="thumb"><img src="${p.icon}" alt=""></span>
-      <span class="f-main"><b>${p.name}</b><span>${p.desc}</span><span class="prog"><i data-w="${p.progress}"></i></span></span>
-      <button class="more" data-more="${p.id}" aria-label="Opciones de ${p.name}">${svg(ICON.dots,1)}</button></div></div>`).join("");
-  grow();
-}
-const grow=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll("[data-w]").forEach(i=>i.style.width=Math.max(2,i.dataset.w)+"%")));
-function renderStats(){
-  const avg=Math.round(PROJECTS.reduce((a,p)=>a+p.progress,0)/PROJECTS.length),C=2*Math.PI*52,l=[...PROJECTS].sort((a,b)=>b.progress-a.progress);
-  $("#list").innerHTML=`<div class="panel" style="--i:0"><div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="12"/><circle class="arc" cx="60" cy="60" r="52" fill="none" stroke="var(--ink)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C*(1-avg/100)}" transform="rotate(-90 60 60)"/></svg><span><b>${avg}%</b>avance total</span></div>
-    <div class="kp"><div><b>${PROJECTS.length}</b>apps</div><div><b>${PROJECTS.filter(p=>p.href).length}</b>activas</div><div><b>${LOG.length}</b>cambios</div></div></div>
-    <div class="panel" style="--i:1;display:block"><h4>Avance por app</h4>${l.map(p=>`<button class="prow" data-id2="${p.id}"><span class="pi"><img src="${p.icon}" alt=""></span><span class="pm"><b>${p.name}</b><span class="pb"><i data-w="${p.progress}"></i></span></span><em>${p.progress}%</em></button>`).join("")}</div>
-    <div class="panel" style="--i:2;display:block"><h4>Lo último que cambió</h4>${LOG.map((e,i)=>{const p=P(e.p);return `<button class="te" style="--i:${i}" ${p.href?`data-id2="${p.id}"`:""}><span class="pi"><img src="${p.icon}" alt=""></span><span class="pm"><b>${p.name}</b><span>${e.t}</span></span><em>${fd(e.d)}</em></button>`}).join("")}</div>`;
-  grow();requestAnimationFrame(()=>requestAnimationFrame(()=>{const a=document.querySelector(".arc");if(a)a.style.strokeDashoffset=a.dataset.off}));
-}
-function renderDocs(){
-  $("#list").innerHTML=`<div class="panel" style="--i:0;display:block"><h4>Documentos de referencia</h4>${DOCS.map(([h,t,s,x],i)=>`<a class="te" style="--i:${i}" href="${h}"><span class="pi" style="font-size:11px">${x}</span><span class="pm"><b>${t}</b><span>${s}</span></span><em>${svg(ICON.open).replace("<svg",'<svg width="16" height="16"')}</em></a>`).join("")}</div>`;
-}
-function renderToday(){
-  const S=simParams(),k=S.ops.kas_build||{},o=S.ops.oven3||{};
-  const cards=[
-    ["buscador-kasalis/","buscador-kasalis","#C6EE3A",`${FALLAS.length} modos de falla`,`${FLOW_CODES.length} códigos con flujo de resolución`,"102 / 231 → pasa la golden primero"],
-    ["simulador-lineas/","simulador-lineas","#4DA3FF",`Lote ${k.lot||30}`,`BUILD ${mmss(k.ct||100)} por pieza`,`horno ${mmss(o.ct||5400)}${S.custom?" · ajustado":""}`],
-    ["#docs","docs","#9B7BFF",`${DOCS.length} docs`,"Manual Pixid, códigos y layout",""],
-  ];
-  $("#today").innerHTML=`<div class="tgrid">${cards.map(([h,id,c,big,sub,foot],i)=>{const p=id==="docs"?{name:"Documentos",icon:"assets/icons/hub.svg"}:P(id);return `<a class="tcard press" ${id==="docs"?'data-v2="docs"':`href="${h}"`} style="--tc:${c};--i:${i}"><span class="th"><img src="${p.icon}" alt="">${p.short||p.name}</span><b>${big}</b><small>${sub}</small>${foot?`<em>${foot}</em>`:""}</a>`}).join("")}</div>`;
-}
-
-/* ---------- escritorio: un widget por app ---------- */
-const W=(id,title,href,body,cls="")=>`<section class="w ${cls}" style="--i:${W.i=(W.i||0)+1}"><header><span class="wi"><img src="${P(id).icon}" alt=""></span><h3>${title}</h3>${href?`<a class="wo" href="${href}">Abrir ${svg(ICON.open)}</a>`:""}</header>${body}</section>`;
-function wFallas(){
-  const com=FALLAS[0];
-  return W("buscador-kasalis","Fallas Kasalis","buscador-kasalis/",`
-    <div class="kpis"><div><small>Modos de falla</small><b>${FALLAS.length}</b></div><div><small>Códigos con flujo</small><b>${FLOW_CODES.length}</b></div><div><small>Pasos documentados</small><b>${STEPS}</b></div></div>
-    <div class="wcols"><div><h4>Primer paso por falla</h4><div class="rows2">${FALLAS.map(f=>`<a href="buscador-kasalis/#f/${f.id}"><span>${f.titulo}<small>${f.flujo[0].p}</small></span><b class="muted2">${f.codigos.slice(0,2).join(" · ")}</b></a>`).join("")}</div></div>
-    <div><h4>${com.titulo}</h4><div class="flowmini">${com.flujo.slice(0,5).map((s,i)=>`<div><i>${i+1}</i><span>${s.p}${i===0&&s.si?`<small>Pasa → son las piezas, no la máquina</small>`:s.d?`<small>${s.d}</small>`:""}</span></div>`).join("")}</div>
-      <h4>Buscar código</h4><div class="chips2">${FLOW_CODES.slice(0,18).map(c=>`<a href="buscador-kasalis/#c/${c}${+c<0?"|ksv":""}">${c}</a>`).join("")}</div></div></div>`,"span2 tall");
-}
-function wSim(){
-  const S=simParams(),o=S.ops;
-  return W("simulador-lineas","Simulador de líneas"+(S.custom?' <em class="tag">ajustado</em>':""),"simulador-lineas/",`<img class="shot" src="assets/preview-simulador.jpg" alt="">
-    <div class="kpis"><div><small>Kasalis BUILD</small><b>${mmss(o.kas_build.ct)}</b><em>lote ${o.kas_build.lot}</em></div><div><small>Horno sensor</small><b>${mmss(o.oven3.ct)}</b><em>cap. ${o.oven3.cap||"—"}</em></div><div><small>Kasalis RETEST</small><b>${mmss(o.kas_retest.ct)}</b><em>lote ${o.kas_retest.lot||"—"}</em></div><div><small>Corrida</small><b>${S.g.totalPieces}</b><em>piezas</em></div></div>`,"tall");
-}
-function wK3D(){
-  let p={...K3D};try{Object.assign(p,JSON.parse(localStorage.getItem("jd_k3d_params")||"{}"))}catch(e){}
-  const z=()=>[0,0,0],C=buildCycle({...p,mode:"build"},{dispCam:z(),alignAboveLens:z(),alignGripLens:z(),alignOverSensor:z(),alignPlace:z(),dispArcStart:z(),arcAt:z});
-  return W("kasalis-3d","Kasalis 3D","kasalis-3d/",`<div class="kpis"><div><small>Ciclo BUILD</small><b>${mmss(C.total)}</b><em>${(3600/C.total).toFixed(1)} UPH · 1 plato</em></div><div><small>Pistón</small><b>${p.piston} s</b><em>sube / baja</em></div></div>
-    <h4>ARC del archivo</h4><div class="chips2"><span>r ${p.XR} mm</span><span>${p.IA}°</span><span>VS ${p.VS} %</span><span>DR ${p.DR} %</span><span>LO ${p.LO}°</span><span>ST ${p.ST} ms</span></div>
-    <h4>Curado UV</h4><p class="wempty">${Math.round(p.uv*1000)} ms · arco de ${C.arcL.toFixed(0)} mm en ${C.arcT.toFixed(1)} s</p>`);
-}
-function wAA(){return W("tutorial-aa","Tutorial Active Alignment",P("tutorial-aa").href,`<p class="wempty">Diferencias entre EOL y Active Alignment, cómo se mide SFR / MTF y qué revisar en los targets.</p><div class="chips2"><span>SFR vs MTF</span><span>Targets</span><span>EOL</span><span>Retest</span></div>`)}
-function wDocs(){return W("hub","Documentos","",`<div class="rows2">${DOCS.map(([h,t,s,x])=>`<a href="${h}"><span>${t}<small>${s}</small></span><b class="muted2">${x}</b></a>`).join("")}</div>`,"tall")}
-function wProyectos(){return W("hub","Apps","",`<div class="pl">${PROJECTS.map(p=>`<a class="plr" ${p.href?`href="${p.href}"`:""}><span class="pi"><img src="${p.icon}" alt=""></span><span><b>${p.name}</b><small>${p.href?p.desc:"Próximamente · "+p.desc}</small></span><em><i style="width:${p.progress}%"></i></em></a>`).join("")}</div>`)}
-function wRecientes(){return W("hub","Lo último que cambió","",`<div class="rows2">${LOG.map(e=>`<div><span>${e.t}<small>${P(e.p).name}</small></span><b class="muted2">${fd(e.d)}</b></div>`).join("")}</div>`)}
-function renderDesk(){
-  W.i=0;const h=new Date().getHours(),d=new Date(),dark=document.documentElement.dataset.theme==="dark";
-  $("#desk").innerHTML=`<div class="dkbar"><span class="dbrand"><span class="av">D</span><span>${h<12?"Buenos días":h<19?"Hola":"Buenas noches"}, Diego<small>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"})} · tus apps de las líneas John Deere</small></span></span><span class="sp"></span>
-    ${PROJECTS.filter(p=>p.href).map(p=>`<a class="dtab" href="${p.href}"><img src="${p.icon}" alt="">${p.short}</a>`).join("")}
-    <button class="dtab" id="dkTheme" aria-label="Cambiar tema">${svg(dark?ICON.sun:ICON.moon)}</button></div>
-    <div class="mega${renderDesk.done?"":" anim"}">${wFallas()}${wSim()}${wDocs()}${wProyectos()}${wRecientes()}${wK3D()}${wAA()}</div>`;
-  renderDesk.done=true;
-}
-
-/* ---------- hojas, avisos y eventos ---------- */
-let tt;function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),1800)}
-function openSheet(h){$("#sheetBody").innerHTML=h;const s=$("#sheet"),c=$("#scrim");s.hidden=c.hidden=false;document.body.classList.add("lock");requestAnimationFrame(()=>{s.classList.add("on");c.classList.add("on")})}
-function closeSheet(){const s=$("#sheet"),c=$("#scrim");if(s.hidden)return;document.body.classList.remove("lock");s.classList.remove("on");c.classList.remove("on");setTimeout(()=>{s.hidden=c.hidden=true},320)}
-$("#scrim").onclick=closeSheet;
-const setView=v=>{view=v;document.querySelectorAll("[data-v]").forEach(b=>b.toggleAttribute("aria-current",b.dataset.v===v));if(b0())b0().setAttribute("aria-current","page");render()};
-const b0=()=>document.querySelector(`[data-v="${view}"]`);
-function toggleTheme(){window.JDTheme.toggle();closeSheet();toast(document.documentElement.dataset.theme==="dark"?"Modo oscuro":"Modo claro")}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();if(e.key==="Enter"&&e.target.matches(".folder"))e.target.click()});
-document.addEventListener("click",e=>{
-  const g=s=>e.target.closest(s);let t;
-  if(t=g("[data-more]")){e.preventDefault();e.stopPropagation();const p=P(t.dataset.more);
-    openSheet(`<h3>${p.name}</h3><p>${p.desc}</p><div class="rows"><div><span>Estado</span><span>${STATUS[p.status]}</span></div><div><span>Avance</span><span>${p.progress}%</span></div><div><span>Carpeta</span><span><code>/${p.id}/</code></span></div><div><span>Último cambio</span><span>${fd(p.updated)}</span></div></div>
-      <div class="btns"><button class="btn" data-close>Cerrar</button>${p.href?`<a class="btn dark" href="${p.href}">Abrir</a>`:""}</div>`);return}
-  if(t=g(".folder")){const p=P(t.dataset.id);e.preventDefault();if(!p.href){toast("Próximamente");return}
-    t.classList.add("opening");setTimeout(()=>location.href=p.href,170);return}
-  if(g("[data-close]")){closeSheet();return}
-  if(t=g("[data-v]")){setView(t.dataset.v);return}
-  if(t=g("[data-v2]")){e.preventDefault();setView(t.dataset.v2);$("#listTitle").scrollIntoView({behavior:"smooth"});return}
-  if(t=g("[data-id2]")){const p=P(t.dataset.id2);if(p.href){t.style.transform="scale(.97)";setTimeout(()=>location.href=p.href,150)}return}
-  if(g("#sort")){sortMode=(sortMode+1)%SORTS.length;render();toast(SORTS[sortMode][0]);return}
-  if(g("#bell")){openSheet(`<h3>Novedades</h3><div class="rows">${LOG.slice(0,4).map(e=>`<div><span>${P(e.p).short||P(e.p).name}</span><span>${e.t}</span></div>`).join("")}</div><div class="btns"><button class="btn dark" data-close>Listo</button></div>`);$("#bell .dot").hidden=true;return}
-  if(g("#grid")){const dark=document.documentElement.dataset.theme==="dark";openSheet(`<h3>JD Automation</h3><p>Apps de troubleshooting y simulación de las líneas de cámaras John Deere. Cada app vive en su carpeta del repo.</p><p>Para instalar una en tu iPhone, ábrela en Safari, toca Compartir y luego <b>Agregar a pantalla de inicio</b>.</p>
-      <div class="rows"><a href="https://github.com/DiegoBasan/JD-AUTOMATION" target="_blank"><span>Repositorio</span><span>GitHub ↗</span></a></div>
-      <div class="btns"><button class="btn" id="shTheme">${dark?"Tema claro":"Tema oscuro"}</button><button class="btn dark" data-close>Cerrar</button></div>`);return}
-  if(g("#shTheme")||g("#dkTheme")){toggleTheme();return}
-});
-function syncThemeColor(){document.querySelector('meta[name="theme-color"]').content=getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()}
-addEventListener("jdtheme",()=>{syncThemeColor();if(DESK.matches)renderDesk()});
-const h=new Date().getHours();$("#hi").textContent=h<12?"Buenos días":h<19?"Hola":"Buenas noches";
-const DESK=matchMedia("(min-width:1100px)");
-function applyDesk(){document.body.classList.toggle("desk",DESK.matches);if(DESK.matches)renderDesk()}
-DESK.addEventListener("change",applyDesk);
-addEventListener("focus",()=>{render();if(DESK.matches)renderDesk()});
-if(location.hash==="#docs")view="docs";
-setView(view);applyDesk();syncThemeColor();
+$('q').addEventListener('input', ()=>search($('q').value));
+$('q').addEventListener('keydown', e=>{ if(e.key==='Enter'){ const a = $('res').querySelector('a.row'); if(a) location.href = a.href; } });
+$('clr').onclick = ()=>{ $('q').value = ''; search(''); $('q').focus(); };
+const h = new Date().getHours(); $('hola').textContent = (h<12?'Buenos días':h<19?'Hola':'Buenas noches') + ', Diego';
+addEventListener('jdtheme', ()=>{ document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(); });
 </script>
 </body>
 </html>

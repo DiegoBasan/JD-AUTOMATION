@@ -154,10 +154,28 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
 :root[data-theme="dark"] .label3d[data-state="run"] .st{color:#4ade80} :root[data-theme="dark"] .label3d[data-state="wait"] .st{color:#fbbf24}
 :root[data-theme="dark"] .label3d.hl{background:#ededed;color:#111;border-color:#ededed} :root[data-theme="dark"] .label3d.hl .st{color:#333}
 :root[data-theme="dark"] .pill.primary, :root[data-theme="dark"] #kas .mode span.on{background:#ededed;color:#111;border-color:#ededed}
+#homeBtn{display:none}
 @media (max-width:900px){
+  #homeBtn{display:grid}
   .kpis .kpi:nth-child(n+3), .src, #top .hideM{display:none}
   #side{width:calc(100% - 20px)} #right{width:calc(100% - 20px)} #kas{width:calc(100% - 20px)}
   select.sel{max-width:120px}
+}
+@media (max-width:700px){
+  /* celular: la barra se acomoda en 2 filas para que siempre se vean Correr y los indicadores */
+  :root{--top:104px}
+  #top{height:auto;min-height:var(--top);flex-wrap:wrap;row-gap:6px;column-gap:6px;padding:8px 10px;align-content:center}
+  #top .sep{display:none}
+  #homeBtn{order:0} #sideBtn{order:1}
+  #prodSeg button.on::before{display:none} #prodSeg button.on{box-shadow:inset 0 -2px 0 var(--c)}
+  #prodSeg{order:2;flex:1 1 170px;min-width:0;display:flex;overflow:hidden}
+  #prodSeg button{flex:1 1 0;min-width:0;padding:0 4px;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #variant{order:5;flex:1 1 60px;min-width:0;max-width:none}
+  #resetBtn{order:6} #playBtn{order:7} #speed{order:8} .clock{order:9} .kpis{order:10;margin-left:auto}
+  #adjBtn{order:3;padding:0 10px} #adjBtn{font-size:0} #adjBtn::before{content:"⚙";font-size:16px}
+  #top [data-theme-toggle]{order:3}
+  .clock{display:none}
+  #playBtn{padding:0 14px}
 }
 </style>
 <script type="importmap">
@@ -168,6 +186,7 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
 <div id="stage"></div>
 
 <header id="top" class="glass">
+  <a class="ibtn" id="homeBtn" href="../" title="Apps"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></a>
   <button class="ibtn" id="sideBtn" title="Menú">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
   </button>
@@ -239,7 +258,7 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
 <aside id="right" class="glass"></aside>
 
 <div id="kas" class="glass">
-  <div style="display:flex;align-items:center;justify-content:space-between"><b>Kasalis Pixid 500-S</b><small id="kasState" style="color:var(--ink2)"></small></div>
+  <div id="kasHead" style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer" title="Plegar / desplegar"><b>Kasalis Pixid 500-S</b><small id="kasState" style="color:var(--ink2);flex:1;text-align:right"></small><span id="kasFold" style="color:var(--ink3);font-weight:800">–</span></div><div id="kasBody">
   <div class="mode"><span id="mBuild">BUILD</span><span id="mRetest">RETEST</span></div>
   <div id="kasSub" style="font-size:12px;color:var(--ink2);min-height:34px"></div>
   <div class="bar"><i id="kasBar" style="width:0"></i></div>
@@ -250,7 +269,14 @@ input[type=search]{height:36px;border-radius:12px;border:1px solid var(--line);b
     <div><b id="kOr">0</b><small>lote retest</small></div>
   </div>
   <div id="ovenLine" style="font-size:12px;color:var(--ink2);margin-top:8px"></div>
-</div>
+</div></div>
+<script>
+/* tarjeta Kasalis plegable (en celular empieza plegada para no tapar la línea) */
+(function(){ const k = document.getElementById('kas'), b = document.getElementById('kasBody'), f = document.getElementById('kasFold');
+  let min = innerWidth < 700; try{ const v = localStorage.getItem('jd_sim_kasmin'); if(v!==null) min = v==='1'; }catch(e){}
+  const set = m => { min = m; b.style.display = m ? 'none' : ''; f.textContent = m ? '+' : '–'; try{ localStorage.setItem('jd_sim_kasmin', m?'1':'0'); }catch(e){} };
+  document.getElementById('kasHead').onclick = () => set(!min); set(min); })();
+</script>
 
 <div id="toasts"></div>
 

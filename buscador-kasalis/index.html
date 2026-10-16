@@ -110,6 +110,26 @@ details.more .in{padding:0 16px 14px}
 .head .tag{background:rgba(255,127,102,.28)}
 .en{display:block;font-family:ui-monospace,Menlo,monospace;font-size:10.5px!important;letter-spacing:.01em;opacity:.65;margin-top:2px;word-break:break-word}
 .head p.en{margin-top:4px}
+
+/* jerarquía: título de sección primario (.sh) vs secundario (.lb), separadores y vista en 2 columnas en compu */
+h3.sh{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;color:var(--ink);margin:22px 4px 12px;letter-spacing:-.2px}
+h3.sh svg,h3.lb svg{width:20px;height:20px;flex:none}
+h3.lb{display:flex;align-items:center;gap:7px}
+h3.lb svg{width:15px;height:15px}
+hr.sep{border:0;border-top:1px solid var(--line);margin:26px 4px 0}
+details.more summary h3{margin:0}
+.fv{display:grid;gap:4px}
+.fv aside{margin-top:12px}
+@media (min-width:1000px){
+  .top .bar,.top .search,main{max-width:1180px}
+  .fv{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:26px;align-items:start}
+  .fv aside{position:sticky;top:150px;margin-top:0}
+  .modes{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .tabs{left:50%;right:auto;transform:translateX(-50%);bottom:16px;border:1px solid var(--line);border-radius:99px;padding:6px 10px;box-shadow:0 10px 30px rgba(0,0,0,.12);gap:4px}
+  .tabs a{flex:none;width:110px;flex-direction:row;justify-content:center;gap:8px;font-size:13px;padding:8px 0;border-radius:99px}
+  .tabs a.on{background:var(--surface2)}
+  .tabs svg{width:20px;height:20px}
+}
 </style>
 </head>
 <body>

@@ -2,6 +2,9 @@
    Mismo formato que Fallas Kasalis: flujo de resolución paso a paso + guías de procesos con fotos. */
 import {MAQ, FALLAS, PROCESOS} from './data/lineas.js';
 import {openGuide} from '../shared/procs.js';
+import {mountFlow} from '../shared/flow.js';
+const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>', wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>'};
+const sh = (ic, t, main) => `<h3 class="${main?'sh':'lb'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI[ic]}</svg>${t}</h3>`;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -30,16 +33,16 @@ function renderFilters(){
 /* ---------- vistas ---------- */
 function homeView(){
   const fs = FALLAS.filter(pasa), ps = Object.keys(PROCESOS).filter(id=>pasa(PROCESOS[id]));
-  return `<h3 class="lb">Fallas</h3>${fs.length?`<div class="modes">${fs.map(card).join('')}</div>`:'<div class="empty">Sin fallas registradas para esta línea todavía.</div>'}
-    <h3 class="lb">Procesos</h3>${ps.length?`<div class="list">${ps.map(procRow).join('')}</div>`:'<div class="empty">Sin procesos para esta línea todavía.</div>'}`;
+  return `${sh('wrench','¿Qué está fallando?',1)}${fs.length?`<div class="modes">${fs.map(card).join('')}</div>`:'<div class="empty">Sin fallas registradas para esta línea todavía.</div>'}
+    <hr class="sep">${sh('book','Procesos paso a paso',1)}${ps.length?`<div class="list">${ps.map(procRow).join('')}</div>`:'<div class="empty">Sin procesos para esta línea todavía.</div>'}`;
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
   let h = `<div class="head" style="--m:${col(f.linea)}"><div class="k"><span class="tag">${esc(MAQ[f.linea]?.n||'')}</span> ${esc(f.maquina)}</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p></div>
-    <h3 class="lb">Qué hacer, en orden</h3>${flowHTML(f)}`;
-  if(f.causas?.length) h += `<h3 class="lb">Causas vistas → solución</h3><div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
-  if(f.tips?.length) h += `<h3 class="lb">Para recordar</h3><div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
-  return h;
+    <div class="fv"><section>${sh('steps','Qué hacer, paso a paso',1)}<div class="gflow" data-fid="${f.id}"></div></section><aside>`;
+  if(f.causas?.length) h += `${sh('cause','Causas vistas en piso → solución')}<div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
+  if(f.tips?.length) h += `${sh('tip','Para recordar')}<div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
+  return h + '</aside></div>';
 }
 function procesoView(id){
   const p = PROCESOS[id]; if(!p) return procesosTab();
@@ -85,7 +88,9 @@ function route(){
   else if(raw.startsWith('s/')){ const q = raw.slice(2); html = searchView(q); title = 'Buscar'; tab = ''; sub = true; if(document.activeElement!==$('q')) $('q').value = q; }
   else html = homeView();
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value = '';
-  $('out').innerHTML = html; $('ttl').textContent = title; $('back').style.display = sub ? '' : 'none';
+  $('out').innerHTML = html; $('ttl').textContent = title;
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'linea', accent: col(f.linea),
+    procHTML: st => st.proc && PROCESOS[st.proc] ? `<button class="procbtn" data-go="p/${st.proc}">Cómo hacerlo: ${esc(PROCESOS[st.proc].titulo)} ›</button>` : ''}); }); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
