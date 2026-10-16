@@ -115,6 +115,7 @@ export const FALLAS = [
 },
 {
   id:'vis233', titulo:'233 · Falla de visión post-dispensado', corto:'Primero validar el dispensado; si está bien, es la cámara de inspección',
+  link:{t:'Probar parámetros con fotos reales (Laboratorio VIS)', href:'../kasalis-3d/vis.html'},
   codigos:['233'],
   flujo:[
     {p:'Revisar el dispensado de la pieza fallada', d:'Ver la pieza o la imagen de la VIS: círculo completo, cerrado y centrado en el lens adapter, sin bola ni burbujas.',
@@ -133,11 +134,14 @@ export const FALLAS = [
     ['Cámara de inspección desenfocada (al cambiar Moose ↔ ELK cambia la altura)', 'Re-enfocar con la foto de referencia'],
     ['Line lights sin apuntar al lens adapter', 'Ajustar tornillos de las barras LED'],
     ['Brillo distinto a la referencia', 'Ajustar brillo / exposición'],
+    ['DOAL (LD) encendida: el sensor y la fixtura brillan y se detectan como material', 'Bajar LD (se cambió de 30 a 0 y el sensor quedó oscuro)'],
+    ['Círculo incompleto con rebaba que pasaba por perímetro amplio', 'Cerrar PMN / PMX (ej. 1000–9000 → 2000–5000): la mala falla y la buena sigue pasando'],
   ],
   tips:[
     'Contención: primero el dispensado, después la cámara. No mover las dos cosas a la vez.',
     'Tener una foto de referencia de la VIS de una pieza buena por modelo (de los logs).',
     'Una VIS desenfocada puede pasar un círculo incompleto: validar siempre con una pieza mala.',
+    'Antes de cambiar parámetros en la máquina, probarlos con fotos reales (buenas y malas) en el Laboratorio VIS de Kasalis 3D.',
   ],
 },
 {

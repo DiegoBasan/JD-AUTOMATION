@@ -133,7 +133,7 @@ function updateCam(step, pose, p){
 }
 
 /* ---------- vista ampliada ---------- */
-const SLIDERS = [['ST','Umbral ST',0,100,1],['LL','Line light LL',0,100,1],['LD','DOAL LD',0,100,1],['EXP','Exposición EXP',10,300,1],['RL','ROI izq. RL',0,50,1],['RT','ROI arriba RT',0,50,1],['RR','ROI der. RR',50,100,1],['RB','ROI abajo RB',50,100,1],
+const SLIDERS = [['ST','Umbral ST (−1 auto)',-1,100,1],['SH','Histograma SH (auto)',0,100,1],['LL','Line light LL',0,100,1],['LD','DOAL LD',0,100,1],['EXP','Exposición EXP',10,300,1],['RL','ROI izq. RL',0,50,1],['RT','ROI arriba RT',0,50,1],['RR','ROI der. RR',50,100,1],['RB','ROI abajo RB',50,100,1],
   ['AMN','Área mín. AMN',0,50,.5],['AMX','Área máx. AMX',0,60,.5],['BMN','Caja mín. BMN',0,100,1],['BMX','Caja máx. BMX',0,100,1],['PMN','Perím. mín. PMN',0,15000,100],['PMX','Perím. máx. PMX',0,20000,100]];
 let bigKey = '';
 function renderBig(){
@@ -142,13 +142,13 @@ function renderBig(){
     const ds = {...dispState(step, pose), bead: CAM_DISP.has(step.id) && step.id!=='disp_vis' && step.id!=='disp_sb' ? pose.bead : 1};
     const key = `v|${ds.bead.toFixed(2)}|${ds.variant}|${ds.pattern}|${ds.grab}|${JSON.stringify(V)}`; if(key===bigKey && !el.hidden) return; bigKey = key;
     const first = el.hidden || !el.querySelector('#bv1'); el.hidden = false;
-    if(first) el.innerHTML = `<div class="bh"><b>VIS · simulador de la inspección post-dispensado</b><button data-big="close" aria-label="Cerrar">✕</button></div><div class="bb">
-      <div><div class="imgs"><div><small>Imagen original</small><canvas id="bv1"></canvas></div><div><small>Detección (rojo = detectado)</small><canvas id="bv2"></canvas></div></div>
+    if(first) el.innerHTML = `<div class="bh"><b>VIS · simulador de la inspección post-dispensado</b><a class="btn dark" href="vis.html" style="width:auto;margin:0;padding:0 14px;height:36px">Probar con imagen real ↗</a><button data-big="close" aria-label="Cerrar">✕</button></div><div class="bb">
+      <div><div class="imgs"><div><small>Imagen original</small><canvas id="bv1"></canvas></div><div><small>Detección (verde = PASS · rojo = FAIL o no cuenta)</small><canvas id="bv2"></canvas></div></div>
         <div class="verdict" id="bverd" style="margin-top:12px"></div><div class="meter" id="bmeter" style="margin-top:10px"></div></div>
       <div><div class="lb" style="margin-top:0">Cordón</div><div class="var" id="bvar"></div>
         <div class="lb">Parámetros VIS (del archivo)</div><div class="ctrls">${SLIDERS.map(([k,n,a,b,st])=>`<label><span>${n}<b id="vv_${k}">${V[k]}</b></span><input type="range" min="${a}" max="${b}" step="${st}" value="${V[k]}" data-vis="${k}"></label>`).join('')}</div>
         <button class="btn" data-big="visreset">Regresar a los valores del archivo</button>
-        <div class="simnote">SM=1 detecta objetos claros: el DELO brilla con la line light (LL) y lo demás queda oscuro. Si subes la DOAL (LD) o bajas el umbral (ST), también se detectan el sensor y la fixtura y el perímetro se dispara, como en tu captura con ST=13.</div></div></div>`;
+        <div class="simnote">Verde = material detectado y PASS; rojo = FAIL o regiones que no cuentan. Solo se mide la región conectada más grande. SM=1 detecta objetos claros: el DELO brilla con la line light (LL) y lo demás queda oscuro. Si subes la DOAL (LD) o bajas el umbral (ST), también se detectan el sensor y la fixtura y el perímetro se dispara, como en tu captura con ST=13.</div></div></div>`;
     $('bvar').innerHTML = [['ok','Normal'],['gap','Incompleto'],['thin','Poco DELO'],['offset','Desfasado'],['none','Sin DELO']].map(([k,n])=>`<button data-var="${k}" aria-pressed="${ds.variant===k}">${n}</button>`).join('');
     const R0 = renderDispCam($('bv1'), ds, V);
     if(!R0.L){ $('bverd').innerHTML = `<span style="color:var(--bad)">FAIL</span><small>${esc(R0.fail)}</small>`; $('bmeter').innerHTML = ''; return; }
@@ -200,7 +200,7 @@ function renderPane(){
     h += `<div class="sum"><div><small>Ciclo</small><b>${fmt(C.total)}</b></div><div><small>UPH (1 plato)</small><b>${(3600/C.total).toFixed(1)}</b></div><div><small>Arco ARC</small><b>${C.arcL.toFixed(0)} mm</b></div></div>`;
     h += C.steps.map((s,i)=>`<button class="stepbtn" data-i="${i}" style="--c:${STATIONS[s.st].color}"><i></i><span><b>${esc(s.title)}</b><small>${STATIONS[s.st].name}${(s.codes||[]).length?' · '+s.codes.join(', '):''}</small></span><em>${fmt(s.dur)}</em></button>`).join('');
     h += `<div class="lb">Vista</div><div class="views">${[['follow','Seguir la pieza'],['iso','Toda la máquina'],['top','Arriba'],['load','Carga'],['disp','Dispensado'],['align','Alineación'],['spare','Spare']].map(([k,n])=>`<button data-view="${k}">${n}</button>`).join('')}</div>`;
-    h += `<div class="lb">Cámaras</div><div class="views"><button data-big="vis">Simulador VIS</button><button data-big="aa">Gráfica AA y targets</button></div>`;
+    h += `<div class="lb">Cámaras</div><div class="views"><button data-big="vis">Simulador VIS</button><button data-big="aa">Gráfica AA y targets</button><button onclick="location.href='vis.html'">Laboratorio VIS (imagen real) ↗</button></div>`;
   } else if(tab==='params'){
     h += Object.keys(LABELS).map(k=>`<label class="prm"><span>${LABELS[k]}${ASSUMED.has(k)?'<small>supuesto</small>':''}</span><input type="number" step="any" data-k="${k}" value="${P[k]}"></label>`).join('');
     h += `<div class="lb">Línea ARC del archivo</div><div class="chips" style="margin-top:0">${['arcX','arcY','XR','YR','SA','IA','VS','VA','LI','LO','DR','SR','ST','ZR'].map(k=>`<span>${k.replace('arc','')} ${P[k]}</span>`).join('')}</div>`;

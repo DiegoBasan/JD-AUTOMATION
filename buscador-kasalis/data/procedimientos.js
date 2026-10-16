@@ -70,7 +70,7 @@ export const PROCS = {
   'enfoque-vis': {
     titulo:'Enfocar y ajustar brillo de la cámara de inspección (VIS)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
     cuando:'El dispensado está bien (centrado y completo) pero la VIS sigue dando 233.',
-    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','Validar con una pieza incompleta: debe fallar.'],
+    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','Validar con una pieza incompleta: debe fallar.','LD (DOAL) rebota en lo plano: con LD alto el sensor se ve blanco y se detecta como material. Se bajó de 30 a 0.','Probar umbral y rangos con fotos reales en el Laboratorio VIS (Kasalis 3D) antes de tocar la máquina.'],
     pasos:[], necesito:['Dónde se guardan / abren las imágenes de la VIS en los logs','Foto de referencia buena por modelo (Moose, Scorpion, Gecko)','Cómo ver la imagen en vivo para enfocar','Dónde se ajusta el brillo / exposición (si es por programa)'],
   },
   'editar-arc': {

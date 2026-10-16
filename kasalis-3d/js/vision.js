@@ -5,7 +5,8 @@
       con picos, tilt y lock, como en el Tutorial Active Alignment. */
 
 /* ======================= 1. Cámara de dispensado + VIS ======================= */
-export const VIS_DEFAULTS = {LD:0, LL:100, EXP:80, SM:1, ST:50, RL:10, RT:1, RR:90, RB:99, AMN:10, AMX:25, BMN:60, BMX:80, PMN:3000, PMX:8000};
+import {analyze, drawResult} from './visalgo.js';
+export const VIS_DEFAULTS = {LD:0, LL:100, EXP:80, SM:1, ST:50, SH:5, RL:10, RT:1, RR:90, RB:99, AMN:10, AMX:25, BMN:60, BMX:80, PMN:3000, PMX:8000};
 const W = 320, H = 256, PSCALE = 4;   // trabajo a 320×256; perímetro escalado a una cámara de 1280×1024
 let rnd = mulberry(7);
 function mulberry(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -16,22 +17,24 @@ export function renderDispCam(canvas, s, V){
   canvas.width = W; canvas.height = H;
   const g = canvas.getContext('2d', {willReadFrequently:true});
   if(s.grab===false){ g.fillStyle = '#000'; g.fillRect(0,0,W,H); return {fail:'GRAB TIMEOUT (−222): la cámara no entregó imagen'}; }
-  const flat = Math.min(1, V.EXP/80*(0.55 + 0.45*V.LL/100) + V.LD/100*0.45), spec = Math.min(1.25, V.EXP/80*V.LL/100);
+  // LL (line light, rasante): hace brillar el cordón de DELO. LD (DOAL, coaxial): rebota en lo plano y brillante
+  // (vidrio del sensor, metal de la fixtura) → con LD alto el sensor se ve blanco y se detecta como material.
+  const ex = V.EXP/80, flat = Math.min(1, ex*(0.55 + 0.45*V.LL/100)), spec = Math.min(1.25, ex*V.LL/100), doal = V.LD/100*ex;
   const gray = v => { const c = Math.round(Math.max(0,Math.min(1,v))*255); return `rgb(${c},${c},${c})`; };
   const cx = W/2 + (s.variant==='offset'? 26:0), cy = H/2 + (s.variant==='offset'? 14:0);
   g.fillStyle = gray(.08*flat); g.fillRect(0,0,W,H);
   // fixtura (esquinas metálicas)
-  g.fillStyle = gray(.30*flat);
+  g.fillStyle = gray(.30*flat + 1.4*doal);
   [[0,0,70,40,40,0],[W,0,W-70,40,W-40,0],[0,H,70,H-36,30,H],[W,H,W-70,H-36,W-30,H]].forEach(([a,b,c,d,e,f])=>{ g.beginPath(); g.moveTo(a,b); g.lineTo(c,d); g.lineTo(e,f); g.fill(); });
   // cuerpo del lens adapter (anillo oscuro) y su borde
   g.fillStyle = gray(.16*flat); g.beginPath(); g.arc(W/2, H/2, 128, 0, 7); g.fill();
   g.strokeStyle = gray(.36*flat); g.lineWidth = 3; g.beginPath(); g.arc(W/2, H/2, 127, 0, 7); g.stroke();
-  g.fillStyle = gray(.22*flat); g.beginPath(); g.arc(W/2, H/2, 110, 0, 7); g.fill();
+  g.fillStyle = gray(.22*flat + .5*doal); g.beginPath(); g.arc(W/2, H/2, 110, 0, 7); g.fill();
   // hueco: se ve el sensor (die) y su área activa
   g.fillStyle = gray(.05*flat); g.beginPath(); g.arc(W/2, H/2, 92, 0, 7); g.fill();
-  g.fillStyle = gray(.42*flat); g.fillRect(W/2-58, H/2-50, 116, 100);
-  g.fillStyle = gray(.24*flat); g.fillRect(W/2-44, H/2-38, 88, 76);
-  g.strokeStyle = gray(.47*flat); g.lineWidth = 2; g.strokeRect(W/2-58, H/2-50, 116, 100);
+  g.fillStyle = gray(.42*flat + 2.6*doal); g.fillRect(W/2-58, H/2-50, 116, 100);
+  g.fillStyle = gray(.24*flat + 1.6*doal); g.fillRect(W/2-44, H/2-38, 88, 76);
+  g.strokeStyle = gray(.47*flat + 2.6*doal); g.lineWidth = 2; g.strokeRect(W/2-58, H/2-50, 116, 100);
   // partículas sobre el sensor (242)
   if(s.particles){ g.fillStyle = gray(.95); [[-30,-18,3],[22,10,2.5],[-8,26,2],[35,-28,2]].forEach(([x,y,r])=>{ g.beginPath(); g.arc(W/2+x, H/2+y, r, 0, 7); g.fill(); }); }
   // cordón de DELO: brillante con la line light
@@ -48,31 +51,9 @@ export function renderDispCam(canvas, s, V){
   return {L};
 }
 
-/* Segmentación + mediciones, igual que la VIS: área y perímetro del material, caja envolvente. */
-export function analyzeVIS(L, V){
-  const x0 = Math.floor(W*V.RL/100), x1 = Math.ceil(W*V.RR/100), y0 = Math.floor(H*V.RT/100), y1 = Math.ceil(H*V.RB/100), th = V.ST/100;
-  const M = new Uint8Array(W*H); let area = 0, bx0=W, by0=H, bx1=-1, by1=-1;
-  for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){ const i = y*W+x, v = L[i]; const on = V.SM===1 ? v > th : v < th;
-    if(on){ M[i]=1; area++; if(x<bx0)bx0=x; if(x>bx1)bx1=x; if(y<by0)by0=y; if(y>by1)by1=y; } }
-  let per = 0;
-  for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++){ const i = y*W+x; if(!M[i]) continue;
-    if(x===x0||x===x1-1||y===y0||y===y1-1||!M[i-1]||!M[i+1]||!M[i-W]||!M[i+W]) per++; }
-  const areaPct = area/(W*H)*100, boxPct = bx1<0 ? 0 : (bx1-bx0+1)*(by1-by0+1)/(W*H)*100, perim = per*PSCALE;
-  const checks = [
-    ['Área', areaPct, V.AMN, V.AMX, '%'],
-    ['Caja', boxPct, V.BMN, V.BMX, '%'],
-    ['Perímetro', perim, V.PMN, V.PMX, 'px'],
-  ].map(([n,v,a,b,u])=>({n, v, a, b, u, ok: v>=a && v<=b}));
-  return {M, areaPct, boxPct, perim, checks, pass: checks.every(c=>c.ok), roi:[x0,y0,x1,y1], box: bx1<0?null:[bx0,by0,bx1,by1]};
-}
-export function drawVISOverlay(canvas, L, R, mode){
-  const g = canvas.getContext('2d'), im = g.createImageData(W,H), d = im.data;
-  for(let i=0;i<W*H;i++){ const v = L[i]*255; if(mode==='mask'){ const on = R.M[i]; d[i*4]=on?200:v*.25; d[i*4+1]=on?20:v*.25; d[i*4+2]=on?20:v*.25; }
-    else { const on = R.M[i]; d[i*4] = on ? Math.min(255, v*.55+120) : v; d[i*4+1] = on ? v*.45 : v; d[i*4+2] = on ? v*.45 : v; } d[i*4+3]=255; }
-  g.putImageData(im,0,0);
-  const [x0,y0,x1,y1] = R.roi; g.strokeStyle = '#22d3ee'; g.lineWidth = 1; g.setLineDash([4,3]); g.strokeRect(x0+.5,y0+.5,x1-x0-1,y1-y0-1); g.setLineDash([]);
-  if(R.box){ const [a,b,c,e] = R.box; g.strokeStyle = R.pass ? '#22c55e' : '#ef4444'; g.lineWidth = 1.5; g.strokeRect(a+.5,b+.5,c-a,e-b); }
-}
+/* Segmentación + mediciones (algoritmo compartido con el Laboratorio VIS). */
+export function analyzeVIS(L, V){ return analyze(L, W, H, V, PSCALE); }
+export function drawVISOverlay(canvas, L, R){ drawResult(canvas, L, R, {box:true}); }
 export function drawPattern(canvas, found){
   const g = canvas.getContext('2d'); g.strokeStyle = found ? '#22c55e' : '#ef4444'; g.lineWidth = 2;
   g.strokeRect(W/2-126, H/2-126, 252, 252);

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laboratorio VIS</title>
+<meta name="description" content="Sube imágenes reales de la VIS de la Kasalis y prueba los parámetros de la inspección post-dispensado antes de cambiarlos en la máquina.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lab VIS">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F2F2F3">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/svg+xml" href="../assets/icons/kasalis3d.svg">
+<script src="../shared/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#F2F2F3;--ink:#141416;--ink2:#7C7C84;--line:#D6D6DA;--chip:#FFFFFF;--ok:#1F9D55;--bad:#E5484D;--kas:#FF7F66;--font:"Urbanist",-apple-system,system-ui,sans-serif}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0E0E10;--ink:#F2F2F4;--ink2:#8C8C94;--line:#2C2C31;--chip:#1A1A1D;--ok:#3DD68C}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1280px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
+.rb{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);flex:none}
+.rb svg{width:19px;height:19px}
+.top h1{margin:0;font-size:24px;letter-spacing:-.02em;line-height:1.1}
+.top small{display:block;color:var(--ink2);font-size:13px;font-weight:600}
+.top .sp{flex:1}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:1000px){.grid{grid-template-columns:minmax(0,1.5fr) minmax(340px,1fr)}}
+.card{background:var(--chip);border-radius:24px;padding:16px;box-shadow:inset 0 5px 0 var(--kas)}
+.card h2{margin:2px 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+.card h2 small{font-weight:600;color:var(--ink2);font-size:12px}
+.lb{font-size:11.5px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;margin:14px 2px 7px}
+.drop{border:2px dashed var(--line);border-radius:18px;padding:18px;text-align:center;color:var(--ink2);font-size:14px;cursor:pointer}
+.drop b{color:var(--ink)}
+.drop.on{border-color:var(--ink);background:var(--bg)}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.btn{height:36px;padding:0 13px;border-radius:99px;background:var(--bg);font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.btn.dark{background:var(--ink);color:var(--bg)}
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px}
+.th{flex:0 0 auto;width:118px;border-radius:14px;overflow:hidden;background:var(--bg);border:2px solid transparent;cursor:pointer;position:relative}
+.th.on{border-color:var(--ink)}
+.th canvas{display:block;width:100%;height:auto}
+.th .meta{display:flex;align-items:center;gap:4px;padding:5px 6px;font-size:11px;font-weight:700}
+.th .meta span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th .x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:12px}
+.pill{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px}
+.pill.ok{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.views small{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.views canvas{width:100%;height:auto;display:block;border-radius:14px;background:#000}
+@media(max-width:640px){.views{grid-template-columns:1fr}}
+.verdict{display:flex;align-items:baseline;gap:10px;margin:12px 2px 8px;font-size:26px;font-weight:800;flex-wrap:wrap}
+.verdict small{font-size:13px;font-weight:600;color:var(--ink2)}
+.meter{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.meter div{background:var(--bg);border-radius:14px;padding:9px 11px;min-width:0}
+.meter small{display:block;font-size:11px;color:var(--ink2);font-weight:700}
+.meter b{font-size:19px;font-variant-numeric:tabular-nums}
+.meter b.ok{color:var(--ok)}.meter b.bad{color:var(--bad)}
+.bar{position:relative;height:6px;border-radius:9px;background:var(--line);margin-top:7px}
+.bar i{position:absolute;top:0;bottom:0;border-radius:9px;background:color-mix(in srgb,var(--ok) 55%,transparent)}
+.bar u{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--ink)}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.facts span{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--bg)}
+.seg{display:inline-flex;padding:3px;border-radius:99px;background:var(--bg)}
+.seg button{height:32px;padding:0 12px;border-radius:99px;font-weight:700;font-size:12.5px;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.ctrls label{display:grid;gap:3px;font-size:12px;font-weight:700;color:var(--ink2)}
+.ctrls label span{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.ctrls input[type=number]{width:74px;height:28px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);text-align:right;padding:0 6px;font-weight:700;font-size:13px}
+.ctrls input[type=range]{width:100%;accent-color:var(--ink)}
+.ctrls label.ch span b{color:var(--kas)}
+.note{border:1.5px dashed var(--line);border-radius:14px;padding:9px 11px;font-size:12.5px;color:var(--ink2);margin-top:10px;line-height:1.45}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 5px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+th{font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;border-top:0}
+td.n{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+td.bad{color:var(--bad);font-weight:700}
+.tbl{overflow-x:auto}
+.exp{display:inline-flex;gap:3px}
+.exp button{font-size:11px;font-weight:800;padding:3px 7px;border-radius:99px;background:var(--bg);color:var(--ink2)}
+.exp button[aria-pressed="true"].g{background:var(--ok);color:#fff}
+.exp button[aria-pressed="true"].m{background:var(--bad);color:#fff}
+.sum{font-weight:800;margin:10px 2px 0}
+textarea{width:100%;min-height:62px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);padding:9px 10px;font:12.5px ui-monospace,Menlo,monospace;resize:vertical}
+.out{font:12.5px ui-monospace,Menlo,monospace;background:var(--bg);border-radius:12px;padding:10px;word-break:break-all;margin-top:6px}
+.chg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chg span{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:color-mix(in srgb,var(--kas) 18%,transparent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="rb" href="./" aria-label="Kasalis 3D"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <div><h1>Laboratorio VIS</h1><small>Prueba los parámetros con fotos reales de la Kasalis</small></div>
+    <span class="sp"></span>
+    <button class="rb" data-theme-toggle aria-label="Tema"></button>
+  </header>
+
+  <div class="grid">
+    <div style="display:grid;gap:14px;align-content:start">
+      <section class="card">
+        <h2>1 · Imágenes <small>se quedan en tu navegador, no se suben</small></h2>
+        <label class="drop" id="drop"><input type="file" id="file" accept="image/*" multiple hidden><b>Sube imágenes crudas de la VIS</b><br>(las que guarda la Kasalis en los logs: buenas y malas)</label>
+        <div class="btns"><button class="btn" data-demo="ok">Ejemplo: buena</button><button class="btn" data-demo="gap">Ejemplo: incompleta</button><button class="btn" data-demo="thin">Ejemplo: poco DELO</button><button class="btn" data-demo="ld">Ejemplo: LD 30</button></div>
+        <div class="thumbs" id="thumbs"></div>
+      </section>
+      <section class="card" id="viewer">
+        <h2 id="vname">2 · Resultado</h2>
+        <div class="views"><div><small>Imagen</small><canvas id="cOrig"></canvas></div><div><small>Detección (verde = PASS, rojo = FAIL / no cuenta)</small><canvas id="cDet"></canvas></div></div>
+        <div class="verdict" id="verdict"></div>
+        <div class="meter" id="meter"></div>
+        <div class="facts" id="facts"></div>
+      </section>
+      <section class="card">
+        <h2>4 · Todas las imágenes con estos parámetros</h2>
+        <div class="tbl"><table id="tbl"></table></div>
+        <div class="sum" id="sum"></div>
+        <div class="btns"><button class="btn dark" id="suggest">Sugerir rangos con las buenas</button></div>
+        <div class="note" id="sugnote">Marca cada imagen como <b>Buena</b> o <b>Mala</b>. La idea es encontrar parámetros con los que todas las buenas pasen y todas las malas fallen.</div>
+      </section>
+    </div>
+
+    <div style="display:grid;gap:14px;align-content:start">
+      <section class="card">
+        <h2>3 · Parámetros VIS</h2>
+        <div class="lb" style="margin-top:0">Segmentación</div>
+        <div class="seg" id="sm"><button data-sm="1">Objetos claros (SM=1)</button><button data-sm="0">Oscuros (SM=0)</button></div>
+        <div class="ctrls" id="ctrls" style="margin-top:10px"></div>
+        <div class="note"><b>LL, LD y EXP no se pueden cambiar sobre una foto:</b> la luz ya quedó en la imagen. Para probarlas, toma fotos en la máquina con cada valor (ej. LD 30 y LD 0) y súbelas aquí para comparar. La <b>ganancia virtual</b> solo aclara u oscurece la foto para aproximar otra exposición.</div>
+      </section>
+      <section class="card">
+        <h2>5 · Pasar a la máquina</h2>
+        <div class="lb" style="margin-top:0">Tu línea VIS actual (del archivo de dispensado)</div>
+        <textarea id="base" spellcheck="false"></textarea>
+        <div class="btns"><button class="btn" id="loadBase">Cargar estos valores</button></div>
+        <div class="lb">Línea nueva</div>
+        <div class="out" id="outLine"></div>
+        <div class="chg" id="chg"></div>
+        <div class="btns"><button class="btn dark" id="copy">Copiar línea VIS</button></div>
+        <div class="note">Antes de cambiar en la máquina: comentar la línea anterior con #, no borrarla. Validar con una pieza buena (debe pasar) y una mala (debe fallar).</div>
+      </section>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/vislab.js"></script>
+</body>
+</html>

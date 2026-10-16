@@ -152,7 +152,7 @@ function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
   const rows = f.codigos.map(c=>{ const n = codeName(c); return n ? `<div class="row" data-go="c/${c}${+c<0?'|ksv':''}"><b>${c}</b><span>${esc(translate(n).charAt(0).toUpperCase()+translate(n).slice(1))}<small class="en">${esc(originalName(n, +c<0?'ksv':'plc'))} · ${esc(englishName(n))}</small></span><span class="faint">›</span></div>` : ''; }).join('');
   return `<div class="head"><div class="k">Modo de falla · Kasalis</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
-    <h3 class="lb">Flujo de resolución</h3>${flowHTML(f)}${causesHTML(f)}${rows?`<h3 class="lb">Códigos de esta falla</h3><div class="list">${rows}</div>`:''}`;
+    <h3 class="lb">Flujo de resolución</h3>${flowHTML(f)}${f.link?`<a class="link" href="${f.link.href}"><span>${esc(f.link.t)}</span><span class="faint">↗</span></a>`:''}${causesHTML(f)}${rows?`<h3 class="lb">Códigos de esta falla</h3><div class="list">${rows}</div>`:''}`;
 }
 function codeView(code, src){
   const c = src==='ksv' ? KSV.get(code) : PLC.get(code);

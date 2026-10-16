@@ -1,5 +1,5 @@
 /* Service worker: la app funciona sin red (red primero, caché de respaldo). */
-const CACHE = 'kasalis-v6';
+const CACHE = 'kasalis-v7';
 const CORE = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'data/fallas.js', 'data/procedimientos.js', '../shared/procs.js', 'data/notas.js', 'data/docs.js',
   'icons/icon-180.png', 'icons/icon-192.png', '../shared/theme.js', '../shared/ui.css', '../shared/kasalis.js', '../shared/kasalis-codes.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
