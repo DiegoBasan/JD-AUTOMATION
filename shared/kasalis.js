@@ -27,6 +27,8 @@ export const HINTS = {
   '175':'Ruido en RETEST: conexión de cámara / pogo pins / exposición.',
   '193':'Saturación en PEAK: exposición/ganancia o backlight demasiado alto.',
   '195':'Máximo de intentos de centrado: asiento del sensor, tilt del lens adapter.',
+  '218':'Tip find no subió (DISP_TIPFIND_EXTEND): el cilindro de aire del tip find no llegó arriba. Revisar aire, válvula solenoide y el sensor/limit switch de extendido del cilindro (manual 9.22.1). Probar subir/bajar desde I/O.',
+  '219':'Tip find no bajó (DISP_TIPFIND_RETRACT, "Timeout waiting for tip find to retract"; sale al inicializar y bloquea la rotary). 1) Aire principal y al cilindro. 2) En I/O mover el cilindro del tip find: si no se mueve → válvula/mangueras/algo trabado; si baja pero no prende la entrada de retraído → sensor del cilindro (posición, cable, conector). 3) Nada atorado (aguja, DELO seco). 4) OK y reinicializar. Si se movió el tip find, correr Tip Find + Calibrate.',
   '199':'Prueba de estabilidad falló: vibración, gripper flojo, temperatura.',
   '222':'Patrón de visión no encontrado (pre-dispense): pieza mal colocada, iluminación (LD/LL/EXP) o patrón .hdb equivocado para el producto.',
   '230':'Falla del dispensador: bomba de desplazamiento positivo, cartucho DELLO, cable.',
