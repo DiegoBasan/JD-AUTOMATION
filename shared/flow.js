@@ -2,7 +2,8 @@
    Un paso a la vez: el actual resaltado, los hechos con ✓ y los siguientes atenuados.
    Pasos con SÍ / NO saltan al paso que dice el texto ("paso 4") o terminan si dice "listo".
    Al terminar se guarda en el historial local (lo ve el inicio de JD Automation). */
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+import {tx, plain} from './txt.js';
+const esc = tx;
 const HKEY = 'jd_historial';
 export function historial(){ try{ return JSON.parse(localStorage.getItem(HKEY)||'[]'); }catch(e){ return []; } }
 function guardar(r){ try{ const h = historial(); h.unshift(r); localStorage.setItem(HKEY, JSON.stringify(h.slice(0, 50))); }catch(e){} }
@@ -25,7 +26,7 @@ const CSS = `
 .gf .gs.cur{border:2px solid var(--gfa,var(--ink,#141416));box-shadow:0 10px 28px rgba(0,0,0,.08);cursor:default}
 .gf .gs.cur .n{background:var(--gfa,var(--ink,#141416));color:#fff}
 .gf .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.gf .acts button{min-height:44px;padding:8px 16px;border-radius:14px;border:1.5px solid var(--line,#d6d6da);background:transparent;color:inherit;font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;line-height:1.25}
+.gf .acts button{flex:1 1 220px;min-height:44px;padding:8px 16px;border-radius:14px;border:1.5px solid var(--line,#d6d6da);background:transparent;color:inherit;font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;line-height:1.25}
 .gf .acts button small{display:block;font-weight:500;font-size:12px;opacity:.8}
 .gf .acts .si{border-color:rgba(34,160,107,.5);background:rgba(34,160,107,.1)}
 .gf .acts .no{border-color:rgba(229,72,77,.45);background:rgba(229,72,77,.08)}
@@ -44,7 +45,7 @@ let styled = false;
 
 const destino = (txt, i, n) => { if(!txt) return i+1; const m = String(txt).match(/paso\s*(\d+)/i); if(m) return Math.min(n, Math.max(1, +m[1])) - 1;
   if(/\b(listo|resuelto|empacar)\b/i.test(txt)) return 'fin'; return i+1; };
-const corto = t => { const s = String(t||'').split(/→|\./)[0].trim(); return s.length > 60 ? s.slice(0,57)+'…' : s; };
+const corto = t => { const s = plain(t).split(/→|\./)[0].trim(); return s.length > 60 ? s.slice(0,57)+'…' : s; };
 
 /* mount(el, falla, {app, accent, procHTML(step) → html, onDone}) */
 export function mountFlow(el, f, o={}){
@@ -59,23 +60,22 @@ export function mountFlow(el, f, o={}){
       let acts = '';
       if(st==='cur'){
         if(s.si || s.no){
-          if(s.si) acts += `<button class="si" data-gf="si"><em>SÍ</em><span>${esc(corto(s.si))}</span></button>`;
-          acts += `<button class="no" data-gf="no"><em>NO</em><span>${esc(s.no ? corto(s.no) : 'Sigue al siguiente paso')}</span></button>`;
+          if(s.si) acts += `<button class="si" data-gf="si"><em>SÍ</em><span>${esc(s.si)}</span></button>`;
+          acts += `<button class="no" data-gf="no"><em>NO</em><span>${esc(s.no || 'Sigue al siguiente paso')}</span></button>`;
           if(!s.si) acts += `<button class="si" data-gf="hecho">Hecho, siguiente</button>`;
         } else acts += `<button class="ok" data-gf="hecho">Hecho, siguiente →</button>`;
         acts += `<button data-gf="resolvio">✓ Con esto se resolvió</button>`;
       }
       const sk = done[i]==='Saltado';
       h += `<div class="gs ${st}${sk&&st==='done'?' skip':''}" data-gi="${i}"><div class="n">${sk ? '–' : done[i] ? '✓' : i+1}</div><div><b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
-        ${st==='cur' && s.si ? `<div class="d"><b style="display:inline;font-size:12.5px;padding:0">SÍ:</b> ${esc(s.si)}</div>` : ''}${st==='cur' && s.no ? `<div class="d"><b style="display:inline;font-size:12.5px;padding:0">NO:</b> ${esc(s.no)}</div>` : ''}
         <div class="ans">${esc(done[i]||'')}</div>${st==='cur' && o.procHTML ? o.procHTML(s) : ''}${acts?`<div class="acts">${acts}</div>`:''}</div></div>`;
     });
     if(fin) h += `<div class="end ${fin.ok?'':'fail'}"><b>${fin.ok ? '✓ Resuelto' : 'Sin resolver con este flujo'}</b><p>${esc(fin.txt)}</p>${fin.ok?'':'<button data-gf="reset">Revisar otra vez</button>'}</div>`;
     else if(cur >= n) h += `<div class="end fail"><b>Llegaste al final del flujo</b><p>Si sigue fallando, escálalo con ingeniería con lo que ya revisaste.</p><button data-gf="cerrar">Registrar como no resuelto</button></div>`;
     el.innerHTML = h + '</div>';
   }
-  function terminar(ok, i){ fin = {ok, txt: ok ? `Se resolvió en el paso ${i+1}: ${f.flujo[i].p}` : 'Se revisaron todos los pasos.'};
-    guardar({app:o.app||'', id:f.id, titulo:f.titulo, fecha:new Date().toISOString(), ok, paso:i+1, solucion: ok ? f.flujo[i].p : ''}); o.onDone && o.onDone(fin); draw(); }
+  function terminar(ok, i){ fin = {ok, txt: ok ? `Se resolvió en el paso ${i+1}: ${plain(f.flujo[i].p)}` : 'Se revisaron todos los pasos.'};
+    guardar({app:o.app||'', id:f.id, titulo:plain(f.titulo), fecha:new Date().toISOString(), ok, paso:i+1, solucion: ok ? plain(f.flujo[i].p) : ''}); o.onDone && o.onDone(fin); draw(); }
   el.addEventListener('click', e=>{
     const b = e.target.closest('[data-gf]');
     if(b){ e.stopPropagation(); const a = b.dataset.gf, s = f.flujo[cur];

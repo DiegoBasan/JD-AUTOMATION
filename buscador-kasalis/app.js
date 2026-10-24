@@ -3,12 +3,13 @@
 import {CODES, HINTS, englishName, originalName} from '../shared/kasalis.js';
 import {DOCS} from './data/docs.js';
 import {FALLAS} from './data/fallas.js';
-import {PROCS, procBtn, openProc} from '../shared/procs.js';
+import {PROCS, procInline, guideHTML} from '../shared/procs.js';
+import {tx, LEYENDA} from '../shared/txt.js';
 import {mountFlow} from '../shared/flow.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = tx;
 const PLC = new Map(CODES.plc.map(r=>[r[0], {code:r[0], name:r[1], group:r[2]}]));
 const KSV = new Map(); CODES.ksv.forEach(r=>{ if(!KSV.has(r[0])) KSV.set(r[0], {code:r[0], name:r[1], group:r[2], comment:r[3]}); });
 const PROCESS = {screws:'Tornillos elevados (Final Assy)', leak:'Leak test FAIL', eol:'EOL FAIL'};
@@ -120,12 +121,6 @@ const codeChips = (list, btn) => `<div class="codes">${list.map(c=> btn ? `<butt
 const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', code:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>', doc:'<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>'};
 const sh = (ic, t, main) => `<h3 class="${main?'sh':'lb'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI[ic]}</svg>${t}</h3>`;
 const gflow = f => `<div class="gflow" data-fid="${f.id}"></div>`;
-function flowHTML(f){
-  return `<div class="flow">${f.flujo.map((s,i)=>`<div class="st"><div class="n">${i+1}</div><div>
-    <b>${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
-    ${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}
-    ${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}${s.proc?procBtn(s.proc):''}</div></div>`).join('')}</div>`;
-}
 function causesHTML(f){
   let h = '';
   if(f.causas.length) h += `${sh('cause','Causas vistas en piso → solución')}<div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
@@ -148,17 +143,16 @@ function docsHTML(docs, terms){
 function homeView(){
   return `${sh('cause','¿Qué está fallando?',1)}<div class="modes">${FALLAS.map((f,i)=>`<div class="mode" data-go="f/${f.id}">
     <div class="top-r"><div class="ic">${icon(f.id)}</div><span class="tag">Kasalis</span></div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span>${codeChips(f.codigos.slice(0,4))}</div>`).join('')}</div>
-    <hr class="sep">${sh('book','Guías y procesos Kasalis',1)}${procList(Object.keys(PROCS))}`;
+    <hr class="sep">${sh('book','Guías del programa',1)}${procList(Object.keys(PROCS))}${LEYENDA}`;
 }
 function procList(ids){
-  return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-proc="${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${p.pasos.length ? p.pasos.length+' pasos con foto' : 'faltan fotos · '+esc(p.permisos)}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
+  return `<div class="list">${ids.map(id=>{ const p = PROCS[id]; return `<div class="row" data-go="p/${id}"><b style="font-size:12px;color:var(--ink3)">${esc(p.estacion.split(' ')[0])}</b><span>${esc(p.titulo)}<small>${esc(p.permisos)}${p.pasos.length ? ' · '+p.pasos.length+' pasos' : ''}</small></span><span class="faint">›</span></div>`; }).join('')}</div>`;
 }
 function fallaView(id){
   const f = FALLAS.find(x=>x.id===id); if(!f) return homeView();
-  const rows = f.codigos.map(c=>{ const n = codeName(c); return n ? `<div class="row" data-go="c/${c}${+c<0?'|ksv':''}"><b>${c}</b><span>${esc(translate(n).charAt(0).toUpperCase()+translate(n).slice(1))}<small class="en">${esc(originalName(n, +c<0?'ksv':'plc'))} · ${esc(englishName(n))}</small></span><span class="faint">›</span></div>` : ''; }).join('');
   return `<div class="head"><div class="k"><span class="tag">Kasalis</span> Modo de falla</div><h2>${esc(f.titulo)}</h2><p>${esc(f.corto)}</p>${codeChips(f.codigos, true)}</div>
     <div class="fv"><section>${sh('steps','Qué hacer, paso a paso',1)}${gflow(f)}${f.link?`<a class="link" href="${f.link.href}"><span>${esc(f.link.t)}</span><span class="faint">↗</span></a>`:''}</section>
-    <aside>${causesHTML(f)}${rows?`<details class="more"><summary>${sh('code','Códigos de esta falla ('+f.codigos.length+')')}</summary><div class="in"><div class="list">${rows}</div></div></details>`:''}</aside></div>`;
+    <aside>${causesHTML(f)}</aside></div>${LEYENDA}`;
 }
 function codeView(code, src){
   const c = src==='ksv' ? KSV.get(code) : PLC.get(code);
@@ -174,22 +168,26 @@ function codeView(code, src){
   const pool = src==='ksv' ? [...KSV.values()] : [...PLC.values()];
   const rel = pool.filter(x=>x.code!==code && x.group===c.group).map(x=>({x, s:x.name.split('_').filter(t=>toks.has(t)).length + (Math.abs(x.code-code)<=2?.5:0)})).filter(o=>o.s>=1).sort((a,b)=>b.s-a.s).slice(0,8);
   let h = `<div class="head"><div class="k">${src==='ksv'?'KSvision':'PLC Pixid'} · ${esc(w.st)}</div>
-    <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div class="big">${code}</div><div style="min-width:0"><h2 style="font-size:17px;margin:0">${esc(c.name)}</h2><p>${esc(tr.charAt(0).toUpperCase()+tr.slice(1))}</p><p class="en">${esc(originalName(c.name, src))} · ${esc(englishName(c.name))}${c.comment?' — '+esc(c.comment):''}</p></div></div>
-    <p style="margin-top:10px;font-size:12.5px">${esc(w.ph)}${freq?` · ${freq}× en logs`:''}</p></div>`;
+    <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div class="big">${code}</div><div style="min-width:0"><h2 style="font-size:17px;margin:0;overflow-wrap:anywhere">${esc(c.name)}</h2>${HINTS[key]?'':`<p>${esc(tr.charAt(0).toUpperCase()+tr.slice(1))}</p>`}<p class="en">${esc(englishName(c.name))}${c.comment?' — '+esc(c.comment):''}</p></div></div>
+    ${freq?`<p style="margin-top:10px;font-size:12.5px">${freq}× en logs</p>`:''}${HINTS[key]?`<div class="hint" style="margin-top:10px">${esc(HINTS[key])}</div>`:''}</div>`;
   h += `<div class="fv"><section>`;
   if(fs.length){
     const f = fs[0];
     h += `${sh('steps','Qué hacer, paso a paso',1)}<div class="faint" style="margin:-4px 4px 10px;font-size:12.5px">${esc(f.titulo)}</div>${gflow(f)}`;
-  } else h += `${sh('info','Qué significa',1)}<div class="card"><div class="hint ${HINTS[key]?'':'muted'}">${esc(HINTS[key]||'Sin guía todavía. Revisa el manual.')}</div></div>`;
+  } else if(!HINTS[key]) h += `<div class="card"><div class="hint muted">Sin guía todavía. Revisa el manual abajo.</div></div>`;
   h += `</section><aside>`;
-  if(fs.length){ h += sh('book','Más de esta falla') + `<div class="link" data-go="f/${fs[0].id}"><span>Causas vistas y tips</span><span class="faint">›</span></div>`;
-    fs.slice(1).forEach(o=>{ h += `<div class="link" data-go="f/${o.id}"><span>También: ${esc(o.titulo)}</span><span class="faint">›</span></div>`; });
-    if(HINTS[key]) h += `${sh('info','Qué significa')}<div class="card"><div class="hint">${esc(HINTS[key])}</div></div>`; }
+  if(fs.length){ h += causesHTML(fs[0]);
+    fs.slice(1).forEach(o=>{ h += `<div class="link" data-go="f/${o.id}"><span>Este código también sale en: ${esc(o.titulo)}</span><span class="faint">›</span></div>`; }); }
   h += notesHTML(key);
-  if(other) h += `<div class="link" data-go="c/${other.code}|${src==='plc'?'ksv':'plc'}"><span>También existe ${other.code} en ${src==='plc'?'KSvision':'PLC'}: ${esc(other.name)}</span><span class="faint">›</span></div>`;
   h += `<details class="more"><summary>Manual y documentos (${docs.length})</summary><div class="in">${docsHTML(docs, [...terms, String(code)])}</div></details>`;
-  if(rel.length) h += `<details class="more"><summary>Códigos relacionados (${rel.length})</summary><div class="in rel">${rel.map(o=>`<button data-go="c/${o.x.code}|${src}">${o.x.code} · ${esc(o.x.name)}</button>`).join('')}</div></details>`;
-  return h + `</aside></div>`;
+  if(rel.length || other) h += `<details class="more"><summary>Códigos parecidos (${rel.length+(other?1:0)})</summary><div class="in rel">${other?`<button data-go="c/${other.code}|${src==='plc'?'ksv':'plc'}">${other.code} · ${esc(other.name)} (${src==='plc'?'KSvision':'PLC'})</button>`:''}${rel.map(o=>`<button data-go="c/${o.x.code}|${src}">${o.x.code} · ${esc(o.x.name)}</button>`).join('')}</div></details>`;
+  return h + `</aside></div>${LEYENDA}`;
+}
+function procView(id){
+  const p = PROCS[id]; if(!p) return homeView();
+  const usa = FALLAS.filter(f=>f.flujo.some(s=>s.proc===id));
+  return `<div class="head"><div class="k"><span class="tag">Kasalis</span> ${esc(p.estacion)} · ${esc(p.permisos)}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando)}</p></div>
+    ${guideHTML(p, undefined, 'Pasos')}${usa.length?`${sh('book','Se usa en')}${usa.map(f=>`<div class="link" data-go="f/${f.id}"><span>${esc(f.titulo)}</span><span class="faint">›</span></div>`).join('')}`:''}${LEYENDA}`;
 }
 function processView(key){
   return `<div class="head"><div class="k">Falla de proceso (no es código Kasalis)</div><h2>${esc(PROCESS[key])}</h2></div>
@@ -207,16 +205,15 @@ function codesTab(){
   return h;
 }
 function infoTab(){
-  return `<h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Para usarla como app (pantalla completa, funciona sin red):
-    <ol><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadro con flecha ↑).</li><li>Elige <b>Agregar a pantalla de inicio</b> → <b>Agregar</b>.</li></ol>
-    <div class="faint" style="margin-top:6px">En Android: menú ⋮ → Instalar app.</div></div>
-    <h3 class="lb">Qué hay aquí</h3><div class="install">
-    <b>Fallas</b>: cada modo de falla con su flujo (primero checar esto, luego esto…), causas vistas en piso y tips.<br>
-    <b>Guías del programa</b>: en los pasos que dicen "Cómo hacerlo en el programa" se abre el paso a paso con fotos de las pantallas de la Kasalis (dónde picar y qué valor poner).<br>
-    <b>Códigos</b>: todos los códigos PLC Pixid y KSvision, con significado, estación, manual y relacionados.<br>
-    <b>Buscar</b>: escribe un código (102, -222) o una palabra (pogo, golden, DELO).</div>
-    <div class="link" onclick="location.href='../index.html'"><span>Otras apps JD Automation</span><span class="faint">›</span></div>
-    <div class="link" onclick="location.href='../simulador-lineas/'"><span>Ver la Kasalis en el simulador</span><span class="faint">›</span></div>`;
+  let notas = ''; try{ notas = localStorage.getItem('jd_misnotas')||''; }catch(e){}
+  return `${sh('info','Cómo se usa',1)}<div class="install">
+    1. Busca el <b>código</b> que sale en la pantalla (ej. 219) o toca la falla.<br>
+    2. Sigue los pasos en orden y contesta <b>SÍ / NO</b>.<br>
+    3. Cuando se arregle, toca <b>✓ Con esto se resolvió</b>.<br>
+    ${LEYENDA.replace('class="leyenda"','class="leyenda" style="margin:8px 0 0"')}</div>
+    ${sh('doc','Mis notas (solo en este celular)')}<div class="install"><textarea id="misnotas" rows="5" placeholder="Contraseñas, extensiones, recordatorios… No se suben a ningún lado." style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;background:var(--surface);color:inherit">${esc(notas)}</textarea></div>
+    <h3 class="lb hide-app">Instalar en el iPhone</h3><div class="install hide-app">Safari → <b>Compartir</b> → <b>Agregar a pantalla de inicio</b>. En Android: menú ⋮ → Instalar app.</div>
+    <div class="link" onclick="location.href='../index.html'"><span>Otras apps JD Automation</span><span class="faint">›</span></div>`;
 }
 function searchView(q){
   if(PROCESS[q.toLowerCase()]) return processView(q.toLowerCase());
@@ -249,7 +246,7 @@ function route(){
   else if(raw==='codigos'){ html = codesTab(); title='Códigos'; tab='codigos'; }
   else if(raw==='info'){ html = infoTab(); title='Más'; tab='info'; }
   else if(raw.startsWith('f/')){ const f=FALLAS.find(x=>x.id===raw.slice(2)); html = fallaView(raw.slice(2)); title = f?f.titulo:title; sub = true; }
-  else if(raw.startsWith('p/')){ html = homeView(); const id = raw.slice(2); setTimeout(()=>openProc(id), 50); }
+  else if(raw.startsWith('p/')){ const p = PROCS[raw.slice(2)]; html = procView(raw.slice(2)); title = p ? 'Guía' : title; sub = true; }
   else if(raw.startsWith('s/')){ const q=raw.slice(2); html = searchView(q); title = 'Buscar'; tab=''; sub = true; if(document.activeElement!==$('q')) $('q').value=q; }
   else {
     const [c, s] = (raw.startsWith('c/') ? raw.slice(2) : raw).split('|');
@@ -262,7 +259,7 @@ function route(){
   }
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value='';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'kasalis', accent:'#FF7F66', procHTML: st => st.proc ? procBtn(st.proc) : ''}); });
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'kasalis', accent:'#FF7F66', procHTML: st => st.proc ? procInline(st.proc) : ''}); });
   $('back').style.display = sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
@@ -270,7 +267,7 @@ function route(){
 }
 let depth = 0;
 function go(h){ depth++; location.hash = h; }
-$('out').addEventListener('click', e=>{ const pr = e.target.closest('[data-proc]'); if(pr){ e.preventDefault(); openProc(pr.dataset.proc); return; }
+$('out').addEventListener('click', e=>{
   const t = e.target.closest('[data-go]'); if(t){ e.preventDefault(); go(t.dataset.go); } });
 $('back').onclick = ()=>{ if(depth>0){ depth--; history.back(); } else location.hash=''; };
 let tmr;
@@ -279,5 +276,6 @@ $('q').addEventListener('input', ()=>{ clearTimeout(tmr); const v=$('q').value.t
 $('q').addEventListener('keydown', e=>{ if(e.key==='Enter'){ $('q').blur(); } });
 $('clr').onclick = ()=>{ $('q').value=''; $('clr').style.display='none'; location.hash=''; };
 document.querySelectorAll('.tabs a').forEach(a=>a.addEventListener('click',()=>{ $('q').value=''; depth=0; }));
+$('out').addEventListener('input', e=>{ if(e.target.id==='misnotas'){ try{ localStorage.setItem('jd_misnotas', e.target.value); }catch(_){} } });
 addEventListener('hashchange', route);
 route();

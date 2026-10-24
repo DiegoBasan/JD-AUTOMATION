@@ -4,7 +4,8 @@ import {PROCS} from '../buscador-kasalis/data/procedimientos.js';
 export {PROCS};
 
 const BASE = new URL('../buscador-kasalis/', import.meta.url);
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+import {tx, plain} from './txt.js';
+const esc = tx;
 const CSS = `
 .pv{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;animation:pvF .2s}
 @keyframes pvF{from{opacity:0}}
@@ -46,6 +47,34 @@ const CSS = `
 .pv .todo li{color:var(--ink2,#7c7c84)}
 `;
 let styled = false;
+const CSS2 = `
+.gi{margin-top:10px;border-radius:16px;background:var(--bg,#f2f2f3);padding:10px 12px}
+.gi h5{margin:0 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2,#7c7c84)}
+.gi ol{margin:0;padding-left:20px;font-size:14px;line-height:1.45}
+.gi li{margin:4px 0}
+.gi li img{display:block;width:100%;max-width:420px;border-radius:12px;margin:6px 0 2px;cursor:zoom-in}
+.gi .v{display:inline-block;margin:3px 0;font:700 13px ui-monospace,Menlo,monospace;background:var(--surface,#fff);padding:3px 8px;border-radius:8px}
+.gi .o{margin-top:3px;font-size:13px;color:#B5452A}
+.gi ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.45;color:var(--ink2,#555)}
+.gi .nf{font-size:11.5px;color:var(--ink3,#999);margin-top:6px}
+.lbx{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.lbx img{max-width:100%;max-height:100%}
+`;
+function style2(){ if(document.getElementById('giCSS')) return; const s = document.createElement('style'); s.id='giCSS'; s.textContent = CSS2; document.head.appendChild(s);
+  document.addEventListener('click', e=>{ const im = e.target.closest('.gi img'); if(!im) return; e.stopPropagation(); const d = document.createElement('div'); d.className='lbx'; d.innerHTML = `<img src="${im.src}" alt="">`; d.onclick=()=>d.remove(); document.body.appendChild(d); }, true); }
+
+/* La guía dentro de la misma pantalla (sin ventana aparte): pasos con su foto, o lo que ya sabemos. */
+export function guideHTML(p, base=BASE, titulo='Cómo se hace'){
+  if(!p) return ''; style2();
+  let h = `<div class="gi"><h5>${esc(titulo)}</h5>`;
+  if(p.pasos?.length){
+    h += `<ol>${p.pasos.map(s=>`<li>${esc(s.texto)}${s.valor?`<br><span class="v">${esc(s.valor)}</span>`:''}${s.ojo?`<div class="o">⚠︎ ${esc(s.ojo)}</div>`:''}${s.foto?`<img loading="lazy" src="${new URL(s.foto, base).href}" alt="">`:''}</li>`).join('')}</ol>`;
+    if(p.sabemos?.length) h += `<ul style="margin-top:8px">${p.sabemos.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  } else if(p.sabemos?.length) h += `<ul>${p.sabemos.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  if(!p.pasos?.some(x=>x.foto)) h += `<div class="nf">Faltan fotos del programa</div>`;
+  return h + '</div>';
+}
+export const procInline = id => guideHTML(PROCS[id]);
 function style(){ if(styled) return; const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); styled = true; }
 
 /* Botón para poner debajo de un paso del flujo. */

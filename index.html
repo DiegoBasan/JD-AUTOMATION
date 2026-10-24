@@ -163,7 +163,7 @@ import {MAQ, FALLAS as LF, PROCESOS as LP} from './fallas-linea/data/lineas.js';
 import {historial} from './shared/flow.js';
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+import {tx as esc} from './shared/txt.js';
 const IC = {
   wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
   code:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',

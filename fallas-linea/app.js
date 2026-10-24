@@ -1,13 +1,14 @@
 /* Fallas de línea — fallas y procesos de las estaciones que no son Kasalis (Gecko, Moose, Scorpion) y hornos.
    Mismo formato que Fallas Kasalis: flujo de resolución paso a paso + guías de procesos con fotos. */
 import {MAQ, FALLAS, PROCESOS} from './data/lineas.js';
-import {openGuide} from '../shared/procs.js';
+import {guideHTML} from '../shared/procs.js';
+import {tx, LEYENDA} from '../shared/txt.js';
 import {mountFlow} from '../shared/flow.js';
 const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>', wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>'};
 const sh = (ic, t, main) => `<h3 class="${main?'sh':'lb'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI[ic]}</svg>${t}</h3>`;
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = tx;
 const BASE = new URL('./', import.meta.url);
 const col = l => (MAQ[l]||MAQ.general).c;
 let filtro = 'todas'; try{ filtro = localStorage.getItem('jd_linea_filtro') || 'todas'; }catch(e){}
@@ -17,12 +18,6 @@ const pasa = x => filtro==='todas' || x.linea===filtro || (x.lineas||[]).include
 const tags = x => [x.linea, ...(x.lineas||[])].filter((v,i,a)=>v && a.indexOf(v)===i).map(l=>`<span class="tag" style="--m:${col(l)}">${esc(MAQ[l]?.n||l)}</span>`).join('');
 function card(f){ return `<div class="mode" style="--m:${col(f.linea)}" data-go="f/${f.id}"><div>${tags(f)}</div><b>${esc(f.titulo)}</b><span>${esc(f.corto)}</span></div>`; }
 function procRow(id){ const p = PROCESOS[id]; return `<div class="row" data-go="p/${id}" style="--m:${col(p.linea)}"><b style="font-size:12px"><span class="tag" style="--m:${col(p.linea)}">${esc(MAQ[p.linea]?.n||'')}</span></b><span>${esc(p.titulo)}<small>${esc(p.maquina||'')} · ${p.pasos.length ? p.pasos.length+' pasos' : 'en construcción'}</small></span><span class="faint">›</span></div>`; }
-function flowHTML(f){
-  return `<div class="flow">${f.flujo.map((s,i)=>`<div class="st"><div class="n" style="background:${col(f.linea)};color:#fff">${i+1}</div><div>
-    <b>${esc(s.p==='Ver el proceso' && s.proc && PROCESOS[s.proc] ? PROCESOS[s.proc].titulo : s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
-    ${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}
-    ${s.proc && PROCESOS[s.proc]?`<button class="procbtn" data-go="p/${s.proc}">Cómo hacerlo ›</button>`:''}</div></div>`).join('')}</div>`;
-}
 function renderFilters(){
   const keys = ['todas', ...Object.keys(MAQ)];
   $('filters').innerHTML = keys.map(k=> k==='kasalis'
@@ -42,20 +37,15 @@ function fallaView(id){
     <div class="fv"><section>${sh('steps','Qué hacer, paso a paso',1)}<div class="gflow" data-fid="${f.id}"></div></section><aside>`;
   if(f.causas?.length) h += `${sh('cause','Causas vistas en piso → solución')}<div class="ca">${f.causas.map(([a,b])=>`<div class="r"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('')}</div>`;
   if(f.tips?.length) h += `${sh('tip','Para recordar')}<div class="tips">${f.tips.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
-  return h + '</aside></div>';
+  return h + '</aside></div>' + LEYENDA;
 }
 function procesoView(id){
   const p = PROCESOS[id]; if(!p) return procesosTab();
   let h = `<div class="head" style="--m:${col(p.linea)}"><div class="k"><span class="tag">${esc(MAQ[p.linea]?.n||'')}</span> Proceso${p.maquina?' · '+esc(p.maquina):''}</div><h2>${esc(p.titulo)}</h2><p>${esc(p.cuando||'')}</p></div>`;
-  if(p.pasos.length){
-    h += `<h3 class="lb">Pasos</h3><div class="steps" style="--m:${col(p.linea)}">${p.pasos.map((s,i)=>`<div class="pstep"><div class="n">${i+1}</div><div><b>${esc(s.texto)}</b>${s.valor?`<span class="v">${esc(s.valor)}</span>`:''}${s.ojo?`<div class="o">⚠︎ ${esc(s.ojo)}</div>`:''}</div></div>`).join('')}</div>
-      <button class="btn" data-guide="${id}">▶ Ver paso a paso${p.pasos.some(s=>s.foto)?' con fotos':''}</button>`;
-  }
-  if(p.sabemos?.length) h += `<h3 class="lb">Para recordar</h3><div class="tips">${p.sabemos.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`;
-  if(p.necesito?.length) h += `<div class="pend"><b>${p.pasos.length?'Para completar con fotos':'En construcción'}:</b> ${p.necesito.map(esc).join(' · ')}</div>`;
+  h += guideHTML(p, BASE, p.pasos.length ? 'Pasos' : 'Lo que ya sabemos');
   const usa = FALLAS.filter(f=>f.flujo.some(s=>s.proc===id));
   if(usa.length) h += `<h3 class="lb">Se usa en</h3>${usa.map(f=>`<div class="link" data-go="f/${f.id}"><span>${esc(f.titulo)}</span><span class="faint">›</span></div>`).join('')}`;
-  return h;
+  return h + LEYENDA;
 }
 function procesosTab(){
   const groups = {};
@@ -90,7 +80,7 @@ function route(){
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value = '';
   $('out').innerHTML = html; $('ttl').textContent = title;
   $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'linea', accent: col(f.linea),
-    procHTML: st => st.proc && PROCESOS[st.proc] ? `<button class="procbtn" data-go="p/${st.proc}">Cómo hacerlo: ${esc(PROCESOS[st.proc].titulo)} ›</button>` : ''}); }); $('back').style.display = sub ? '' : 'none';
+    procHTML: st => st.proc && PROCESOS[st.proc] ? guideHTML(PROCESOS[st.proc], BASE, PROCESOS[st.proc].titulo) : ''}); }); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';
@@ -100,7 +90,6 @@ let depth = 0;
 const go = h => { depth++; location.hash = h; };
 document.addEventListener('click', e=>{
   const g = s => e.target.closest(s); let x;
-  if(x = g('[data-guide]')){ const p = PROCESOS[x.dataset.guide]; openGuide({...p, estacion: p.maquina || MAQ[p.linea]?.n || '', permisos: p.permisos || 'Operador', codigos: []}, BASE, col(p.linea)); return; }
   if(x = g('[data-go]')){ e.preventDefault(); go(x.dataset.go); return; }
   if(x = g('[data-href]')){ location.href = x.dataset.href; return; }
   if(x = g('[data-f]')){ filtro = x.dataset.f; try{ localStorage.setItem('jd_linea_filtro', filtro); }catch(err){} renderFilters(); route(); return; }

@@ -9,7 +9,8 @@ import {englishName, originalName} from '../../shared/kasalis.js';
 import {procBtn, openProc} from '../../shared/procs.js';
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+import {tx} from '../../shared/txt.js';
+const esc = tx;
 const load = (k, d) => { try{ return {...d, ...JSON.parse(localStorage.getItem(k)||'{}')}; }catch(e){ return {...d}; } };
 const store = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 let P = load('jd_k3d_params', DEFAULTS), V = load('jd_k3d_vis', VIS_DEFAULTS);
