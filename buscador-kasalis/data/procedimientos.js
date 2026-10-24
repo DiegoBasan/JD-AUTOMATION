@@ -21,7 +21,7 @@
 export const PROCS = {
   'ajustar-place': {
     titulo:'Ajustar place X, Y, Z del plato', estacion:'Alineación', permisos:'Ingeniería', codigos:['108','131','137','195'],
-    cuando:'Fallas de alineación seguidas en un plato y la golden también falla en ese plato.',
+    cuando:'Fallas de alineación seguidas en un plato {{y la golden también falla en ese plato}}.',
     sabemos:['Con 5 fallas de alineación seguidas ya se ajusta.','Se ajustan las 3 posiciones del plato; si no basta, también theta X / Y.','Se ajusta por plato (ELK plato 4 ha sido el más frecuente).','Mientras se ajusta, se puede correr con el otro plato.','Cada cambio en la Kasalis genera serial number break.'],
     pasos:[], necesito:['Pantalla principal con el botón para entrar a setup / teach','Selección de estación (Alineación) y de plato / fixtura','Pantalla de posiciones place X, Y, Z (y theta)','Cómo se mueve el eje (jog) y cómo se guarda','Cómo se prueba el cambio y se regresa a producción'],
   },
@@ -33,7 +33,7 @@ export const PROCS = {
   },
   'aeo-roi': {
     titulo:'Align Extra Offset (AEO) y ROI', estacion:'Alineación', permisos:'Ingeniería (con autorización)', codigos:['131','161'],
-    cuando:'Ajuste fino de SFR cuando la máquina y el lente están bien.',
+    cuando:'Ajuste fino de SFR {{cuando la máquina y el lente están bien}}.',
     sabemos:['El valor de AEO depende del modelo: probar primero con pocas piezas.','El cambio de ROI lo hace ingeniería por SFR.','Requiere autorización.'],
     pasos:[], necesito:['Dónde está el AEO','Dónde se editan las ROI','Cómo se guarda'],
   },
@@ -51,7 +51,7 @@ export const PROCS = {
   },
   'purga': {
     titulo:'Purga / prime del dispensador', estacion:'Dispensado', permisos:'Operador', codigos:['233','230'],
-    cuando:'Burbujas, trazo bajo, después de cambiar cartucho de DELO o motor.',
+    cuando:'Burbujas, trazo bajo, después de cambiar cartucho de DELO {{o motor}}.',
     sabemos:['PurgeTimeDispenseHead1 = 10000 ms al 50 %.','Prime: 5 ciclos de 10000 ms al 50 %, suck back 50 ms.','Después: pesar 3 dispensados y foto.'],
     pasos:[], necesito:['Botón de purga / prime','A dónde va el cabezal (copa de purga)','Cómo se confirma'],
   },
@@ -70,7 +70,7 @@ export const PROCS = {
   'enfoque-vis': {
     titulo:'Enfocar y ajustar brillo de la cámara de inspección (VIS)', estacion:'Dispensado', permisos:'Ingeniería', codigos:['233'],
     cuando:'El dispensado está bien (centrado y completo) pero la VIS sigue dando 233.',
-    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','Validar con una pieza incompleta: debe fallar.','LD (DOAL) rebota en lo plano: con LD alto el sensor se ve blanco y se detecta como material. Se bajó de 30 a 0.','Probar umbral y rangos con fotos reales en el Laboratorio VIS (Kasalis 3D) antes de tocar la máquina.'],
+    sabemos:['Comparar contra la foto de referencia de logs pasados: pieza buena del mismo modelo.','Al cambiar Moose ↔ ELK el lens queda más bajo: hay que re-enfocar.','Las line lights (barras LED) deben apuntar al lens adapter (se ajustan con tornillos).','Validar con una pieza incompleta: debe fallar.','LD (DOAL) {{rebota en lo plano:}} con LD alto el sensor se ve blanco {{y se detecta como material}}. Se bajó de 30 a 0.','Probar umbral y rangos con fotos reales en el Laboratorio VIS (Kasalis 3D) antes de tocar la máquina.'],
     pasos:[], necesito:['Dónde se guardan / abren las imágenes de la VIS en los logs','Foto de referencia buena por modelo (Moose, Scorpion, Gecko)','Cómo ver la imagen en vivo para enfocar','Dónde se ajusta el brillo / exposición (si es por programa)'],
   },
   'editar-arc': {
@@ -81,7 +81,7 @@ export const PROCS = {
   },
   'inicializar': {
     titulo:'Inicializar la estación / equipo', estacion:'General', permisos:'Operador', codigos:['102','231','104'],
-    cuando:'Comunicación intermitente, gripper ladeado, estación que no llega a home.',
+    cuando:'Comunicación intermitente, gripper ladeado{{, estación que no llega a home}}.',
     sabemos:['Reiniciar MIU / inicializar el equipo ayudó en comunicación de dispensado.','Después de reiniciar la MIU: abrir warmstart y luego Kasalis antes de inicializar.'],
     pasos:[], necesito:['Botón de inicializar (equipo y por estación)','Qué esperar en pantalla mientras inicializa'],
   },

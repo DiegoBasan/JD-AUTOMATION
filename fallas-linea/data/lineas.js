@@ -84,7 +84,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Muy recurrente (casi diario en julio; repuntes en septiembre al mezclar housing reutilizado o con personal nuevo).",
+   "Frecuencia: {{Muy recurrente (casi diario en julio; repuntes en septiembre al mezclar housing reutilizado o con personal nuevo).}}",
    "Visto en chats: 2026-07-08 a 2026-09-26"
   ]
  },
@@ -132,7 +132,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente en julio; luego esporádico.",
+   "Frecuencia: {{Recurrente en julio; luego esporádico.}}",
    "Visto en chats: 2026-07-08 a 2026-08-06"
   ]
  },
@@ -188,7 +188,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-07-14 a 2026-09-22"
   ]
  },
@@ -236,7 +236,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente.",
+   "Frecuencia: {{Recurrente.}}",
    "Visto en chats: 2026-07-13 a 2026-09-17"
   ]
  },
@@ -276,7 +276,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente (llegaron a cargar 1 h de tiempo muerto por visión).",
+   "Frecuencia: {{Recurrente (llegaron a cargar 1 h de tiempo muerto por visión).}}",
    "Visto en chats: 2026-07-13 a 2026-09-15"
   ]
  },
@@ -320,7 +320,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional pero con paros largos (hasta varias horas).",
+   "Frecuencia: {{Ocasional pero con paros largos (hasta varias horas).}}",
    "Visto en chats: 2026-07-20 a 2026-10-09"
   ]
  },
@@ -376,7 +376,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Frecuente.",
+   "Frecuencia: {{Frecuente.}}",
    "Visto en chats: 2026-07-08 a 2026-10-08"
   ]
  },
@@ -428,7 +428,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente (varias veces por semana en julio-agosto).",
+   "Frecuencia: {{Recurrente (varias veces por semana en julio-agosto).}}",
    "Visto en chats: 2026-07-15 a 2026-10-07"
   ]
  },
@@ -476,7 +476,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-08-06 a 2026-09-15"
   ]
  },
@@ -539,7 +539,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Muy frecuente (agosto-septiembre), ligado a lotes de O-ring y housing.",
+   "Frecuencia: {{Muy frecuente (agosto-septiembre), ligado a lotes de O-ring y housing.}}",
    "Visto en chats: 2026-08-04 a 2026-09-24"
   ]
  },
@@ -598,7 +598,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Muy frecuente (decenas por turno en picos).",
+   "Frecuencia: {{Muy frecuente (decenas por turno en picos).}}",
    "Visto en chats: 2026-07-15 a 2026-10-07"
   ]
  },
@@ -654,7 +654,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-08-18 a 2026-10-06"
   ]
  },
@@ -718,7 +718,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente.",
+   "Frecuencia: {{Recurrente.}}",
    "Visto en chats: 2026-07-09 a 2026-09-30"
   ]
  },
@@ -750,7 +750,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Esporádico.",
+   "Frecuencia: {{Esporádico.}}",
    "Visto en chats: 2026-07-13 a 2026-08-24"
   ]
  },
@@ -818,7 +818,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-07-23 a 2026-10-04"
   ]
  },
@@ -882,7 +882,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-07-17 a 2026-10-01"
   ]
  },
@@ -962,7 +962,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: En cada corrida de Gecko.",
+   "Frecuencia: {{En cada corrida de Gecko.}}",
    "Visto en chats: 2026-07-28 a 2026-09-24"
   ]
  },
@@ -1002,7 +1002,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-07-30 a 2026-09-18"
   ]
  },
@@ -1058,7 +1058,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Recurrente.",
+   "Frecuencia: {{Recurrente.}}",
    "Visto en chats: 2026-08-18 a 2026-10-08"
   ]
  },
@@ -1106,7 +1106,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Ocasional.",
+   "Frecuencia: {{Ocasional.}}",
    "Visto en chats: 2026-08-20 a 2026-09-21"
   ]
  },
@@ -1154,7 +1154,7 @@ export const FALLAS = [
    ]
   ],
   "tips": [
-   "Frecuencia: Frecuente en temporada de lluvia.",
+   "Frecuencia: {{Frecuente en temporada de lluvia.}}",
    "Visto en chats: 2026-08-11 a 2026-09-10"
   ]
  },
@@ -1196,7 +1196,7 @@ export const PROCESOS = {
       {texto:'Picar "Cargar cambios". Pide contraseña.', valor:'Contraseña: admin'},
       {texto:'Iniciar el programa.'},
     ],
-    sabemos:['Confirmar en pantalla que quedaron los valores de la hoja antes de cargar piezas.'],
+    sabemos:['{{Confirmar en pantalla que quedaron los valores de la hoja antes de cargar piezas.}}'],
     necesito:['Fotos de cada pantalla (Detener, pestaña Parámetros, Modificar parámetros, Cargar cambios, Iniciar)'],
   },
   'horno-manual': {
@@ -1215,17 +1215,17 @@ export const PROCESOS = {
       {texto:'Encender el aire de forma gradual y revisar que no haya fugas.'},
       {texto:'Purgar, pesar 3 dispensados y tomar foto.'},
     ],
-    sabemos:['El DELO se ambienta 1.5 h antes de usarlo (el de MRO llega congelado).','Si cambia de cuarto: 30 min de refri y luego ambientar.','Registrar cada DELO en la base de datos; la caducidad corre desde que se abre.','No reusar envases.'],
+    sabemos:['El DELO se ambienta 1.5 h antes de usarlo (el de MRO llega congelado).','Si cambia de cuarto: 30 min de refri y luego ambientar.','Registrar cada DELO en la base de datos; la caducidad corre desde que se abre.','{{No reusar envases.}}'],
     necesito:['Fotos del dispensador de cada estación (dónde está el opresor y la válvula de aire)'],
   },
   'cambio-fixtura': {
     titulo:'Cambio de fixtura', linea:'general', lineas:['gecko','moose','scorpion'], maquina:'Estaciones', permisos:'Técnico',
-    cuando:'Cambio de modelo o fixtura dañada.',
+    cuando:'Cambio de modelo{{ o fixtura dañada}}.',
     pasos:[], sabemos:[], necesito:['Pasos y fotos del cambio de fixtura por estación'],
   },
   "receta-dogbone": {"titulo": "Cambio de receta / nuevo número de parte en Dogbone", "linea": "scorpion", "maquina": "Dogbone", "permisos": "Técnico", "cuando": "Nuevo número de parte o cambio de receta en Dogbone.", "pasos": [{"texto": "Confirmar con Producción y Calidad el modelo y PFA a correr (revisar en MES, no por el nombre de la fixtura)"}, {"texto": "Buscar en el apartado de MES de las recetas la que corresponde al PFA del campo 'camera s/n'"}, {"texto": "Si no existe, crear la receta con los campos que pase Calidad/MES (incluido el número de etiqueta en el apartado de impresión/pruebas)"}, {"texto": "Ajustar visiones y flujo para el nuevo modelo"}, {"texto": "Imprimir una etiqueta de prueba y verificar el PFA impreso; que Calidad la libere"}, {"texto": "Si truena el checkpoint de ligado, revisar la variable del serial de la cámara y que el material tenga la progresión correcta (Calidad muta)"}, {"texto": "No dejar el checkpoint bypasseado: reactivarlo al terminar"}], "sabemos": ["Las placas de fixtura de 100 mm horizontal/vertical están invertidas", "Plan B: ligado manual por Calidad"], "necesito": ["Fotos de cada paso"]},
   "receta-lens-adapter": {"titulo": "Cambio de fixtura y receta en Lens Adapter", "linea": "general", "maquina": "Lens adapter", "permisos": "Técnico", "cuando": "Cambio de modelo en la estación de lens adapter.", "pasos": [{"texto": "Cambiar la fixtura del modelo en la estación de Lens Adapter"}, {"texto": "Seleccionar la receta correcta del modelo"}, {"texto": "Al cambiar revisión de lens adapter (ej. Rev A→B), cerrar y abrir la app (también en ISO5) para que tome el cambio"}, {"texto": "Validar con primera pieza el ligado y la progresión"}], "sabemos": ["No mezclar revisiones de lens adapter; la nueva revisión requiere alta previa en MES (BOM)", "Lens adapter de Scorpion no se liga"], "necesito": ["Fotos de cada paso"]},
-  "contencion-leak": {"titulo": "Contención por fallas de fuga en Leak Test", "linea": "general", "maquina": "Leak test", "permisos": "Técnico", "cuando": "Fallas de fuga seguidas (regla 3-5-10).", "pasos": [{"texto": "Detener por regla 3-5-10; abrir Andon y QRQC"}, {"texto": "Diagnosticar en ≤15 min la primera pieza"}, {"texto": "Validar el equipo: leak test limpio y pasar golden good y bad (Pruebas)"}, {"texto": "Verificar que los torques funcionen correctamente (Automatización)"}, {"texto": "Auditar que el método de ensamble sea el documentado (Manufactura/Calidad)"}, {"texto": "Calidad pesa y segrega O-ring (>0.38 g) y valida front/back housing"}, {"texto": "Reanudar con validación de 20 piezas y luego batches de 10 con pantallazo de yield"}], "sabemos": ["Falla por O-ring suele dar delta P <50; fuga gruesa suele ser cristal", "No acumular material sin diagnóstico"], "necesito": ["Fotos de cada paso"]},
+  "contencion-leak": {"titulo": "Contención por fallas de fuga en Leak Test", "linea": "general", "maquina": "Leak test", "permisos": "Técnico", "cuando": "Fallas de fuga seguidas (regla 3-5-10).", "pasos": [{"texto": "Detener por regla 3-5-10; abrir Andon y QRQC"}, {"texto": "Diagnosticar en ≤15 min la primera pieza"}, {"texto": "Validar el equipo: leak test limpio y pasar golden good y bad (Pruebas)"}, {"texto": "Verificar que los torques funcionen correctamente (Automatización)"}, {"texto": "Auditar que el método de ensamble sea el documentado (Manufactura/Calidad)"}, {"texto": "Calidad pesa y segrega O-ring {{(>0.38 g)}} y valida front/back housing"}, {"texto": "Reanudar con validación de 20 piezas y luego batches de 10 con pantallazo de yield"}], "sabemos": ["Falla por O-ring suele dar delta P <50; fuga gruesa suele ser cristal", "No acumular material sin diagnóstico"], "necesito": ["Fotos de cada paso"]},
   "limites-atornillado": {"titulo": "Ajuste de límites de atornillado en Final", "linea": "moose", "maquina": "Final Assy", "permisos": "Técnico", "cuando": "Tornillos elevados que pasan o buenos que fallan por ángulo.", "pasos": [{"texto": "Abrir en el controlador el programa activo (el primero, en azul)"}, {"texto": "Ir a la última etapa (etapa 3 / apriete final)"}, {"texto": "Revisar límites de ángulo y el mensaje de falla (flecha a la izquierda)"}, {"texto": "Comparar el ángulo de una pieza buena vs una fallada"}, {"texto": "Ajustar velocidad o ángulo mínimo de forma controlada e informar a Calidad"}, {"texto": "Validar con housing nuevo; para housing reutilizado usar su programa"}], "sabemos": ["Bajar demasiado el ángulo puede dejar pasar elevados"], "necesito": ["Fotos de cada paso"]},
   "apagado-encendido": {"titulo": "Apagado y encendido de equipos (corte eléctrico / fin de semana)", "linea": "general", "maquina": "Todas", "permisos": "Técnico", "cuando": "Corte eléctrico o fin de semana.", "pasos": [{"texto": "Apagar primero las computadoras"}, {"texto": "Apagar el switch principal (main switch) de cada máquina y gabinete"}, {"texto": "Incluir hornos, refrigeradores, impresora 3D y equipos fuera del cuarto limpio; desconectar si se requiere"}, {"texto": "No dejar material productivo dentro del cuarto limpio"}, {"texto": "Al encender: prender gabinetes y máquinas, luego PCs; encender el horno desde su display y abrir su app"}, {"texto": "Iniciar sesión con credenciales; si una app se traba usar el administrador de tareas (Ctrl+Shift+Esc) para cerrarla"}, {"texto": "Liberar partículas, temperatura y humedad antes de arrancar"}, {"texto": "Validar primera pieza con Calidad; Pruebas enciende Leak Test/EOL y retira candados"}], "sabemos": ["Arrancar en batches pequeños (5-10 piezas) tras un paro largo"], "necesito": ["Fotos de cada paso"]},
   "horno-cargas": {"titulo": "Cargas y tiempos del horno de curado (post-Kasalis)", "linea": "horno", "maquina": "Horno", "permisos": "Técnico", "cuando": "Curado después de la Kasalis.", "pasos": [{"texto": "Abrir el shortcut/app del horno correspondiente al modelo"}, {"texto": "Meter cargas completas (estándar 30 piezas; Moose se llegó a definir en 60 o lo construido en 2 horas)"}, {"texto": "Registrar hora de entrada; el ciclo dura aprox. 1.5-2 h (varía ~8 min)"}, {"texto": "Al salir, dejar enfriar ~20 min"}, {"texto": "Dar retest en Kasalis y entregar a Front"}], "sabemos": ["Evitar cargas parciales salvo orden de Producción", "Contemplar horno + enfriamiento + retest en la planeación de material"], "necesito": ["Fotos de cada paso"]},
