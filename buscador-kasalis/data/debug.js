@@ -1,0 +1,165 @@
+/* =====================================================================
+   DEBUG — material en revisión (no confirmado). No toca las fallas ni las guías.
+   Cuando una idea se confirma en piso, se pasa a fallas.js / procedimientos.js.
+   {
+     id, titulo, fuente, estado,
+     secciones: [{ t:'0:01', fin:'1:23', titulo, puntos:['…'], gif:'debug/<id>/01.gif' | null }],
+     cruces: ['relación con lo que ya está en la app'],
+     dudas: ['lo que no quedó claro en la fuente'],
+   }
+   Texto de la fuente = real. {{…}} = interpretación o relación que hizo Claude.
+   Sin contraseñas, nombres ni rutas internas (repo público).
+   ===================================================================== */
+export const DEBUG = [
+{
+  id:'jacob-howto-trim1', titulo:'Jacob · Pixid500_how_to-Trim1',
+  fuente:'Video de entrenamiento del ingeniero de Kasalis (Alemania). Transcripción en alemán, ~60 min, traducida y resumida.',
+  estado:'Transcripción lista · faltan los GIFs (falta el video)',
+  secciones:[
+  {t:'0:01', fin:'1:23', titulo:'Encender la máquina', puntos:[
+    'Para trabajar adentro con la puerta abierta: poner el modo de mantenimiento en 1. Si no, el E-Stop no se puede resetear con la puerta abierta.',
+    'Mientras arranca la PC: liberar el E-Stop si está presionado y dar Reset.',
+    'Iniciar sesión en Windows (contraseña: no se publica, guárdala en Mis notas).',
+    'Esperar a que arranque el sistema Realtime en segundo plano. Si abres el programa antes, sale un error la primera vez.']},
+  {t:'1:23', fin:'2:24', titulo:'Programas para un modelo nuevo (ej. Gecko)', puntos:[
+    'En el escritorio, arriba, hay 2 programas: a la izquierda el Pixid 500 y a la derecha un programa de prueba para configurar lo de visión.',
+    'Para un modelo nuevo: hacer una copia de los dos, pegarla en el escritorio y ajustar las rutas de los targets y los archivos config nuevos.']},
+  {t:'2:24', fin:'3:19', titulo:'Inicializar y modo Engineer', puntos:[
+    'Moose, Scorpion, etc. son el mismo programa; solo cambian los archivos config.',
+    'Initialize → cuando termina, aparecen abajo los 3 mensajes de estado en negro.',
+    'Engineer → se abre la interfaz completa.']},
+  {t:'3:19', fin:'6:31', titulo:'Pestaña Production: botones', puntos:[
+    'Arriba hay 4 pestañas: Dispense, Align, Spare y Production (los botones del operador).',
+    'Park: regresa la máquina a su posición de origen.',
+    'Build: arranca producción BUILD. Retest: arranca RETEST.',
+    'Run out: con Build o Retest corriendo, deja terminar el ciclo actual normal. Para cortarlo: Stop cycle o volver a picar Build / Retest.',
+    'Lower fixtures: bajan las fixtures para poder quitarlas. Al ponerlas: que las 3 esferas entren en los 3 huecos; con 2 fixtures, la fixture 3 va en el lugar 3. Solo se sacan cuando están abajo.',
+    'Si metes la mano mientras sube, se activa la cortina de luz y no deja que suba con el aire.',
+    'Rotary / Index stations: gira una estación cada vez. Park lo regresa al origen.']},
+  {t:'6:31', fin:'8:19', titulo:'Cargar la pieza en la fixture', puntos:[
+    'Jalar con el dedo el tope (hard stop) del nido hacia atrás y sacar la pieza.',
+    'Va el interposer board con los pogo pads que conectan con la fixture, y luego el sensor board. En Gecko probablemente sale un flex del sensor (no está seguro).',
+    'Orientación: el chaflán de arriba no debe chocar con la "barbilla" de la izquierda.',
+    'Presionar hasta que quede bien enclavada; después se pone el lente.']},
+  {t:'8:19', fin:'10:46', titulo:'Mover los ejes', puntos:[
+    'Pestaña Dispense: Speed máximo 25 (no sabe la unidad). Con − / + se mueve continuo (jog).',
+    'Ejes: X+ a la derecha, X− a la izquierda, Y+ hacia atrás, Y− hacia adelante, Z hacia arriba.',
+    'Escribir un valor: el campo solo se ve seleccionado cuando tecleas. Decimales con punto y Enter.',
+    'Flecha = movimiento absoluto (ej. X a 4 mm). Flechas de incremento = mover cierta distancia (ej. 200 µm o 1 mm).',
+    'Igual en Align XYZ (la torre de atrás). Theta controla la rotación del align stack.']},
+  {t:'10:46', fin:'13:09', titulo:'Estado de la máquina', puntos:[
+    'El contador de adhesivo y de horas restantes baja todo el tiempo, aunque no haya DELO: no confiar en él, llevar registro propio.',
+    'Production: estado de las 4 estaciones (load, dispense, align, spare) y qué fixture está en cada una (el número grabado en la fixture). Se mueven con la mesa, junto con el Work ID, el estado OK / Fail, el código de falla y el código extra.',
+    'Timing: duración de cada paso (no es importante).',
+    'Align: lo que ya giró el goniómetro y lo que falta girar. Criterio de salida: 0.03°; al llegar ahí termina el alignment.']},
+  {t:'13:09', fin:'15:27', titulo:'Dispense: inspecciones y cámaras', puntos:[
+    'Dispense: corre la rutina normal; primero va a la posición de pre-inspection.',
+    'Advanced › Pre inspect: la torre va a la posición donde ve el lens adapter.',
+    'Particle test: posición parecida, prende la luz de partículas y ve la imagen del sensor (cambiar a la vista Dispense live).',
+    'Pestañas de imagen: gráfica de alignment (idealmente forma de campana), Align live / frame, Dispense live / frame, cámara de arriba (down-looking) live / frame y Spare live / frame.',
+    'Camera Open en dispensado abre el sensor con el archivo INI de la configuración. Esa imagen es la que se usa para partículas (blemish).',
+    'La tercera posición es la de post-dispense inspection; se parece a la de pre-dispense.']},
+  {t:'15:27', fin:'18:21', titulo:'Calibrate, Teach, Head 1 Reset, Prime y Purge', puntos:[
+    'Calibrate casi no se usa: mide las referencias del tip find (la barrera láser con 2 cruces blancas) y luego hace un tip find.',
+    'Teach ajusta la altura de la aguja, pero casi no se usa: mejor correr Dispense y ajustar en vivo cuando está en el punto donde pondría el DELO.',
+    'Si sale "Dispense volume low" o pocas horas: Head 1 Reset → tipo de adhesivo, batch ID, caducidad; resetear volumen y horas → OK.',
+    'DELO nuevo del congelador y aguja nueva: Prime Head 1 = 5 veces ~10 s; Purge = una vez ~10–15 s (no está seguro de los tiempos).',
+    'Al cambiar aguja él siempre usa Prime, porque asegura sacar todo el aire. Con Purge a veces no sale todo, sobre todo al cambiar cartucho.',
+    'Si el vasito de purga está lleno o la máquina lo marca: Reset Prime.']},
+  {t:'18:21', fin:'26:48', titulo:'Align: alinear, final test y pruebas', puntos:[
+    'Mandar la fixture a align con Rotary / Index. No meter la mano en la cortina mientras gira: se detiene, pide sacar la mano, confirmar y sigue.',
+    'Camera Open: a veces falla la conexión.',
+    'Align: toma el lente, lo coloca y hace el scan. Rojo = centro, colores = esquinas. Busca quedar abajo de 0.03° en TX y TY.',
+    'Al lograrlo cura en esa posición, menos el Align offset y más el UV offset, y suelta. Con la casilla UV sin marcar hace un alignment en seco y se queda en la posición final.',
+    'Return lens: regresa el lente.',
+    'Secuencia: prefocus (enfoque grueso) → precentration (centrado grueso) → scan. Si el punto de inicio es malo (los picos salen a la izquierda, fuera de la gráfica) normalmente se recupera solo; si es muy malo, marca error.',
+    'Se puede abortar a la mitad.',
+    'En live view se mueve con incrementos (ej. 100 µm lateral, 10 µm vertical) y se ve cómo cambia el foco.',
+    'Final test: toma una imagen y mide SFR (si no está centrado marca error de centrado).',
+    'Characterize: scan muy fino de 1 µm por paso (configurable), sin poly fit (también configurable), de ~60–70 µm.',
+    'Stability: 100 imágenes con 300 ms entre cada una, para ver si los valores se mantienen.',
+    'Repeatability: 3 o 5 alignments seguidos.',
+    'Si se pierde la imagen de la cámara: volver a conectar (reactivar la cámara de align) y abrir otra vez.']},
+  {t:'26:48', fin:'27:40', titulo:'Spare station', puntos:[
+    'Solo tiene Camera Open y el botón de la prueba de partículas.',
+    'Un domo con luz difusa indirecta baja sobre la cámara y toma una imagen blanca. Al terminar, Park.']},
+  {t:'27:40', fin:'32:29', titulo:'Motion e IO', puntos:[
+    'Motion: acceso a cada eje. Casi no lo usa, solo con una falla grave.',
+    'IO: control de cada cosa. ¡Cuidado, aquí se puede chocar! Ej. girar la mesa mientras suben o bajan los pogos.',
+    'Hay 3 pogos: align, dispense y spare (el bloque que toca la fixture por abajo).',
+    'Load station: primero desactivar "up" y luego activar "down"; no pueden estar los dos.',
+    'Rotary table lock: el seguro de la mesa; casi no se toca.',
+    'A la derecha está el estado de los sensores de posición de los cilindros: sirve para ver si algo está trabado y no llega a su fin de carrera.',
+    'Target: brillo del target central y de las 4 esquinas, o todo al 100 %. Las 4 de abajo no están instaladas.',
+    'Downlight: solo on / off; la intensidad se ajusta con un potenciómetro abajo en la máquina (el ajuste de la pantalla no hace nada).',
+    'Align: abrir / cerrar gripper, prender UV y ajustar la intensidad UV a mano.',
+    'Dispense: luces DOAL (diffuse on-axis), line light y particle detection light, y el dispense rate.',
+    'Partículas usa la luz PD; la post-inspection usa DOAL o line light (no está seguro de cuál bloque es cuál).',
+    'Enclosure: seguros y luz; casi no se usa.']},
+  {t:'32:29', fin:'34:51', titulo:'Dispensado en seco y archivos de parámetros', puntos:[
+    'Engrane abajo a la derecha: "disable dispense" para dispensar en seco, y activar las posiciones de mesa que tienen fixture (ej. 1 y 2). También se puede en los archivos de parámetros.',
+    'Params: Pixid ks INI (general), Machine params, Camera fixture offsets (solo con 2 fixtures) y KsProcess / KsDispense, que tienen los parámetros del proceso.',
+    'KsDispense: pre-dispense inspection, dispensado, partículas, post-dispense inspection y blemish de la spare.',
+    'Patterns: los patrones que él ha hecho (Moose, Scorpion y el de la cruz blanca del tip find). No hacer caso a las flechas de error de la lista (la pantalla falla). Usar solo la sección de arriba.']},
+  {t:'34:51', fin:'41:18', titulo:'Instalar el dispensador', puntos:[
+    'Sacar el DELO del refri ~1 hora antes para que se descongele. Confirmar el adhesivo correcto (786 o 787, viene en el dibujo de ensamble).',
+    'Para cambiar el DELO: aflojar el tornillo de la abrazadera negra con la llave hexagonal grande de la caja de herramientas, sin sacarlo completo.',
+    'Aflojar el anillo azul, quitar el anillo de goma y soltar la abrazadera.',
+    'Al montar: la ranura fresada apunta hacia la punta.',
+    'Jalar la abrazadera hasta el tope contra el anillo; si no, no alcanza la altura de dispensado.',
+    'Que quede derecha, no girada. Apretar sin exceso: si se aprieta de más, puede atorar el tornillo sin fin.',
+    'Motor (atrás): los 2 pines entran en la ranura del acople y el pin de arriba en su barreno. Apretar el 1er y 2º tornillo prisionero solo a mano y ligero (desarmador de la caja azul).',
+    'A la fixture: 2 pines en 2 barrenos; sostenerlo girado en sentido horario; 2 tornillos con la misma llave, solo a mano.',
+    'Aire: meter la pieza girada 90°, girar en sentido antihorario y enroscar el anillo completo para que selle. Si no sella, volver a bajar el anillo. Abrir el aire.']},
+  {t:'41:18', fin:'44:33', titulo:'Cambiar y enderezar la aguja', puntos:[
+    'Si está dura, usar pinzas.',
+    'Ver desde arriba con un fondo de contraste: aflojar el anillo, girar la aguja hasta que quede casi perfecta y apretar.',
+    'Ver de frente: si no está vertical, doblarla un poco con los dedos. No tiene que ser exacto, solo que no quede chueca.']},
+  {t:'44:33', fin:'49:16', titulo:'Tip find y altura de dispensado (modelo nuevo)', puntos:[
+    'En producción, después de cambiar cartucho: Head 1 Reset (horas, nombre) y luego tip find antes de todo.',
+    'Tip find: escanea XY y luego hace un scan fino; se ven las cruces que usa Calibrate.',
+    'Antes de ajustar, cambiar al programa del modelo correcto, para no cambiar los valores de otro modelo.',
+    'Advanced › Teach: lo probó y chocó la aguja contra la pieza. No lo recomienda; mejor hacerlo manual.',
+    'Manual: aguja nueva, enderezarla y tip find. Con Rotary ir a dispense. En parámetros poner DispenseOffset1Z alto (máx. ~39–40, ej. 39) para no chocar con el lens adapter.',
+    'Desactivar el adhesivo (dispensado en seco), picar Dispense y abortar cuando esté sobre el lens adapter.',
+    'Antes de esto hay que configurar la pre-dispense inspection.']},
+  {t:'49:16', fin:'53:41', titulo:'Posición de pre-dispense inspection y luces', puntos:[
+    'Fixture en dispense › Advanced › Pre inspect. Con Z enfocar y con XY dejar el feature a medir en el centro.',
+    'Tomar captura de pantalla de las posiciones (tecla Impr Pant).',
+    'Guardarlas en el archivo KsDispense, hasta abajo: posición XYZ (ej. 25.2, 19.5, 39). Al volver a Pre inspect debe quedar igual.',
+    'Si la luz no está bien: en IO › Dispense ajustar intensidades. Line light apagado → más oscuro; DOAL apagado → casi no se ve.',
+    'Anotar los valores y pasarlos igual al archivo de parámetros: LD (DOAL) y LL (line light).',
+    'Tercer ajuste: la exposición de la 2ª cámara (está en 50; no sabe si son µs o ms).']},
+  {t:'53:41', fin:'60:00', titulo:'Crear el pattern del lens adapter', puntos:[
+    'En Pre inspect › Patterns elegir cualquiera (ej. el de Moose) y crear uno nuevo. Hay un video tutorial interno del software de patterns: es el mismo software con otro diseño.',
+    'New pattern → Edit model. Si la pantalla está negra, el icono de herramienta de arriba la hace visible.',
+    'Agrandar la caja verde (ROI) para encerrar el feature; él usa el borde interior del lens adapter.',
+    'Feature selection: None → Build model. Revisar que el feature quede marcado con una línea continua (doble clic lo selecciona completo).',
+    'Si no lo detecta: cambiar la luz o la exposición, o usar Low / High sensitivity (filtro). Con Low sensitivity casi siempre basta.',
+    'Ajustar la caja verde justo sobre el borde detectado, para que el feature quede centrado.',
+    'Mover el origen (amarillo) al centro con "ROI center". Ese origen es la referencia de la pre-dispense inspection para poner la aguja.',
+    'Agrandar la caja 20 px alrededor (en el video: 902, 82, 249, 1058).',
+    'Build model otra vez y elegir 2 niveles de detalle, Outline y Detail; los dos son obligatorios. Revisar y Apply para guardar.',
+    'Búsqueda: Advanced parameters › Location: no buscar en toda la imagen, sino en un área de 990 × 990. Si la pieza se mueve más, algo está mal con la fixture.',
+    'Contour: no se toca. Search: permitir 0.05 (5 %) de escala; rotación 0 porque la pieza es simétrica.',
+    'Recognition: el video se corta aquí ({{seguramente sigue en el Trim2}}).']},
+  ],
+  cruces:[
+    'DELO: Jacob dice ~1 h para descongelar; la app dice 1.5 h (y en un chat dijeron que desde 1 h ya se puede). Falta definir cuál se usa.',
+    'Prime Head 1 = 5 × ~10 s, igual que la guía de purga de la app (5 ciclos de 10000 ms).',
+    'LD (DOAL) y LL (line light) son los mismos parámetros de la línea VIS del Laboratorio VIS.',
+    '{{IO › estado de sensores de cilindros: es donde se ve el sensor del tip find (218 / 219).}}',
+    '{{"Si se pierde la imagen de align, volver a conectar la cámara": va con la falla de comunicación 102.}}',
+    '{{DispenseOffset1Z es probablemente el parámetro de la guía "Altura de la aguja".}}',
+    '{{El Teach que no recomienda es el de dispensado; la guía "Teach Z" de la app es de alineación (otro).}}',
+    'Contador de adhesivo / horas no confiable → registro propio (va con "Registrar cada DELO").',
+  ],
+  dudas:[
+    'Unidad del Speed (máx. 25) y de la exposición de la 2ª cámara (50: ¿µs o ms?).',
+    '¿Cuál bloque de luz es el DOAL y cuál el de partículas (PD)?',
+    'Tiempos exactos de Prime y Purge.',
+    'Nombre exacto del switch de "modo de mantenimiento" y dónde está.',
+    'La parte de Recognition del pattern (¿sigue en Trim2?).',
+  ],
+},
+];

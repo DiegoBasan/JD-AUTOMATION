@@ -6,6 +6,7 @@ import {FALLAS} from './data/fallas.js';
 import {PROCS, procInline, guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA} from '../shared/txt.js';
 import {mountFlow} from '../shared/flow.js';
+import {DEBUG} from './data/debug.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
 
 const $ = id => document.getElementById(id);
@@ -204,9 +205,35 @@ function codesTab(){
   h += `<h3 class="lb">Fallas de proceso</h3><div class="list">${Object.keys(PROCESS).map(k=>`<div class="row" data-go="s/${k}"><b style="font-size:13px">${k}</b><span>${esc(PROCESS[k])}</span><span class="faint">›</span></div>`).join('')}</div>`;
   return h;
 }
+/* ---------- debug: material en revisión, separado de lo que ya funciona ---------- */
+const DBG_CSS = `<style>.dbg-ban{border:1.5px dashed var(--line);border-radius:16px;padding:10px 12px;font-size:13px;color:var(--ink2);margin-bottom:12px}
+.dbg-sec{border-radius:16px;background:var(--surface);border:1px solid var(--line);margin-bottom:8px;overflow:hidden}
+.dbg-sec summary{list-style:none;display:flex;gap:10px;align-items:center;padding:12px 14px;cursor:pointer;font-weight:700;font-size:15px}
+.dbg-sec summary::-webkit-details-marker{display:none}
+.dbg-sec summary i{font:700 12px ui-monospace,Menlo,monospace;font-style:normal;padding:3px 8px;border-radius:8px;background:var(--bg);color:var(--ink2);white-space:nowrap}
+.dbg-sec summary span{flex:1;min-width:0}.dbg-sec summary span.faint{flex:0 0 auto}
+.dbg-sec[open] summary{border-bottom:1px solid var(--line)}
+.dbg-sec ul{margin:10px 14px 12px;padding-left:18px;font-size:14px;line-height:1.5}
+.dbg-sec li{margin:4px 0}
+.dbg-gif{margin:0 14px 14px;border-radius:12px;background:var(--bg);color:var(--ink3);font-size:12px;padding:14px;text-align:center}
+.dbg-gif img{width:100%;border-radius:12px;display:block}</style>`;
+function debugList(){
+  return `${DBG_CSS}${sh('code','Debug · en revisión',1)}<div class="dbg-ban">Material que todavía no está confirmado en piso. No cambia las fallas ni las guías; cuando se confirme, se pasa a la app.</div>
+    <div class="list">${DEBUG.map(d=>`<div class="row" data-go="debug/${d.id}"><b style="font-size:12px;color:var(--ink3)">${d.secciones.length}</b><span>${esc(d.titulo)}<small>${esc(d.estado)}</small></span><span class="faint">›</span></div>`).join('')}</div>`;
+}
+function debugView(id){
+  const d = DEBUG.find(x=>x.id===id); if(!d) return debugList();
+  return `${DBG_CSS}<div class="head"><div class="k">Debug · en revisión</div><h2>${esc(d.titulo)}</h2><p>${esc(d.fuente)}</p><p style="font-size:12.5px;margin-top:6px">${esc(d.estado)}</p></div>
+    ${sh('steps','Desglose del video',1)}${d.secciones.map((x,i)=>`<details class="dbg-sec"${i===0?' open':''}><summary><i>${esc(x.t)}–${esc(x.fin)}</i><span>${esc(x.titulo)}</span><span class="faint">+</span></summary>
+      <ul>${x.puntos.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+      <div class="dbg-gif">${x.gif?`<img loading="lazy" src="${esc(x.gif)}" alt="">`:`GIF pendiente · minuto ${esc(x.t)}`}</div></details>`).join('')}
+    ${d.cruces?.length?`${sh('book','Cruce con lo que ya está en la app')}<div class="tips">${d.cruces.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`:''}
+    ${d.dudas?.length?`${sh('info','Dudas del video')}<div class="tips">${d.dudas.map(t=>`<div>${esc(t)}</div>`).join('')}</div>`:''}${LEYENDA}`;
+}
 function infoTab(){
   let notas = ''; try{ notas = localStorage.getItem('jd_misnotas')||''; }catch(e){}
-  return `${sh('info','Cómo se usa',1)}<div class="install">
+  return `<div class="link" data-go="debug"><span>🛠 Debug · material en revisión (${DEBUG.length})</span><span class="faint">›</span></div>
+    ${sh('info','Cómo se usa',1)}<div class="install">
     1. Busca el <b>código</b> que sale en la pantalla (ej. 219) o toca la falla.<br>
     2. Sigue los pasos en orden y contesta <b>SÍ / NO</b>.<br>
     3. Cuando se arregle, toca <b>✓ Con esto se resolvió</b>.<br>
@@ -245,6 +272,8 @@ function route(){
   if(!raw){ html = homeView(); }
   else if(raw==='codigos'){ html = codesTab(); title='Códigos'; tab='codigos'; }
   else if(raw==='info'){ html = infoTab(); title='Más'; tab='info'; }
+  else if(raw==='debug'){ html = debugList(); title='Debug'; tab='info'; sub = true; }
+  else if(raw.startsWith('debug/')){ html = debugView(raw.slice(6)); title='Debug'; tab='info'; sub = true; }
   else if(raw.startsWith('f/')){ const f=FALLAS.find(x=>x.id===raw.slice(2)); html = fallaView(raw.slice(2)); title = f?f.titulo:title; sub = true; }
   else if(raw.startsWith('p/')){ const p = PROCS[raw.slice(2)]; html = procView(raw.slice(2)); title = p ? 'Guía' : title; sub = true; }
   else if(raw.startsWith('s/')){ const q=raw.slice(2); html = searchView(q); title = 'Buscar'; tab=''; sub = true; if(document.activeElement!==$('q')) $('q').value=q; }
