@@ -21,14 +21,14 @@ export const HINTS = {
   '131':'PEAK_MTF: en el pico de alineación el MTF no llega al límite (= "no llega a target SFR" en BUILD). Limpiar lente y targets, checar comunicación de cámara, parámetros MTF por variante de lente.',
   '143':'MTF falla durante el curado UV: el lente se movió al curar (contracción). Revisar offset Z (UVCure offset){{ y patrón de DELLO}}.',
   '149':'MTF falla post-curado UV (aún en gripper). {{Igual que 143: contracción / offset.}}',
-  '155':'UNGRIP_MTF: el MTF cae al ABRIR el gripper (antes del horno). Causas: curado UV insuficiente ({{intensidad/}}tiempo), gripper arrastra el lente{{, poco DELLO / cordón incompleto, offset de contracción}}. (El doc de flujos lo describía como post-horno.)',
+  '155':'UNGRIP_MTF: el MTF cae al ABRIR el gripper (antes del horno). Causas: [[d:curado UV insuficiente (]]{{intensidad/}}[[d:tiempo)]], [[d:gripper arrastra el lente]]{{, poco DELLO / cordón incompleto, offset de contracción}}. (El doc de flujos lo describía como post-horno.)',
   '161':'RETEST_MTF: el MTF del RETEST (después de horno) está fuera de límite. Causas: lente/target sucio, DELLO se movió en horno (perfil temp.), {{golpe/manejo entre horno y retest,}} límites RETEST en ksprocess, cámara/pogo pins (ver 175 RETEST_NOISE).',
   '170':'No encontró pico en scan Z: {{rango Z insuficiente o lente fuera de nominal.}}',
   '175':'Ruido en RETEST: {{conexión de cámara / pogo pins / exposición.}}',
   '193':'Saturación en PEAK: {{exposición/ganancia o backlight demasiado alto.}}',
   '195':'Máximo de intentos de centrado: {{asiento del sensor, tilt del lens adapter.}}',
   '218':'Tip find no subió (DISP_TIPFIND_EXTEND). Manual 9.22.1: revisar el limit switch del cilindro de aire. {{También aire y válvula; probar subir/bajar desde I/O.}}',
-  '219':'Tip find no bajó (DISP_TIPFIND_RETRACT, "Timeout waiting for tip find to retract"), sale al inicializar. Visto en piso: era el sensor del cilindro del tip find; se ajustó y jaló. {{Si no es el sensor: revisar aire, válvula y que nada lo trabe; probar el cilindro desde I/O.}}',
+  '219':'Tip find no bajó (DISP_TIPFIND_RETRACT, "Timeout waiting for tip find to retract"), [[d:sale al inicializar. Visto en piso: era el sensor del cilindro del tip find; se ajustó y jaló.]] {{Si no es el sensor: revisar aire, válvula y que nada lo trabe; probar el cilindro desde I/O.}}',
   '199':'Prueba de estabilidad falló: {{vibración, gripper flojo, temperatura.}}',
   '222':'Patrón de visión no encontrado (pre-dispense): {{pieza mal colocada, iluminación (LD/LL/EXP) o patrón .hdb equivocado para el producto.}}',
   '230':'Falla del dispensador: bomba de desplazamiento positivo{{, cartucho DELLO, cable}}.',
@@ -44,8 +44,8 @@ export const HINTS = {
   '419':'Falla en estación de dispensado{{ — ver sub-código}}.',
   '426':'Vacío no detectado en fixture.',
   'screws':'Tornillos elevados: revisar torque por tipo de tornillo, velocidad de spindle, presión del cilindro (empuja más allá del límite del material), altura/calibre del tornillo. Parámetros aún TBD por línea.',
-  'leak':'Leak test: O-ring mal asentado o dañado, {{tornillo elevado, cordón de DELLO de la ventana incompleto (233 en Fisnar),}} housing con poro.',
-  'eol':'EOL: comparar MTF de EOL vs datos de Kasalis RETEST; {{targets/ROIs de EOL, distancia de target por variante,}} conexión/serializer.',
+  'leak':'[[e:Leak test: O-ring mal asentado o dañado,]] {{tornillo elevado, cordón de DELLO de la ventana incompleto (233 en Fisnar),}} [[e:housing con poro.]]',
+  'eol':'[[d:EOL: comparar MTF de EOL vs datos de Kasalis RETEST;]] {{targets/ROIs de EOL, distancia de target por variante,}} [[e:conexión/serializer.]]',
 };
 export const STEP_FAIL_LABEL = {screws:'Tornillos elevados', leak:'Leak FAIL', eol:'EOL FAIL'};
 
