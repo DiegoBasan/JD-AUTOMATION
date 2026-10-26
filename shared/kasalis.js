@@ -19,6 +19,7 @@ export const HINTS = {
   '113':'Gripper no cierra: {{presión de aire, sensor de gripper, mecánica.}}',
   '130':'Medición UV falló: {{lightguide Dymax dañada/sucia, intensidad baja, calibración UV.}}',
   '131':'PEAK_MTF: en el pico de alineación el MTF no llega al límite (= "no llega a target SFR" en BUILD). Limpiar lente y targets, checar comunicación de cámara, parámetros MTF por variante de lente.',
+  '132':'PEAK_CTR: en el pico de alineación (prueba final en BUILD) el centro óptico quedó fuera de límite. [[j:El final test marca error de centrado si el lente no está centrado; el alignment hace un precentration (centrado grueso) antes del scan.]] {{Revisar asiento del sensor y del lens adapter, target central limpio y límites CTR del ksprocess por variante. No confundir con -132 de KSvision (tamaño de imagen).}}',
   '143':'MTF falla durante el curado UV: el lente se movió al curar (contracción). Revisar offset Z (UVCure offset){{ y patrón de DELLO}}.',
   '149':'MTF falla post-curado UV (aún en gripper). {{Igual que 143: contracción / offset.}}',
   '155':'UNGRIP_MTF: el MTF cae al ABRIR el gripper (antes del horno). Causas: [[d:curado UV insuficiente (]]{{intensidad/}}[[d:tiempo)]], [[d:gripper arrastra el lente]]{{, poco DELLO / cordón incompleto, offset de contracción}}. (El doc de flujos lo describía como post-horno.)',
