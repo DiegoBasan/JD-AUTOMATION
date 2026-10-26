@@ -3,7 +3,7 @@
 import {MAQ, FALLAS, PROCESOS} from './data/lineas.js';
 import {guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA} from '../shared/txt.js';
-import {mountFlow} from '../shared/flow.js';
+import {flowFijo} from '../shared/flow.js';
 const SI = {steps:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11M3.5 18l1.5 1.5L7.5 17"/>', cause:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', tip:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>', wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>'};
 const sh = (ic, t, main) => `<h3 class="${main?'sh':'lb'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SI[ic]}</svg>${t}</h3>`;
 
@@ -79,8 +79,7 @@ function route(){
   else html = homeView();
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value = '';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'linea', accent: col(f.linea),
-    procHTML: st => st.proc && PROCESOS[st.proc] ? guideHTML(PROCESOS[st.proc], BASE, PROCESOS[st.proc].titulo) : ''}); }); $('back').style.display = sub ? '' : 'none';
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(f, {accent:col(f.linea), base:new URL('./', location.href).href, procHTML: st => st.proc && PROCESOS[st.proc] ? guideHTML(PROCESOS[st.proc], BASE, PROCESOS[st.proc].titulo) : ''}); }); $('back').style.display = sub ? '' : 'none';
   $('filters').style.display = (tab==='fallas' || tab==='procesos') && !sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';

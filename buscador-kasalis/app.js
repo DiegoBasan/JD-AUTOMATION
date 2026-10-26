@@ -5,7 +5,7 @@ import {DOCS} from './data/docs.js';
 import {FALLAS} from './data/fallas.js';
 import {PROCS, procInline, guideHTML} from '../shared/procs.js';
 import {tx, LEYENDA} from '../shared/txt.js';
-import {mountFlow} from '../shared/flow.js';
+import {flowFijo} from '../shared/flow.js';
 import {DEBUG} from './data/debug.js';
 import {NOTAS, PROCEDIMIENTOS, FRECUENCIA, FRECUENCIA_FUENTE} from './data/notas.js';
 
@@ -288,7 +288,7 @@ function route(){
   }
   if(!raw.startsWith('s/') && document.activeElement!==$('q')) $('q').value='';
   $('out').innerHTML = html; $('ttl').textContent = title;
-  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) mountFlow(el, f, {app:'kasalis', accent:'#FF7F66', procHTML: st => st.proc ? procInline(st.proc) : ''}); });
+  $('out').querySelectorAll('.gflow').forEach(el=>{ const f = FALLAS.find(x=>x.id===el.dataset.fid); if(f) el.innerHTML = flowFijo(f, {accent:'#FF7F66', base:new URL('./', location.href).href, procHTML: st => st.proc ? procInline(st.proc) : ''}); });
   $('back').style.display = sub ? '' : 'none';
   document.querySelectorAll('.tabs a').forEach(a=>a.classList.toggle('on', a.dataset.tab===tab));
   $('clr').style.display = $('q').value ? 'block' : 'none';

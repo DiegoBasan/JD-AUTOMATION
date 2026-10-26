@@ -93,3 +93,36 @@ export function mountFlow(el, f, o={}){
   });
   draw();
 }
+
+/* Flujo fijo: todos los pasos visibles con sus detalles (sin confirmar paso por paso).
+   Paso: {p, d, si, no, proc, img:['fotos/x.jpg' | {src, cap}]} */
+const CSS_FIJO = `
+.ff{position:relative;display:grid;gap:10px;--ffa:var(--ink,#141416)}
+.ff .fs{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surface,#fff);border:1px solid var(--line,rgba(0,0,0,.08))}
+.ff .fs .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--ffa);color:#fff}
+.ff .fs b.t{display:block;font-size:15.5px;line-height:1.35;padding-top:6px}
+.ff .fs .d{color:var(--ink2,#6b6b6b);font-size:14px;margin-top:4px;line-height:1.5}
+.ff .br{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13.5px;line-height:1.45;padding:7px 10px;border-radius:12px}
+.ff .br em{font-style:normal;font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;flex:0 0 auto;margin-top:1px}
+.ff .br.si{background:rgba(34,160,107,.09)} .ff .br.si em{background:rgba(34,160,107,.9);color:#fff}
+.ff .br.no{background:rgba(229,72,77,.07)} .ff .br.no em{background:rgba(229,72,77,.9);color:#fff}
+.ff .ims{display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:2px}
+.ff .ims figure{margin:0;flex:0 0 auto;max-width:min(320px,78vw)}
+.ff .ims img{display:block;max-height:200px;max-width:100%;border-radius:12px;border:1px solid var(--line,#ddd);cursor:zoom-in;background:#fff}
+.ff .ims figcaption{font-size:11.5px;color:var(--ink3,#999);margin-top:3px}
+`;
+let fijoCSS = false;
+export function flowFijo(f, o={}){
+  if(!fijoCSS && typeof document!=='undefined'){ const s = document.createElement('style'); s.textContent = CSS_FIJO; document.head.appendChild(s); fijoCSS = true;
+    document.addEventListener('click', e=>{ const im = e.target.closest('.ff .ims img'); if(!im) return; const d = document.createElement('div');
+      d.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+      d.innerHTML = `<img src="${im.src}" style="max-width:100%;max-height:100%">`; d.onclick=()=>d.remove(); document.body.appendChild(d); }); }
+  const base = o.base || location.href;
+  const ims = s => (s.img||[]).length ? `<div class="ims">${s.img.map(x=>{ const it = typeof x==='string'?{src:x}:x; return `<figure><img loading="lazy" src="${new URL(it.src, base).href}" alt="">${it.cap?`<figcaption>${esc(it.cap)}</figcaption>`:''}</figure>`; }).join('')}</div>` : '';
+  const visto = {};
+  const guia = (s,i) => { if(!o.procHTML || !s.proc) return ''; if(visto[s.proc]!=null) return `<div class="br" style="background:var(--bg,#f2f2f3)">Cómo se hace: ver paso ${visto[s.proc]+1}</div>`; visto[s.proc] = i; return o.procHTML(s); };
+  return `<div class="ff" style="--ffa:${o.accent||'var(--ink)'}">${f.flujo.map((s,i)=>`<div class="fs"><div class="n">${i+1}</div><div>
+    <b class="t">${esc(s.p)}</b>${s.d?`<div class="d">${esc(s.d)}</div>`:''}
+    ${s.si?`<div class="br si"><em>SÍ</em><span>${esc(s.si)}</span></div>`:''}${s.no?`<div class="br no"><em>NO</em><span>${esc(s.no)}</span></div>`:''}
+    ${ims(s)}${guia(s,i)}</div></div>`).join('')}</div>`;
+}
